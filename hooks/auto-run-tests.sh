@@ -19,7 +19,13 @@ if echo "$FILE_PATH" | grep -qE '\.dart$'; then
     TEST_FILE=$(echo "$FILE_PATH" | sed 's|lib/|test/|;s|\.dart$|_test.dart|')
   fi
   if [ -f "$TEST_FILE" ]; then
-    RESULT=$(flutter test "$TEST_FILE" 2>&1 | tail -10)
+    # Use fvm if available (check for .fvmrc in project root)
+    if [ -f ".fvmrc" ] && command -v fvm &>/dev/null; then
+      FLUTTER_CMD="fvm flutter"
+    else
+      FLUTTER_CMD="flutter"
+    fi
+    RESULT=$($FLUTTER_CMD test "$TEST_FILE" 2>&1 | tail -10)
   else
     RESULT="No matching test file found for $FILE_PATH"
   fi
