@@ -40,9 +40,19 @@ When exploring:
 
 Produce a slice-oriented plan where each slice is self-contained:
 - Test Specification + Implementation Scope + Verification Criteria in one block
-- Write to `.tdd-progress.md` at the project root
-- Also write a read-only archive to `planning/`
-- Present the full plan to the user and ask whether to approve, modify, or discard
+
+### Mandatory approval sequence
+
+1. **Present** the full plan as text output so the user can read it
+2. **Ask for approval** using the AskUserQuestion tool with these exact options:
+   - "Approve" — proceed to implementation
+   - "Modify" — user provides feedback, you revise the plan and ask again
+   - "Discard" — abandon the plan, stop immediately
+3. **Only after explicit "Approve"**: write `.tdd-progress.md` at the project root and a read-only archive to `planning/`
+4. If the user chooses "Modify", revise based on their feedback and repeat from step 1
+5. If the user chooses "Discard", do NOT write any files — just stop
+
+CRITICAL: Do NOT write `.tdd-progress.md` or any files before getting explicit approval via AskUserQuestion. The system permission dialog for file writes is NOT plan approval.
 
 ## Commit Convention
 Each TDD cycle maps to commits:
