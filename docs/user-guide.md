@@ -25,7 +25,7 @@ After installation, verify it loaded:
 claude --debug
 ```
 
-Look for `loading plugin: tdd-workflow` in the output. The `/tdd-plan` command should appear in your skill list.
+Look for `loading plugin: tdd-workflow` in the output. The `/tdd-plan` and `/tdd-implement` commands should appear in your skill list.
 
 ---
 
@@ -67,11 +67,21 @@ Take time here. A good plan prevents wasted implementation cycles. Each slice sh
 - **Implementation Scope**: files to create/modify, public API surface
 - **Verification Criteria**: expected test output, analysis requirements
 
+### 4. Start implementation
+
+After the planner writes `.tdd-progress.md`, run:
+
+```
+/tdd-implement
+```
+
+This reads the progress file, finds pending slices, and runs each through the red-green-refactor cycle with automated verification.
+
 ---
 
 ## The Implementation Loop
 
-After plan approval, each slice goes through a three-phase cycle. Claude orchestrates this by invoking two agents per slice.
+`/tdd-implement` orchestrates the implementation. For each pending slice, it invokes two agents in sequence.
 
 ### Phase 1: RED — The implementer writes a failing test
 
@@ -198,9 +208,7 @@ See `docs/version-control.md` for the full commit message format and branching s
 If your session ends mid-workflow (timeout, crash, manual exit):
 
 1. Start a new Claude session in the same project
-2. Claude reads `CLAUDE.md` which tells it to check for `.tdd-progress.md`
-3. If the file exists, Claude will see which slices are done and which remain
-4. You can say "continue the TDD session" or "resume from slice 3"
+2. Run `/tdd-implement` — it reads `.tdd-progress.md`, skips completed slices, and resumes from the first pending one
 
 The `planning/` archive provides the original plan for reference if `.tdd-progress.md` gets corrupted.
 

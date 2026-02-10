@@ -8,9 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- `/tdd-implement` skill for starting and resuming the TDD implementation loop
 - User guide with step-by-step walkthrough (docs/user-guide.md)
 
-### Changed
+### Fixed
+- Planner now requires explicit approval via AskUserQuestion before writing `.tdd-progress.md` — prevents confusion with system permission dialogs
 - Stop hook: replaced prompt hook with deterministic command hook (check-tdd-progress.sh) that reads .tdd-progress.md directly — fixes "JSON validation failed" error, prevents infinite loops via stop_hook_active check, zero latency
 
 ## [1.0.0] - 2026-02-10

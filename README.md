@@ -22,7 +22,13 @@ claude plugin install <path-to-tdd-workflow>
 /tdd-plan Implement a LocationService that wraps geolocator
 ```
 
-This forks a fresh context, researches your codebase, and produces a structured plan with testable slices. After review, each slice goes through red-green-refactor with automated verification.
+This forks a fresh context, researches your codebase, and produces a structured plan with testable slices. After reviewing and approving the plan:
+
+```
+/tdd-implement
+```
+
+This reads `.tdd-progress.md`, finds pending slices, and runs each through red-green-refactor with automated verification. Supports resuming interrupted sessions.
 
 ## How It Works
 
@@ -70,6 +76,7 @@ PASS -> next slice | FAIL -> retry
 | Skill | Type |
 |-------|------|
 | `/tdd-plan` | Orchestrating entry point (forks context) |
+| `/tdd-implement` | Implementation loop (reads progress, runs slices) |
 | dart-flutter-conventions | Convention reference (auto-loaded by agents) |
 | cpp-testing-conventions | Convention reference (auto-loaded by agents) |
 
@@ -109,6 +116,8 @@ tdd-workflow/
 │   └── tdd-verifier.md
 ├── skills/
 │   ├── tdd-plan/
+│   │   └── SKILL.md
+│   ├── tdd-implement/
 │   │   └── SKILL.md
 │   ├── dart-flutter-conventions/
 │   │   ├── SKILL.md

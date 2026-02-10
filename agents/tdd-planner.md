@@ -54,6 +54,8 @@ Produce a slice-oriented plan where each slice is self-contained:
 
 CRITICAL: Do NOT write `.tdd-progress.md` or any files before getting explicit approval via AskUserQuestion. The system permission dialog for file writes is NOT plan approval.
 
+After writing the files, tell the user to run `/tdd-implement` to start the implementation loop.
+
 ## Commit Convention
 Each TDD cycle maps to commits:
 - `test: add tests for <component>` (RED phase)
