@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Added
 - User guide with step-by-step walkthrough (docs/user-guide.md)
 
+### Changed
+- Stop hook: replaced prompt hook with deterministic command hook (check-tdd-progress.sh) that reads .tdd-progress.md directly — fixes "JSON validation failed" error, prevents infinite loops via stop_hook_active check, zero latency
+
 ## [1.0.0] - 2026-02-10
 
 ### Added

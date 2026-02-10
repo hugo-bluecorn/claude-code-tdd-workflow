@@ -81,7 +81,7 @@ PASS -> next slice | FAIL -> retry
 | auto-run-tests.sh | PostToolUse (command) | Runs tests after every file change |
 | SubagentStop (implementer) | prompt | Verifies R-G-R cycle completion |
 | SubagentStop (verifier) | prompt | Verifies full suite + analysis ran |
-| Stop | prompt | Prevents session end with pending slices |
+| check-tdd-progress.sh | Stop (command) | Prevents session end with pending slices |
 
 ## Configuration
 
@@ -126,7 +126,8 @@ tdd-workflow/
 ├── hooks/
 │   ├── hooks.json
 │   ├── validate-tdd-order.sh
-│   └── auto-run-tests.sh
+│   ├── auto-run-tests.sh
+│   └── check-tdd-progress.sh
 ├── docs/
 │   └── version-control.md
 ├── CLAUDE.md

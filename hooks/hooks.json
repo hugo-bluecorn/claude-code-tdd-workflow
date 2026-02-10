@@ -17,9 +17,9 @@
       {
         "hooks": [
           {
-            "type": "prompt",
-            "prompt": "Check if a TDD session is in progress by looking for .tdd-progress.md. If it exists and there are slices with status PENDING or IN_PROGRESS, the session is NOT complete. Respond {\"ok\": false, \"reason\": \"TDD session has remaining slices\"} to continue. If all slices are PASS or no TDD session is active, respond {\"ok\": true}.",
-            "timeout": 15
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/check-tdd-progress.sh",
+            "timeout": 10
           }
         ]
       }

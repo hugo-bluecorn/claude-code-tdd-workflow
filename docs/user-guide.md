@@ -143,7 +143,7 @@ Typical structure:
 - Status: PENDING
 ```
 
-The **Stop hook** checks this file before allowing your Claude session to end. If slices are still PENDING or IN_PROGRESS, it will prompt Claude to continue working.
+The **Stop hook** (`check-tdd-progress.sh`) reads this file before allowing your Claude session to end. It counts slices by `## Slice` headers and checks their status lines. If any slices are not in a terminal state (PASS, DONE, COMPLETE, FAIL, SKIP), it blocks the stop and tells Claude how many slices remain.
 
 ---
 
@@ -164,7 +164,7 @@ The plugin installs five hooks that enforce TDD discipline automatically.
 |------|------|--------------|
 | SubagentStop (implementer) | When implementer finishes | Checks that all three R-G-R phases completed with test output. Blocks if incomplete. |
 | SubagentStop (verifier) | When verifier finishes | Checks that full test suite, static analysis, and structured report were produced. Blocks if incomplete. |
-| Stop (session) | When Claude tries to stop | Checks `.tdd-progress.md` for remaining slices. Blocks session end if work remains. |
+| check-tdd-progress.sh | When Claude tries to stop | Reads `.tdd-progress.md`, counts slices not in terminal state (PASS/DONE/COMPLETE/FAIL/SKIP). Blocks session end if work remains. Deterministic — no LLM call. |
 
 ### When a hook blocks
 
