@@ -23,6 +23,8 @@ verify and what implementation should achieve.
 ## Planning Process
 
 When exploring:
+- Check for `.fvmrc` in the project root. If present, all `flutter` commands in the plan
+  must be prefixed with `fvm` (e.g., `fvm flutter test`, `fvm flutter analyze`).
 - Check pubspec.yaml and CMakeLists.txt for test dependencies
 - Look at existing test/ directories for patterns and conventions
 - Understand the project architecture before planning changes

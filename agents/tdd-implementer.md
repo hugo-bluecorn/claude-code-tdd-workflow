@@ -48,6 +48,11 @@ to execute the red-green-refactor cycle for that slice ONLY.
 2. Run the test again to confirm it still passes
 3. Check for: duplicated code, naming clarity, unnecessary complexity
 
+## Flutter Command Detection
+Before running any `flutter` commands, check for `.fvmrc` in the project root.
+If present, use `fvm flutter` instead of `flutter` for all commands
+(e.g., `fvm flutter test`, `fvm flutter analyze`).
+
 ## Rules
 - NEVER write implementation before a failing test exists
 - NEVER modify a test to make it pass — fix the implementation

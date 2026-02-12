@@ -17,9 +17,11 @@ disable-model-invocation: true
 Plan TDD implementation for: $ARGUMENTS
 
 ## Project Context (auto-detected)
-- Test runner: !`which flutter >/dev/null 2>&1 && echo "flutter test" || echo "ctest"`
+- Flutter available: !`flutter --version 2>/dev/null`
+- FVM available: !`fvm --version 2>/dev/null`
 - Existing test count: !`find . -name "*_test.dart" -o -name "*_test.cpp" 2>/dev/null | wc -l`
-- Test frameworks: !`grep -l "flutter_test\|package:test" pubspec.yaml 2>/dev/null | head -1 && echo "dart" || grep -l "gtest\|catch2" CMakeLists.txt 2>/dev/null | head -1 && echo "cpp"`
+- Has pubspec.yaml: !`ls pubspec.yaml 2>/dev/null`
+- Has CMakeLists.txt: !`ls CMakeLists.txt 2>/dev/null`
 
 ## Process
 
