@@ -23,14 +23,9 @@ verify and what implementation should achieve.
 ## Planning Process
 
 When exploring:
-- Run `flutter --version` to confirm Flutter is available
-- Run `fvm --version` to check if FVM is installed
-- Check if `.fvmrc` exists in the project root
-- If `.fvmrc` exists: use `fvm flutter test` as the test command and `fvm dart analyze`
-  as the analysis command. NEVER use resolved absolute paths from FVM output — always
-  use the literal `fvm flutter` and `fvm dart` commands in plan output, .tdd-progress.md,
-  and the planning archive
-- If `.fvmrc` does not exist: use `flutter test` and `dart analyze`
+- Run `command -v fvm` to check if FVM is on PATH. If available AND `.fvmrc` exists
+  in the project root, use `fvm flutter` / `fvm dart` as command prefix. Otherwise
+  use `flutter` / `dart` directly. Never use resolved absolute paths in plan output.
 - Count existing test files: `find . -name "*_test.dart" -o -name "*_test.cpp"`
 - Identify test frameworks from `pubspec.yaml` and `CMakeLists.txt`
 - Look at existing test/ directories for patterns and conventions

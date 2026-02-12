@@ -29,24 +29,21 @@ of code that was just implemented via TDD.
 You do NOT need to understand how or why the code was written.
 You only need to determine whether it meets the specified criteria.
 
-## Flutter Command Detection
-Before running any `flutter` commands, check for `.fvmrc` in the project root.
-If present, use `fvm flutter` instead of `flutter` for all commands.
-
 ## Verification Checklist
 
+If `fvm` is on PATH and `.fvmrc` exists, prefix flutter/dart commands with `fvm`.
+
 1. **Full test suite passes**
-   - Dart/Flutter: `flutter test` (or `fvm flutter test` if `.fvmrc` exists)
+   - Dart/Flutter: `flutter test`
    - C++: project test command (ctest, make test, etc.)
    - ALL tests must pass, not just the new ones
 
 2. **Static analysis clean**
    - Dart: `dart analyze` — zero issues
-   - Flutter: `flutter analyze` (or `fvm flutter analyze` if `.fvmrc` exists) — zero issues
    - C++: clang-tidy or project linter if configured
 
 3. **Coverage check** (if tooling available)
-   - Dart: `flutter test --coverage` (or `fvm flutter test --coverage`) then check lcov.info
+   - Dart: `flutter test --coverage` then check lcov.info
    - New code should have test coverage
 
 4. **Verification criteria from plan**
