@@ -23,7 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Planner agent reads reference templates during codebase research phase
 
 ### Fixed
-- FVM auto-detection: all agents check for `.fvmrc` and use `fvm flutter` when present; planner skill detects FVM via `fvm --version`
+- FVM auto-detection: all agents check for `.fvmrc` and use `fvm flutter` when present; planner runs detection during exploration phase
+- Moved project context detection (Flutter, FVM, test count, frameworks) from skill `!` backtick snippets to planner agent exploration — avoids Bash permission issues
 - Planner agent now explicitly reads convention reference docs (test-patterns, mocking-guide, widget-testing, project-conventions for Dart/Flutter; googletest-patterns, cmake-integration, googlemock-guide for C++) based on detected project type — previously the skill SKILL.md was injected but reference files were not read
 - Planner now requires explicit approval via AskUserQuestion before writing `.tdd-progress.md` — prevents confusion with system permission dialogs
 - Stop hook: replaced prompt hook with deterministic command hook (check-tdd-progress.sh) that reads .tdd-progress.md directly — fixes "JSON validation failed" error, prevents infinite loops via stop_hook_active check, zero latency
