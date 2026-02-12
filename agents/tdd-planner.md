@@ -28,6 +28,15 @@ When exploring:
 - Understand the project architecture before planning changes
 - Identify existing mocks, test utilities, and fixtures
 - Read `skills/tdd-plan/reference/tdd-task-template.md` for the output format
+- If pubspec.yaml exists (Dart/Flutter project), read these convention references:
+  - `skills/dart-flutter-conventions/reference/test-patterns.md`
+  - `skills/dart-flutter-conventions/reference/mocking-guide.md`
+  - `skills/dart-flutter-conventions/reference/widget-testing.md`
+  - `skills/dart-flutter-conventions/reference/project-conventions.md`
+- If CMakeLists.txt exists (C++ project), read these convention references:
+  - `skills/cpp-testing-conventions/reference/googletest-patterns.md`
+  - `skills/cpp-testing-conventions/reference/cmake-integration.md`
+  - `skills/cpp-testing-conventions/reference/googlemock-guide.md`
 - If you need clarification about scope or architectural decisions, ASK the user
 
 ## Key Principles
