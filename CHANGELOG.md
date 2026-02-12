@@ -10,6 +10,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Added
 - `/tdd-implement` skill for starting and resuming the TDD implementation loop
 - User guide with step-by-step walkthrough (docs/user-guide.md)
+- TDD task template (`skills/tdd-plan/reference/tdd-task-template.md`) with
+  Given-When-Then test specification format and acceptance criteria structure
+- Feature notes template (`skills/tdd-plan/reference/feature-notes-template.md`)
+  for planning archive documents with architectural context and trade-offs
+- Enhanced `CLAUDE.md` with development workflow, project guidelines,
+  pre-commit checklist, and project-specific customization section
+
+### Changed
+- Planner skill (`tdd-plan/SKILL.md`) now references templates for
+  structured output formatting
+- Planner agent reads reference templates during codebase research phase
 
 ### Fixed
 - Planner now requires explicit approval via AskUserQuestion before writing `.tdd-progress.md` — prevents confusion with system permission dialogs

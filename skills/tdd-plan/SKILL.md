@@ -58,13 +58,27 @@ Plan TDD implementation for: $ARGUMENTS
    - Coverage expectations
    - Static analysis requirements (dart analyze, clang-tidy)
 
+   Use the format defined in `reference/tdd-task-template.md` for structuring
+   each slice's test specification. In particular:
+   - Use Given-When-Then format for test descriptions
+   - Include acceptance criteria as verification checkpoints
+   - Track phase results (RED confirmed / GREEN confirmed / REFACTOR complete)
+
 5. **Present the plan** as text output so the user can read it in full.
 
 6. **Get explicit approval** using AskUserQuestion with options: Approve / Modify / Discard.
    - If Modify: revise based on feedback and repeat from step 5
    - If Discard: stop without writing any files
 
-7. **Only after "Approve"**: write the plan as structured markdown to `.tdd-progress.md` at the project root. Also write a read-only archive to `planning/YYYYMMDD_HHMM_feature_name.md`.
+7. **Only after "Approve"**: write the plan as structured markdown to
+   `.tdd-progress.md` at the project root. Also write a read-only archive
+   to `planning/YYYYMMDD_HHMM_feature_name.md` using the structure defined
+   in `reference/feature-notes-template.md`. The archive should capture:
+   - Feature purpose and requirements analysis
+   - Architectural approach and design decisions
+   - Dependencies (external packages, internal modules)
+   - Known limitations and trade-offs
+   - The slice decomposition (referencing .tdd-progress.md for live status)
 
 ## Constraints
 - Do NOT write any implementation code or test code in the plan

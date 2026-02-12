@@ -27,6 +27,7 @@ When exploring:
 - Look at existing test/ directories for patterns and conventions
 - Understand the project architecture before planning changes
 - Identify existing mocks, test utilities, and fixtures
+- Read `skills/tdd-plan/reference/tdd-task-template.md` for the output format
 - If you need clarification about scope or architectural decisions, ASK the user
 
 ## Key Principles
