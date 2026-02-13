@@ -18,6 +18,14 @@ Plan TDD implementation for: $ARGUMENTS
 
 ## Process
 
+0. **Load and follow convention references** (mandatory, do this first):
+   - Dart/Flutter projects (`pubspec.yaml` exists): read every file in `skills/dart-flutter-conventions/reference/`
+   - C++ projects (`CMakeLists.txt` exists): read every file in `skills/cpp-testing-conventions/reference/`
+   - Also read `reference/tdd-task-template.md` for the output format
+   The plan MUST conform to the architecture, directory structure, state management,
+   and naming conventions defined in these files. Do not proceed to step 1 until all
+   reference files for the detected project type are loaded.
+
 1. **Research the codebase** using Glob, Grep, and Read to understand:
    - Existing test patterns and frameworks in use
    - Project structure and architecture
@@ -34,38 +42,83 @@ Plan TDD implementation for: $ARGUMENTS
    - Independently testable
    - Ordered by dependency (foundations first)
 
-4. **For each slice, specify:**
+4. **Re-read format requirements before writing the plan:**
+   - Re-read `reference/tdd-task-template.md` for the output structure
+   - Re-read step 0's convention requirements (architecture, state management)
+   - The plan you are about to write MUST use the exact format from the template —
+     Given/When/Then blocks, acceptance criteria, and phase tracking per slice.
+     Summary tables and bullet descriptions are NOT acceptable.
+   This step exists because research (19+ tool uses, ~30k tokens) pushes the
+   original instructions far back in context. Re-reading them right before output
+   ensures they are in active attention.
 
-   ### Test Specification
-   - What behavior to assert (not how to implement)
-   - Test file path following project conventions
-   - Test descriptions using "when X, then Y" format
-   - Which test doubles are needed (mocks, fakes, stubs)
-   - Edge cases to cover
+5. **For each slice, produce this exact structure:**
 
-   ### Implementation Scope
-   - Files to create or modify
-   - Public API surface (function signatures, class interfaces)
-   - Dependencies on other slices
+   ```
+   ## Slice N: {Slice Name}
 
-   ### Verification Criteria
-   - Expected test command and output
-   - Coverage expectations
-   - Static analysis requirements (dart analyze, clang-tidy)
+   **Status:** pending
 
-   Use the format defined in `reference/tdd-task-template.md` for structuring
-   each slice's test specification. In particular:
-   - Use Given-When-Then format for test descriptions
-   - Include acceptance criteria as verification checkpoints
-   - Track phase results (RED confirmed / GREEN confirmed / REFACTOR complete)
+   **Source:** `{source file path}`
+   **Tests:** `{test file path}`
 
-5. **Present the plan** as text output so the user can read it in full.
+   ### Test 1: {Test Name}
 
-6. **Get explicit approval** using AskUserQuestion with options: Approve / Modify / Discard.
-   - If Modify: revise based on feedback and repeat from step 5
+   **Given:**
+   - {precondition}
+
+   **When:**
+   - {action}
+
+   **Then:**
+   - {expected outcome}
+
+   ### Edge Cases
+
+   **Given:**
+   - {edge case condition}
+
+   **When:**
+   - {action}
+
+   **Then:**
+   - {expected behavior}
+
+   ### Acceptance Criteria
+   - [ ] All tests pass
+   - [ ] {slice-specific criteria}
+
+   ### Phase Tracking
+
+   - **RED:** pending
+   - **GREEN:** pending
+   - **REFACTOR:** pending
+
+   **Depends on:** {slice numbers} | **Blocks:** {slice numbers}
+   ```
+
+   Do NOT summarize tests as bullet points or table rows. Each test MUST have
+   explicit Given/When/Then blocks. This is the format that gets written to
+   `.tdd-progress.md`.
+
+6. **Self-check before presenting** — verify EVERY slice has all of these.
+   If any are missing, fix the plan before showing it:
+   - [ ] Given/When/Then as multi-line blocks (not compressed to single lines)
+   - [ ] Acceptance Criteria section with checkboxes
+   - [ ] Phase Tracking section (RED: pending, GREEN: pending, REFACTOR: pending)
+   - [ ] Source and Test file paths
+   - [ ] Depends on / Blocks references
+   - [ ] Edge Cases section
+   If a slice is missing any of these, add them before proceeding.
+   Do NOT present an incomplete plan.
+
+7. **Present the plan** as text output so the user can read it in full.
+
+8. **Get explicit approval** using AskUserQuestion with options: Approve / Modify / Discard.
+   - If Modify: revise based on feedback and repeat from step 7
    - If Discard: stop without writing any files
 
-7. **Only after "Approve"**: write the plan as structured markdown to
+9. **Only after "Approve"**: write the plan as structured markdown to
    `.tdd-progress.md` at the project root. Also write a read-only archive
    to `planning/YYYYMMDD_HHMM_feature_name.md` using the structure defined
    in `reference/feature-notes-template.md`. The archive should capture:
@@ -82,3 +135,5 @@ Plan TDD implementation for: $ARGUMENTS
 - Implement ONLY the features explicitly described in the user's request
 - Keep slices to 2-5 minutes of implementation work each
 - Order slices so each builds on the last
+- The plan's architecture, directory layout, state management approach, and naming
+  MUST match what the convention references prescribe — do not invent alternatives

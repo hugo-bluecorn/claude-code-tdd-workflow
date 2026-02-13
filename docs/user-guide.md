@@ -247,6 +247,21 @@ The planner runs in `permissionMode: plan` by default, which may block some Bash
 1. Remove `permissionMode: plan` from `agents/tdd-planner.md` (the `disallowedTools` list still prevents code writes)
 2. Approve the write when prompted
 
+### Changing state management or architecture
+
+The planner follows whatever conventions are defined in
+`skills/dart-flutter-conventions/reference/project-conventions.md`. To switch
+from Riverpod to Bloc, Provider, or any other approach:
+
+1. Edit `project-conventions.md`
+2. Update the **State Management** section with your preferred solution and code examples
+3. Update the **ViewModel Example** and **View Example** to match
+4. Update the **Official References** table
+
+The plugin itself has no opinion about state management — it reads the conventions
+doc and follows it. You never need to edit SKILL.md or agent files to change
+architecture choices.
+
 ### Increasing agent turn limits
 
 If a complex slice needs more iterations, edit the `maxTurns` value in the relevant agent file:

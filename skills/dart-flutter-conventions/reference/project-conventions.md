@@ -290,10 +290,16 @@ class CounterWidget extends ConsumerWidget {
 }
 ```
 
-**Built-in Solutions for Ephemeral State:** For simple, widget-local state, Flutter's built-in solutions are appropriate:
+**Built-in Solutions for Ephemeral State Only:** For widget-local state that does not
+leave the widget (e.g., animation controllers, form field focus, toggle visibility),
+Flutter's built-in solutions are appropriate:
 - `ValueNotifier` with `ValueListenableBuilder` for single values
 - `Streams` with `StreamBuilder` for async event sequences
 - `Futures` with `FutureBuilder` for single async operations
+
+These are NOT alternatives to Riverpod for app state. Any state that a ViewModel
+manages, that crosses widget boundaries, or that represents business logic MUST
+use Riverpod as shown in the ViewModel and View examples above.
 
 ## Conventional Commits
 
@@ -309,7 +315,6 @@ class CounterWidget extends ConsumerWidget {
 ## Official References
 
 Key takeaways from Flutter AI Rules:
-- Built-in state management preferred for simple cases
 - `dart:developer` log function for logging
 - `package:checks` for assertions
 - MVVM as recommended architecture
@@ -318,7 +323,8 @@ Key takeaways from Flutter AI Rules:
 
 | Need | Official | Recommended |
 |------|----------|-------------|
-| State Management | Built-in (ValueNotifier, ChangeNotifier) | Riverpod |
+| State Management (app state) | Riverpod | Riverpod |
+| State Management (ephemeral) | Built-in (ValueNotifier, ChangeNotifier) | Built-in |
 | Navigation | go_router | go_router |
 | Serialization | json_serializable | dart_mappable |
 | Linting | flutter_lints | flutter_lints |
