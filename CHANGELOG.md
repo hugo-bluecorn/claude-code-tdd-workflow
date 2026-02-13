@@ -16,16 +16,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   for planning archive documents with architectural context and trade-offs
 - Enhanced `CLAUDE.md` with development workflow, project guidelines,
   pre-commit checklist, and project-specific customization section
+- User guide: documented how to change state management or architecture
+  by editing `project-conventions.md` (plugin is framework-agnostic)
 
 ### Changed
-- Planner skill (`tdd-plan/SKILL.md`) now references templates for
-  structured output formatting
-- Planner agent reads reference templates during codebase research phase
+- Planner skill (`tdd-plan/SKILL.md`) restructured with 10-step process (0-9):
+  - Step 0: mandatory convention reference loading before any research
+  - Step 1: codebase research with FVM detection
+  - Step 4: re-read format requirements after research (~30k tokens of research
+    was pushing original instructions out of LLM attention)
+  - Step 5: inline template example showing exact output structure
+  - Step 6: self-check checklist verifying every slice has Given-When-Then blocks,
+    Phase Tracking, Acceptance Criteria, Edge Cases, and file paths
+- Planner agent (`tdd-planner.md`): removed duplicated file lists and FVM
+  detection (now handled by SKILL.md), tightened Output section to require
+  template structure
+- `project-conventions.md`: clarified ephemeral vs app state management —
+  ChangeNotifier/ValueNotifier only for widget-local state (animations, form
+  focus), Riverpod required for all app/business state. Removed "built-in for
+  simple cases" bullet that was causing the planner to choose ChangeNotifier.
+  Split state management reference table into app state and ephemeral rows.
 
 ### Fixed
+- FVM detection: moved from agent system prompt (ignored after research) to
+  SKILL.md step 1 (task prompt, reliably executed)
+- Plan format consistency: planner was ignoring template format in 50%+ of runs.
+  Root cause: ~30k tokens of research displaced instructions from LLM attention.
+  Fixed with three-layer defense (load → re-read → self-check) achieving 100%
+  format compliance across parallel test runs
+- Architecture consistency: planner was choosing ChangeNotifier/ValueNotifier
+  instead of Riverpod across runs. Root cause: ambiguous "built-in for simple
+  cases" language in conventions doc. Fixed at source (conventions doc) rather
+  than patching the plugin
 - FVM auto-detection: all agents use `command -v fvm` + `.fvmrc` check to decide whether to prefix commands with `fvm` — matches the hook pattern, never uses resolved absolute paths
 - Moved project context detection (Flutter, FVM, test count, frameworks) from skill `!` backtick snippets to planner agent exploration — avoids Bash permission issues
-- Planner agent now explicitly reads convention reference docs (test-patterns, mocking-guide, widget-testing, project-conventions for Dart/Flutter; googletest-patterns, cmake-integration, googlemock-guide for C++) based on detected project type — previously the skill SKILL.md was injected but reference files were not read
 - Planner now requires explicit approval via AskUserQuestion before writing `.tdd-progress.md` — prevents confusion with system permission dialogs
 - Stop hook: replaced prompt hook with deterministic command hook (check-tdd-progress.sh) that reads .tdd-progress.md directly — fixes "JSON validation failed" error, prevents infinite loops via stop_hook_active check, zero latency
 
