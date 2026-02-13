@@ -31,6 +31,9 @@ Plan TDD implementation for: $ARGUMENTS
    - Project structure and architecture
    - Related code that the feature will interact with
    - Existing test configuration (pubspec.yaml, CMakeLists.txt, test/ directories)
+   - **FVM detection:** if `.fvmrc` exists in the project root AND `command -v fvm` succeeds,
+     use `fvm flutter` / `fvm dart` as the command prefix throughout the plan.
+     Otherwise use `flutter` / `dart` directly.
    - If clarification is needed about scope or architectural decisions, ASK the user
 
 2. **Identify the testing frameworks** already in use:

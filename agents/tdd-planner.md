@@ -23,9 +23,6 @@ verify and what implementation should achieve.
 ## Planning Process
 
 When exploring:
-- Run `command -v fvm` to check if FVM is on PATH. If available AND `.fvmrc` exists
-  in the project root, use `fvm flutter` / `fvm dart` as command prefix. Otherwise
-  use `flutter` / `dart` directly. Never use resolved absolute paths in plan output.
 - Count existing test files: `find . -name "*_test.dart" -o -name "*_test.cpp"`
 - Identify test frameworks from `pubspec.yaml` and `CMakeLists.txt`
 - Look at existing test/ directories for patterns and conventions
