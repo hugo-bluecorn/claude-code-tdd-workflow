@@ -177,7 +177,6 @@ current implementation. Update it after each significant plugin change.
 | C28 | `${CLAUDE_PLUGIN_ROOT}` | ✅ | All hook commands use this for portable paths |
 | C29 | `$CLAUDE_ENV_FILE` | ⊘ | No env var persistence needed |
 | C30 | `$CLAUDE_CODE_REMOTE` | ⊘ | No remote-specific behavior |
-<!-- CC addition: C31 $TOOL_INPUT added to match Doc A v2.1; appears in sub-agents docs as command-line variable -->
 | C31 | `$TOOL_INPUT` | ⊘ | Appears in sub-agents docs as CLI variable for hook commands; not needed by current hooks (they read JSON from stdin) |
 | C32 | Exit code 0 | ✅ | Used in all command hooks |
 | C33 | Exit code 2 | ✅ | Used in `validate-tdd-order.sh` to block writes |
