@@ -7,6 +7,7 @@ description: >
   Triggers on: "implement with TDD", "TDD plan", "test-driven".
 context: fork
 agent: tdd-planner
+argument-hint: "[feature description]"
 disable-model-invocation: true
 ---
 

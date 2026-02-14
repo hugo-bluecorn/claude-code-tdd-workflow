@@ -3,6 +3,7 @@ name: cpp-testing-conventions
 description: >
   C++ testing conventions using GoogleTest, CMake integration,
   and project-specific patterns. Loaded by TDD agents for C++ work.
+user-invocable: false
 ---
 
 # C++ Testing Conventions

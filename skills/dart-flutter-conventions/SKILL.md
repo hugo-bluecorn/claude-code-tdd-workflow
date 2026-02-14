@@ -3,6 +3,7 @@ name: dart-flutter-conventions
 description: >
   Dart and Flutter testing conventions, patterns, and project structure.
   Loaded automatically by TDD agents when working on .dart files.
+user-invocable: false
 ---
 
 # Dart/Flutter Testing Conventions

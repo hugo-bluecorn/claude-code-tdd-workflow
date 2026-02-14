@@ -5,7 +5,7 @@ description: >
   minimal code to pass, refactors. Use for each slice in a TDD plan.
   MUST be invoked with a specific slice specification.
 tools: Read, Write, Edit, MultiEdit, Bash, Glob, Grep
-model: sonnet
+model: opus
 maxTurns: 50
 memory: project
 skills:

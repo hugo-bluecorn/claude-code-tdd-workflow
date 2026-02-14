@@ -6,7 +6,7 @@ description: >
   and architecture to inform plan creation. Read-only.
 tools: Read, Glob, Grep, Bash, AskUserQuestion
 disallowedTools: Write, Edit, MultiEdit, NotebookEdit, Task
-model: sonnet
+model: opus
 permissionMode: plan
 maxTurns: 30
 skills:
