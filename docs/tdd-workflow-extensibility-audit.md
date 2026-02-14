@@ -407,7 +407,7 @@ no skill wrapper, no hooks, and no plugin structure. Since then:
 
 | # | Item | Effort | Rationale | Ref |
 |---|------|--------|-----------|-----|
-| M1 | **Add planner Bash guard hook** | ~30 lines | Planner disallows Write/Edit/MultiEdit but Bash can still `echo > lib/file.dart`. PreToolUse command hook on `Bash` blocks output redirection outside `planning/` | C3, C15 |
+| M1 | **Add planner Bash guard hook (allowlist)** | ~40 lines | Planner disallows Write/Edit/MultiEdit but Bash can still write files. PreToolUse command hook on `Bash` uses allowlist (find, grep, cat, wc, ls, git, etc.) — only read-only commands permitted. Blocks everything else. Round 2 consensus: allowlist > denylist | C3, C15 |
 | M2 | **Add planner Stop hook (plan output validator)** | ~40 lines | Planner can stop without producing a plan file or with missing sections. Checks: file in `planning/`, required sections present, zero `refactor:` commit types | C10, C15 |
 
 ### S — Should-Have (quality / robustness)
@@ -477,37 +477,44 @@ completing the plan, update it with discoveries:
 
 ```bash
 #!/bin/bash
-# PreToolUse hook for tdd-planner: blocks Bash commands that write files
-# outside the planning/ directory.
+# PreToolUse hook for tdd-planner: allowlist approach.
+# Only permits read-only commands. Blocks everything else.
 # Reads JSON from stdin. Exit 0 = allow, exit 2 = block.
+#
+# Design note (Round 2 CC×Web consensus): The original denylist regex
+# couldn't catch dd, python -c, heredocs, curl -o, etc. An allowlist
+# is strictly safer — if the planner needs a new command, add it here.
 
 INPUT=$(cat)
 COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // ""')
 
-# Block output redirection to non-planning paths
-# <!-- CC addition: This regex doesn't catch dd of=, python -c "open(...).write()", heredocs,
-#      or curl -o. Defense-in-depth with permissionMode:plan, but consider a stricter allowlist
-#      approach if the planner gains more Bash usage. -->
-if echo "$COMMAND" | grep -qE '(^|[;&|])\s*(cat|echo|printf)\s.*>\s*[^|]' ; then
-  if echo "$COMMAND" | grep -qE '>\s*(\./)?planning/' ; then
-    exit 0
+# Extract the first command word (handles leading env vars, cd, etc.)
+# Strip variable assignments and whitespace from the front
+BASE_CMD=$(echo "$COMMAND" | sed 's/^[[:space:]]*\([A-Za-z_][A-Za-z_0-9]*=[^;]*[[:space:]]*\)*//' | awk '{print $1}')
+
+# Allowlisted commands: read-only inspection only
+ALLOWED="find grep rg cat head tail wc ls tree file stat du df git flutter dart fvm test command which type pwd echo"
+
+ALLOWED_MATCH=false
+for CMD in $ALLOWED; do
+  if [ "$BASE_CMD" = "$CMD" ]; then
+    ALLOWED_MATCH=true
+    break
   fi
-  echo "BLOCKED: Bash output redirection outside planning/ directory." >&2
+done
+
+if [ "$ALLOWED_MATCH" = false ]; then
+  echo "BLOCKED: Command '$BASE_CMD' is not in the planner's allowlist. The planner is read-only." >&2
   exit 2
 fi
 
-# Block tee to non-planning paths
-if echo "$COMMAND" | grep -qE 'tee\s+' ; then
-  if echo "$COMMAND" | grep -qE 'tee\s+(\./)?planning/' ; then
+# Even for allowed commands, block output redirection to source paths
+if echo "$COMMAND" | grep -qE '>\s*' ; then
+  # Allow redirection only to /dev/null and planning/
+  if echo "$COMMAND" | grep -qE '>\s*(/dev/null|(\./)?planning/)' ; then
     exit 0
   fi
-  echo "BLOCKED: tee to files outside planning/ directory." >&2
-  exit 2
-fi
-
-# Block common file-creation commands targeting source/test paths
-if echo "$COMMAND" | grep -qE '(cp|mv|touch|mkdir)\s+.*(lib/|test/|src/)' ; then
-  echo "BLOCKED: Bash command modifies project source files. The planner is read-only." >&2
+  echo "BLOCKED: Output redirection outside planning/ directory." >&2
   exit 2
 fi
 
@@ -698,7 +705,7 @@ additions that affect the TDD plugin assessment:
 | F15-F18 Sandbox settings | Correctly omitted — consumer settings |
 | F19-F26 Environment variables | Correctly omitted — consumer settings |
 
-The v2.0 audit prompt is now the **canonical feature inventory** for future
+The v2.1 audit prompt is now the **canonical feature inventory** for future
 audits. The v1.0 prompt should be retired.
 
 ---
@@ -757,6 +764,7 @@ audits. The v1.0 prompt should be retired.
 
 ---
 
-*Audit completed 2026-02-14.*
+*Audit completed 2026-02-14. Round 2 CC×Web consensus reached.*
 *Feature inventory: extensibility-audit-prompt.md v2.1*
+*M1 revised from denylist to allowlist (Round 2).*
 *Next audit: after implementing Layer 1-3 version control integration.*
