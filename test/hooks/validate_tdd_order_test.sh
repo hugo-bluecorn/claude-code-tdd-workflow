@@ -140,3 +140,132 @@ function test_allows_pubspec_yaml() {
   run_hook "pubspec.yaml"
   assert_exit_code 0
 }
+
+# Helper: create a temporary directory that is NOT a git repo, copy the hook
+create_tmp_no_repo() {
+  local tmp_dir
+  tmp_dir=$(mktemp -d)
+  cp "$HOOK_ABS" "$tmp_dir/"
+  echo "$tmp_dir"
+}
+
+# Helper: run hook inside a given directory (not necessarily a repo), capturing stderr
+run_hook_in_dir_stderr() {
+  local dir="$1"
+  local file_path="$2"
+  local json
+  json=$(build_json "$file_path")
+  (cd "$dir" && { echo "$json" | bash "$dir/validate-tdd-order.sh" >/dev/null; } 2>&1)
+}
+
+# Helper: run hook with raw stdin (for malformed JSON tests)
+run_hook_raw_stdin() {
+  local raw_input="$1"
+  echo "$raw_input" | bash "$HOOK" 2>/dev/null
+}
+
+# ========== Edge Case Tests (Slice 4) ==========
+
+# ---------- Test 10: test_ prefix file allowed ----------
+
+function test_test_prefix_file_allowed() {
+  run_hook "test_helper.sh"
+  assert_exit_code 0
+}
+
+# ---------- Test 11: .hpp in test/ directory allowed ----------
+
+function test_hpp_in_test_directory_allowed() {
+  run_hook "test/unit/test_fixture.hpp"
+  assert_exit_code 0
+}
+
+# ---------- Test 12: .hpp source file blocked when no tests ----------
+
+function test_hpp_source_blocked_when_no_tests() {
+  local tmp_repo
+  tmp_repo=$(create_tmp_repo)
+
+  run_hook_in_repo "$tmp_repo" "src/utils.hpp"
+  local rc=$?
+
+  assert_equals 2 "$rc"
+
+  rm -rf "$tmp_repo"
+}
+
+# ---------- Test 13: Empty file_path passes through ----------
+
+function test_empty_file_path_passes() {
+  run_hook ""
+  assert_exit_code 0
+}
+
+# ---------- Test 14: Git diff failure (non-git directory) blocks with BLOCKED ----------
+
+function test_git_diff_failure_blocks_with_message() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_no_repo)
+
+  (cd "$tmp_dir" && build_json "hooks/my_script.sh" | bash "$tmp_dir/validate-tdd-order.sh" 2>/dev/null)
+  local rc=$?
+
+  local stderr_output
+  stderr_output=$(run_hook_in_dir_stderr "$tmp_dir" "hooks/my_script.sh")
+
+  assert_equals 2 "$rc"
+  assert_contains "BLOCKED" "$stderr_output"
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- Test 15: .cc source file blocked when no tests ----------
+
+function test_cc_source_blocked_when_no_tests() {
+  local tmp_repo
+  tmp_repo=$(create_tmp_repo)
+
+  run_hook_in_repo "$tmp_repo" "src/parser.cc"
+  local rc=$?
+
+  assert_equals 2 "$rc"
+
+  rm -rf "$tmp_repo"
+}
+
+# ---------- Test 16: _test.cc file allowed ----------
+
+function test_test_cc_file_allowed() {
+  run_hook "src/parser_test.cc"
+  assert_exit_code 0
+}
+
+# ---------- Test 17: _test.hpp NOT recognized as test (latent bug) ----------
+# Line 9 regex does not include hpp in the _test pattern.
+# Falls through to line 14 where .hpp IS a source extension, so it blocks.
+
+function test_test_hpp_not_recognized_as_test_latent_bug() {
+  local tmp_repo
+  tmp_repo=$(create_tmp_repo)
+
+  run_hook_in_repo "$tmp_repo" "src/parser_test.hpp"
+  local rc=$?
+
+  assert_equals 2 "$rc"
+
+  rm -rf "$tmp_repo"
+}
+
+# ---------- Test 18: test/ subdirectory without _test suffix allowed ----------
+
+function test_test_subdir_without_test_suffix_allowed() {
+  run_hook "test/helpers/setup.sh"
+  assert_exit_code 0
+}
+
+# ---------- Test 19: Malformed JSON input passes through ----------
+
+function test_malformed_json_passes_through() {
+  run_hook_raw_stdin "not json at all"
+  assert_exit_code 0
+}

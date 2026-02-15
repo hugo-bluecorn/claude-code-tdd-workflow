@@ -61,4 +61,4 @@ elif echo "$FILE_PATH" | grep -qE '\.sh$'; then
 fi
 
 # Return as system message (informational, doesn't block)
-echo "{\"systemMessage\": \"Auto-test: $RESULT\"}"
+jq -n --arg msg "Auto-test: $RESULT" '{"systemMessage": $msg}'
