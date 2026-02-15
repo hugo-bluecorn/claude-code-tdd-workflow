@@ -36,11 +36,13 @@ If `fvm` is on PATH and `.fvmrc` exists, prefix flutter/dart commands with `fvm`
 1. **Full test suite passes**
    - Dart/Flutter: `flutter test`
    - C++: project test command (ctest, make test, etc.)
+   - Bash: `bashunit` (run via `./lib/bashunit`)
    - ALL tests must pass, not just the new ones
 
 2. **Static analysis clean**
    - Dart: `dart analyze` — zero issues
    - C++: clang-tidy or project linter if configured
+   - Bash: `shellcheck` on all `.sh` files
 
 3. **Coverage check** (if tooling available)
    - Dart: `flutter test --coverage` then check lcov.info

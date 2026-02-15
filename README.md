@@ -1,6 +1,6 @@
 # tdd-workflow
 
-A Claude Code plugin for Test-Driven Development with context-isolated agents. Enforces red-green-refactor discipline for Dart/Flutter and C++ projects.
+A Claude Code plugin for Test-Driven Development with context-isolated agents. Enforces red-green-refactor discipline for Dart/Flutter, C++, and Bash/Shell projects.
 
 ## Overview
 
@@ -79,6 +79,7 @@ PASS -> next slice | FAIL -> retry
 | `/tdd-implement` | Implementation loop (reads progress, runs slices) |
 | dart-flutter-conventions | Convention reference (auto-loaded by agents) |
 | cpp-testing-conventions | Convention reference (auto-loaded by agents) |
+| bash-testing-conventions | Convention reference (auto-loaded by agents) |
 
 ### Hooks
 
@@ -126,12 +127,17 @@ tdd-workflow/
 │   │       ├── mocking-guide.md
 │   │       ├── widget-testing.md
 │   │       └── project-conventions.md
-│   └── cpp-testing-conventions/
+│   ├── cpp-testing-conventions/
+│   │   ├── SKILL.md
+│   │   └── reference/
+│   │       ├── googletest-patterns.md
+│   │       ├── cmake-integration.md
+│   │       └── googlemock-guide.md
+│   └── bash-testing-conventions/
 │       ├── SKILL.md
 │       └── reference/
-│           ├── googletest-patterns.md
-│           ├── cmake-integration.md
-│           └── googlemock-guide.md
+│           ├── bashunit-patterns.md
+│           └── shellcheck-guide.md
 ├── hooks/
 │   ├── hooks.json
 │   ├── validate-tdd-order.sh
@@ -143,6 +149,41 @@ tdd-workflow/
 ├── README.md
 ├── CHANGELOG.md
 └── LICENSE
+```
+
+## Bash/Shell Prerequisites
+
+To use bash testing support, install bashunit and shellcheck:
+
+### bashunit
+
+```bash
+curl -s https://bashunit.typeddevs.com/install.sh | bash
+```
+
+### shellcheck
+
+```bash
+# Debian/Ubuntu
+apt install shellcheck
+
+# macOS
+brew install shellcheck
+```
+
+### Permissions
+
+Add the following to your `.claude/settings.local.json` to allow Claude Code to run these tools:
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "Bash(shellcheck *)",
+      "Bash(bashunit *)"
+    ]
+  }
+}
 ```
 
 ## Documentation

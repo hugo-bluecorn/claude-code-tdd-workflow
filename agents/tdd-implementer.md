@@ -11,6 +11,7 @@ memory: project
 skills:
   - dart-flutter-conventions
   - cpp-testing-conventions
+  - bash-testing-conventions
 hooks:
   PreToolUse:
     - matcher: "Write|Edit|MultiEdit"

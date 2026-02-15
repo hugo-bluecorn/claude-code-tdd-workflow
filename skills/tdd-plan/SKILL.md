@@ -22,6 +22,7 @@ Plan TDD implementation for: $ARGUMENTS
 0. **Load and follow convention references** (mandatory, do this first):
    - Dart/Flutter projects (`pubspec.yaml` exists): read every file in `skills/dart-flutter-conventions/reference/`
    - C++ projects (`CMakeLists.txt` exists): read every file in `skills/cpp-testing-conventions/reference/`
+   - Bash projects (`_test.sh` files exist or `.bashunit.yml` exists): read every file in `skills/bash-testing-conventions/reference/`
    - Also read `reference/tdd-task-template.md` for the output format
    The plan MUST conform to the architecture, directory structure, state management,
    and naming conventions defined in these files. Do not proceed to step 1 until all
@@ -40,6 +41,7 @@ Plan TDD implementation for: $ARGUMENTS
 2. **Identify the testing frameworks** already in use:
    - Dart/Flutter: flutter_test, mockito, bloc_test, integration_test
    - C++: GoogleTest, Catch2, or project-specific framework
+   - Bash: bashunit, shellcheck
 
 3. **Decompose into feature slices.** Each slice must be:
    - Small enough to complete in one test-implement-refactor cycle

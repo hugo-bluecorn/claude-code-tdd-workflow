@@ -104,6 +104,15 @@ Full details are available in the plugin's `cpp-testing-conventions` skill
 - **CMake Integration**: Tests registered via `add_test()` and run with `ctest`
 - **Test Organization**: Mirror source structure in test directories
 
+### Bash Testing
+
+Full details are available in the plugin's bash testing conventions skill
+(auto-loaded when editing `.sh` files). Key points:
+
+- **Framework**: bashunit for unit and integration tests
+- **Static Analysis**: shellcheck for linting and correctness checks
+- **Test Organization**: Mirror source structure in `test/` with `_test.sh` suffix
+
 ### Version Control
 
 - **Conventional Commits**: `test:`, `feat:`, `refactor:`, `fix:`, `docs:`, `chore:`
@@ -126,9 +135,9 @@ Before proposing commits, ensure:
 
 - [ ] `flutter pub get` if dependencies changed
 - [ ] `flutter analyze` or `dart analyze` passes with no issues
-- [ ] `flutter test` or `ctest` passes — all tests green
+- [ ] `flutter test` or `ctest` or `bashunit` passes — all tests green
 - [ ] `CHANGELOG.md` updated with changes
-- [ ] `dart format` or `clang-format` applied
+- [ ] `dart format` or `clang-format` or `shellcheck` applied
 - [ ] No secrets or credentials in staged files
 
 ---
@@ -141,6 +150,7 @@ The plugin auto-loads convention skills based on file type:
 |-------|------------|----------------|
 | `dart-flutter-conventions` | `.dart` files | test-patterns, mocking-guide, widget-testing, project-conventions |
 | `cpp-testing-conventions` | `.cpp`, `.h` files | googletest-patterns, cmake-integration, googlemock-guide |
+| `bash-testing-conventions` | `.sh` files | bashunit-patterns, shellcheck-guide |
 
 Planning reference templates (used by tdd-planner agent):
 - `skills/tdd-plan/reference/tdd-task-template.md` — test specification format

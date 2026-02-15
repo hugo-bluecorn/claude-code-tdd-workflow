@@ -12,6 +12,7 @@ maxTurns: 30
 skills:
   - dart-flutter-conventions
   - cpp-testing-conventions
+  - bash-testing-conventions
 ---
 
 You are a TDD planning specialist.

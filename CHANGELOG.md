@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- `bash-testing-conventions` skill with bashunit-patterns and shellcheck-guide reference docs
+- validate-tdd-order.sh bash support: recognizes `_test.sh` files and bash test patterns
+- auto-run-tests.sh bashunit integration: detects and runs bashunit for `.sh` file changes
+- Verifier bash/shellcheck support: runs shellcheck static analysis and bashunit test suite
+- Permission requirements: users must allow `Bash(shellcheck *)` and `Bash(bashunit *)` in `.claude/settings.local.json`
 - `/tdd-implement` skill for starting and resuming the TDD implementation loop
 - User guide with step-by-step walkthrough (docs/user-guide.md)
 - TDD task template (`skills/tdd-plan/reference/tdd-task-template.md`) with
