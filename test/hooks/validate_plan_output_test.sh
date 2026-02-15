@@ -1,0 +1,371 @@
+#!/bin/bash
+
+# Test suite for validate-plan-output.sh hook
+# Tests: stop hook guard, plan file existence, required sections, and refactoring leak detection.
+
+HOOK_ABS="$(pwd)/hooks/validate-plan-output.sh"
+
+# Helper: build Stop hook JSON with stop_hook_active flag
+build_json() {
+  local stop_active="$1"
+  printf '{"stop_hook_active": %s}\n' "$stop_active"
+}
+
+# Helper: create an isolated temp directory with the hook script copied in
+create_tmp_env() {
+  local tmp_dir
+  tmp_dir=$(mktemp -d)
+
+  cp "$HOOK_ABS" "$tmp_dir/"
+  mkdir -p "$tmp_dir/planning"
+
+  echo "$tmp_dir"
+}
+
+# Helper: run hook inside a given directory, piping JSON via stdin
+run_hook_in_dir() {
+  local dir="$1"
+  local json="$2"
+  (cd "$dir" && echo "$json" | bash "$dir/validate-plan-output.sh" 2>/dev/null)
+}
+
+# Helper: run hook inside a given directory, capturing stderr
+run_hook_in_dir_stderr() {
+  local dir="$1"
+  local json="$2"
+  # shellcheck disable=SC2069
+  (cd "$dir" && echo "$json" | bash "$dir/validate-plan-output.sh" 2>&1 >/dev/null)
+}
+
+# Helper: write a plan file with all required sections
+write_valid_plan() {
+  local dir="$1"
+  local extra_content="${2:-}"
+  cat > "$dir/planning/feature-plan.md" <<PLAN
+## Feature Analysis
+
+This is the feature analysis section.
+
+## Slice 1: Core implementation
+
+This is the first slice.
+${extra_content}
+PLAN
+}
+
+# ---------- Test 1: Exits 0 when stop_hook_active is true ----------
+
+function test_exits_zero_when_stop_hook_active_is_true() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+
+  local json
+  json=$(build_json "true")
+
+  run_hook_in_dir "$tmp_dir" "$json"
+  assert_exit_code 0
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- Test 2: Exits 2 when no plan file exists in planning/ ----------
+
+function test_exits_two_when_no_plan_file_in_planning() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+
+  local json
+  json=$(build_json "false")
+
+  run_hook_in_dir "$tmp_dir" "$json"
+  local rc=$?
+
+  assert_equals 2 "$rc"
+
+  rm -rf "$tmp_dir"
+}
+
+function test_stderr_contains_no_plan_file_message() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+
+  local json
+  json=$(build_json "false")
+
+  local stderr_output
+  stderr_output=$(run_hook_in_dir_stderr "$tmp_dir" "$json")
+
+  assert_contains "No plan file found" "$stderr_output"
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- Test 3: Exits 0 when valid plan file exists with recent modification ----------
+
+function test_exits_zero_when_recent_plan_file_exists() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+
+  # Create a recently modified .md file in planning/ with required sections
+  write_valid_plan "$tmp_dir"
+
+  local json
+  json=$(build_json "false")
+
+  run_hook_in_dir "$tmp_dir" "$json"
+  assert_exit_code 0
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- Edge Case 1: JSON with no stop_hook_active field ----------
+
+function test_missing_stop_hook_active_proceeds_to_validation() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+
+  # No stop_hook_active field, no plan file -> should exit 2
+  local json='{"some_other_field": "value"}'
+
+  run_hook_in_dir "$tmp_dir" "$json"
+  local rc=$?
+
+  assert_equals 2 "$rc"
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- Edge Case 2: Plan file older than 30 minutes ----------
+
+function test_stale_plan_file_exits_two() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+
+  # Create a plan file, then set modification time to 60 minutes ago
+  echo "# Old Plan" > "$tmp_dir/planning/old-plan.md"
+  touch -t "$(date -d '60 minutes ago' '+%Y%m%d%H%M.%S')" "$tmp_dir/planning/old-plan.md"
+
+  local json
+  json=$(build_json "false")
+
+  run_hook_in_dir "$tmp_dir" "$json"
+  local rc=$?
+
+  assert_equals 2 "$rc"
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- Slice 4, Test 1: Exits 2 when feature analysis section missing ----------
+
+function test_exits_two_when_feature_analysis_section_missing() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+
+  # Plan file has Slice heading but NO feature analysis heading
+  cat > "$tmp_dir/planning/feature-plan.md" <<PLAN
+## Slice 1: Something
+
+Details about the first slice.
+PLAN
+
+  local json
+  json=$(build_json "false")
+
+  run_hook_in_dir "$tmp_dir" "$json"
+  local rc=$?
+
+  assert_equals 2 "$rc"
+
+  local stderr_output
+  stderr_output=$(run_hook_in_dir_stderr "$tmp_dir" "$json")
+  assert_contains "missing required sections" "$stderr_output"
+  assert_contains "Feature-Analysis" "$stderr_output"
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- Slice 4, Test 2: Exits 2 when test specification/slice sections missing ----------
+
+function test_exits_two_when_slice_sections_missing() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+
+  # Plan file has Feature Analysis but NO slice headings
+  cat > "$tmp_dir/planning/feature-plan.md" <<PLAN
+## Feature Analysis
+
+Details about the feature but no slice sections.
+PLAN
+
+  local json
+  json=$(build_json "false")
+
+  run_hook_in_dir "$tmp_dir" "$json"
+  local rc=$?
+
+  assert_equals 2 "$rc"
+
+  local stderr_output
+  stderr_output=$(run_hook_in_dir_stderr "$tmp_dir" "$json")
+  assert_contains "missing required sections" "$stderr_output"
+  assert_contains "Test-Specification" "$stderr_output"
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- Slice 4, Test 3: Exits 0 when all required sections present ----------
+
+function test_exits_zero_when_all_required_sections_present() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+
+  write_valid_plan "$tmp_dir"
+
+  local json
+  json=$(build_json "false")
+
+  run_hook_in_dir "$tmp_dir" "$json"
+  assert_exit_code 0
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- Slice 4, Test 4: Exits 2 when refactoring leak (refactor: commit type) ----------
+
+function test_exits_two_when_refactoring_leak_refactor_commit_type() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+
+  write_valid_plan "$tmp_dir" "refactor: clean up authentication"
+
+  local json
+  json=$(build_json "false")
+
+  run_hook_in_dir "$tmp_dir" "$json"
+  local rc=$?
+
+  assert_equals 2 "$rc"
+
+  local stderr_output
+  stderr_output=$(run_hook_in_dir_stderr "$tmp_dir" "$json")
+  assert_contains "REFACTORING LEAK" "$stderr_output"
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- Slice 4, Test 5: Exits 2 when refactoring leak (REFACTOR Phase) ----------
+
+function test_exits_two_when_refactoring_leak_refactor_phase() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+
+  write_valid_plan "$tmp_dir" "REFACTOR Phase"
+
+  local json
+  json=$(build_json "false")
+
+  run_hook_in_dir "$tmp_dir" "$json"
+  local rc=$?
+
+  assert_equals 2 "$rc"
+
+  local stderr_output
+  stderr_output=$(run_hook_in_dir_stderr "$tmp_dir" "$json")
+  assert_contains "REFACTORING LEAK" "$stderr_output"
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- Slice 4, Edge 1: Standalone word "refactoring" does NOT trigger leak ----------
+
+function test_standalone_word_refactoring_does_not_trigger_leak() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+
+  write_valid_plan "$tmp_dir" "Consider refactoring later if needed."
+
+  local json
+  json=$(build_json "false")
+
+  run_hook_in_dir "$tmp_dir" "$json"
+  assert_exit_code 0
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- Slice 4, Edge 2: Case-insensitive section matching ----------
+
+function test_case_insensitive_section_matching() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+
+  cat > "$tmp_dir/planning/feature-plan.md" <<PLAN
+## FEATURE ANALYSIS
+
+This is the feature analysis section in uppercase.
+
+### slice 1: core implementation
+
+This is a slice heading in lowercase.
+PLAN
+
+  local json
+  json=$(build_json "false")
+
+  run_hook_in_dir "$tmp_dir" "$json"
+  assert_exit_code 0
+
+  rm -rf "$tmp_dir"
+}
+
+# =====================================================================
+# Slice 5 — Integration: hooks.json SubagentStop entry for tdd-planner
+# =====================================================================
+
+HOOKS_JSON="hooks/hooks.json"
+
+# ---------- Test S5-3: hooks.json SubagentStop entry for tdd-planner ----------
+
+function test_hooks_json_has_subagent_stop_tdd_planner_matcher() {
+  local result
+  result=$(jq -r '.hooks.SubagentStop[] | select(.matcher == "tdd-planner") | .matcher' "$HOOKS_JSON")
+  assert_equals "tdd-planner" "$result"
+}
+
+function test_hooks_json_tdd_planner_entry_uses_validate_plan_output() {
+  local result
+  result=$(jq -r '.hooks.SubagentStop[] | select(.matcher == "tdd-planner") | .hooks[0].command' "$HOOKS_JSON")
+  assert_contains "validate-plan-output.sh" "$result"
+}
+
+function test_hooks_json_tdd_planner_entry_has_timeout_10() {
+  local result
+  result=$(jq -r '.hooks.SubagentStop[] | select(.matcher == "tdd-planner") | .hooks[0].timeout' "$HOOKS_JSON")
+  assert_equals "10" "$result"
+}
+
+function test_hooks_json_tdd_planner_entry_type_is_command() {
+  local result
+  result=$(jq -r '.hooks.SubagentStop[] | select(.matcher == "tdd-planner") | .hooks[0].type' "$HOOKS_JSON")
+  assert_equals "command" "$result"
+}
+
+# ---------- Test S5-4: hooks.json is valid JSON and existing entries preserved ----------
+
+function test_hooks_json_is_valid_json() {
+  jq empty "$HOOKS_JSON"
+  assert_exit_code 0
+}
+
+function test_hooks_json_existing_tdd_implementer_subagent_stop_preserved() {
+  local result
+  result=$(jq -r '.hooks.SubagentStop[] | select(.matcher == "tdd-implementer") | .matcher' "$HOOKS_JSON")
+  assert_equals "tdd-implementer" "$result"
+}
+
+function test_hooks_json_existing_stop_hook_preserved() {
+  local result
+  result=$(jq -r '.hooks.Stop[0].hooks[0].command' "$HOOKS_JSON")
+  assert_contains "check-tdd-progress.sh" "$result"
+}

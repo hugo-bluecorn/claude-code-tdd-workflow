@@ -12,6 +12,16 @@
             "timeout": 30
           }
         ]
+      },
+      {
+        "matcher": "tdd-planner",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/validate-plan-output.sh",
+            "timeout": 10
+          }
+        ]
       }
     ],
     "Stop": [

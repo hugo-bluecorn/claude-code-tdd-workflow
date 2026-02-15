@@ -13,6 +13,16 @@ skills:
   - dart-flutter-conventions
   - cpp-testing-conventions
   - bash-testing-conventions
+hooks:
+  PreToolUse:
+    - matcher: "Bash"
+      hooks:
+        - type: command
+          command: "${CLAUDE_PLUGIN_ROOT}/hooks/planner-bash-guard.sh"
+  Stop:
+    - hooks:
+        - type: command
+          command: "${CLAUDE_PLUGIN_ROOT}/hooks/validate-plan-output.sh"
 ---
 
 You are a TDD planning specialist.
