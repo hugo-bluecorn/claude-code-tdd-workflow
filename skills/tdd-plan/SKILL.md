@@ -17,9 +17,6 @@ disable-model-invocation: true
 
 Plan TDD implementation for: $ARGUMENTS
 
-## Project Context (auto-detected)
-!`${CLAUDE_PLUGIN_ROOT}/hooks/detect-project-context.sh`
-
 ## Process
 
 0. **Load and follow convention references** (mandatory, do this first):
@@ -31,7 +28,11 @@ Plan TDD implementation for: $ARGUMENTS
    and naming conventions defined in these files. Do not proceed to step 1 until all
    reference files for the detected project type are loaded.
 
-1. **Research the codebase** using Glob, Grep, and Read to understand:
+1. **Detect project context** by running: `${CLAUDE_PLUGIN_ROOT}/hooks/detect-project-context.sh`
+   This outputs key=value lines for test_runner, test_count, branch, dirty_files, and fvm.
+   Use this information to guide your research — skip detection steps you already have answers for.
+
+2. **Research the codebase** using Glob, Grep, and Read to understand:
    - Existing test patterns and frameworks in use
    - Project structure and architecture
    - Related code that the feature will interact with
@@ -41,17 +42,17 @@ Plan TDD implementation for: $ARGUMENTS
      Otherwise use `flutter` / `dart` directly.
    - If clarification is needed about scope or architectural decisions, ASK the user
 
-2. **Identify the testing frameworks** already in use:
+3. **Identify the testing frameworks** already in use:
    - Dart/Flutter: flutter_test, mockito, bloc_test, integration_test
    - C++: GoogleTest, Catch2, or project-specific framework
    - Bash: bashunit, shellcheck
 
-3. **Decompose into feature slices.** Each slice must be:
+4. **Decompose into feature slices.** Each slice must be:
    - Small enough to complete in one test-implement-refactor cycle
    - Independently testable
    - Ordered by dependency (foundations first)
 
-4. **Re-read format requirements before writing the plan:**
+5. **Re-read format requirements before writing the plan:**
    - Re-read `reference/tdd-task-template.md` for the output structure
    - Re-read step 0's convention requirements (architecture, state management)
    - The plan you are about to write MUST use the exact format from the template —
@@ -61,7 +62,7 @@ Plan TDD implementation for: $ARGUMENTS
    original instructions far back in context. Re-reading them right before output
    ensures they are in active attention.
 
-5. **For each slice, produce this exact structure:**
+6. **For each slice, produce this exact structure:**
 
    ```
    ## Slice N: {Slice Name}
@@ -110,7 +111,7 @@ Plan TDD implementation for: $ARGUMENTS
    explicit Given/When/Then blocks. This is the format that gets written to
    `.tdd-progress.md`.
 
-6. **Self-check before presenting** — verify EVERY slice has all of these.
+7. **Self-check before presenting** — verify EVERY slice has all of these.
    If any are missing, fix the plan before showing it:
    - [ ] Given/When/Then as multi-line blocks (not compressed to single lines)
    - [ ] Acceptance Criteria section with checkboxes
@@ -121,13 +122,13 @@ Plan TDD implementation for: $ARGUMENTS
    If a slice is missing any of these, add them before proceeding.
    Do NOT present an incomplete plan.
 
-7. **Present the plan** as text output so the user can read it in full.
+8. **Present the plan** as text output so the user can read it in full.
 
-8. **Get explicit approval** using AskUserQuestion with options: Approve / Modify / Discard.
+9. **Get explicit approval** using AskUserQuestion with options: Approve / Modify / Discard.
    - If Modify: revise based on feedback and repeat from step 7
    - If Discard: stop without writing any files
 
-9. **Only after "Approve"**: write the plan as structured markdown to
+10. **Only after "Approve"**: write the plan as structured markdown to
    `.tdd-progress.md` at the project root. Also write a read-only archive
    to `planning/YYYYMMDD_HHMM_feature_name.md` using the structure defined
    in `reference/feature-notes-template.md`. The archive should capture:

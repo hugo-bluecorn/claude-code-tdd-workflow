@@ -114,7 +114,7 @@ current implementation. Update it after each significant plugin change.
 
 | # | Feature | Status | Notes |
 |---|---------|--------|-------|
-| B14 | Dynamic context injection (`!`) | ✅ | Auto-detects test runner, test count, git branch, uncommitted changes, FVM. Applied in v1.4.0 (S4) |
+| B14 | Dynamic context injection (`!`) | ⚠️ | `!` backtick blocked by permission system — even via helper script. Replaced with planner step 1 running `detect-project-context.sh` directly. Same outcome, different mechanism. Applied in v1.4.0 (S4) |
 | B15 | `ultrathink` | ✅ | `/tdd-plan` SKILL.md includes `<!-- ultrathink -->` |
 | B16 | Supporting files | ✅ | `tdd-plan/reference/` (2 templates), convention skills each have `reference/` dirs |
 | B17 | Skills-in-subagents duality | ✅ | Both patterns used: `/tdd-plan` = skill→agent fork; conventions = agent preload |
