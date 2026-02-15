@@ -1,7 +1,7 @@
 # TDD Workflow Plugin — Claude Code Extensibility Audit
 
-**Revision date:** 2026-02-14
-**Plugin version:** 1.2.0
+**Revision date:** 2026-02-15
+**Plugin version:** 1.3.0
 **Feature inventory:** extensibility-audit-prompt.md v2.1 (2026-02-14)
 **Previous audit:** 2026-02-10 (v3 revision notes, pre-plugin state)
 
@@ -58,7 +58,7 @@ current implementation. Update it after each significant plugin change.
 | A8 | `skills` | ✅ | Planner and implementer preload `dart-flutter-conventions`, `cpp-testing-conventions`, and `bash-testing-conventions` |
 | A9 | `memory` | ⚠️ | Implementer has `memory: project`. Planner does NOT — re-discovers codebase patterns each invocation. **→ S1** |
 | A10 | `mcpServers` | ⊘ | No relevant MCP servers for TDD workflow |
-| A11 | `hooks` (frontmatter) | ✅ | Implementer: PreToolUse + PostToolUse. Verifier: Stop. Planner: none yet **→ M1, M2** |
+| A11 | `hooks` (frontmatter) | ✅ | Implementer: PreToolUse + PostToolUse. Verifier: Stop. Planner: PreToolUse (Bash guard) + Stop (plan validator). Applied in v1.3.0 (M1, M2) |
 
 #### Behavioral Features
 
@@ -134,14 +134,14 @@ current implementation. Update it after each significant plugin change.
 |---|-------|--------|-------|
 | C1 | `SessionStart` | ⊘ | Could detect in-progress TDD sessions. Low priority — planner completes in one context window. **→ N4** |
 | C2 | `UserPromptSubmit` | ⊘ | Not relevant to TDD workflow |
-| C3 | `PreToolUse` | ✅ | Implementer: `validate-tdd-order.sh` on `Write\|Edit\|MultiEdit`. Planner: none yet **→ M1** |
+| C3 | `PreToolUse` | ✅ | Implementer: `validate-tdd-order.sh` on `Write\|Edit\|MultiEdit`. Planner: `planner-bash-guard.sh` on `Bash`. Applied in v1.3.0 (M1) |
 | C4 | `PermissionRequest` | ⊘ | `permissionMode: plan` on read-only agents eliminates dialogs; implementer needs interactive approval |
 | C5 | `PostToolUse` | ✅ | Implementer: `auto-run-tests.sh` on `Write\|Edit\|MultiEdit` |
 | C6 | `PostToolUseFailure` | ⊘ | No failure recovery logic needed |
 | C7 | `Notification` | ⊘ | Desktop notification on slice completion would improve UX. **→ N3** |
 | C8 | `SubagentStart` | ❌ | Should inject git context into planner at startup. **→ S5** |
-| C9 | `SubagentStop` | ✅ | `hooks.json`: prompt-based hook on `tdd-implementer` validates R-G-R cycle. Planner: none yet **→ S2** |
-| C10 | `Stop` | ✅ | Main thread: `check-tdd-progress.sh` prevents session end with pending slices. Verifier: prompt-based completeness check |
+| C9 | `SubagentStop` | ✅ | `hooks.json`: prompt-based hook on `tdd-implementer` validates R-G-R cycle. Command hook on `tdd-planner` validates plan output. Applied in v1.3.0 (S2) |
+| C10 | `Stop` | ✅ | Main thread: `check-tdd-progress.sh` prevents session end with pending slices. Verifier: prompt-based completeness check. Planner: `validate-plan-output.sh`. Applied in v1.3.0 (M2) |
 | C11 | `TeammateIdle` | ⊘ | No agent teams |
 | C12 | `TaskCompleted` | ⊘ | Not relevant |
 | C13 | `PreCompact` | ⊘ | Low priority (same reason as C1) |
@@ -151,7 +151,7 @@ current implementation. Update it after each significant plugin change.
 
 | # | Type | Status | Notes |
 |---|------|--------|-------|
-| C15 | `command` | ✅ | All file-based hooks (validate-tdd-order, auto-run-tests, check-tdd-progress). Anthropic best practice: prefer command for deterministic logic |
+| C15 | `command` | ✅ | All file-based hooks (validate-tdd-order, auto-run-tests, check-tdd-progress, planner-bash-guard, validate-plan-output). Anthropic best practice: prefer command for deterministic logic |
 | C16 | `prompt` | ✅ | Verifier Stop hook + implementer SubagentStop (non-deterministic checks) |
 | C17 | `agent` | ⊘ | Too expensive — spawns subagent for validation |
 
@@ -181,7 +181,7 @@ current implementation. Update it after each significant plugin change.
 | C32 | Exit code 0 | ✅ | Used in all command hooks |
 | C33 | Exit code 2 | ✅ | Used in `validate-tdd-order.sh` to block writes |
 | C34 | Other exit codes | ✅ N/A | Not used; understood |
-| C35 | `stop_hook_active` | ✅ | `check-tdd-progress.sh` checks this to prevent infinite loops |
+| C35 | `stop_hook_active` | ✅ | `check-tdd-progress.sh` and `validate-plan-output.sh` check this to prevent infinite loops |
 
 #### JSON Output
 
@@ -204,7 +204,7 @@ current implementation. Update it after each significant plugin change.
 | # | Field | Status | Notes |
 |---|-------|--------|-------|
 | D1 | `name` | ✅ | `"tdd-workflow"` |
-| D2 | `version` | ✅ | `"1.2.0"` |
+| D2 | `version` | ✅ | `"1.3.0"` |
 | D3 | `description` | ✅ | Present and descriptive |
 | D4 | `author` | ⊘ | Optional; can add later |
 | D5 | `homepage` | ⊘ | No published docs yet |
@@ -240,7 +240,7 @@ tdd-workflow/                               Status
 ├── .claude-plugin/
 │   └── plugin.json                         ✅
 ├── agents/
-│   ├── tdd-planner.md                      ✅ (pending: memory, hooks)
+│   ├── tdd-planner.md                      ✅ (pending: memory)
 │   ├── tdd-implementer.md                  ✅ (pending: git commits)
 │   └── tdd-verifier.md                     ✅
 ├── skills/
@@ -261,10 +261,12 @@ tdd-workflow/                               Status
 │       ├── SKILL.md                        ✅ (added in v1.2.0)
 │       └── reference/  (2 files)           ✅
 ├── hooks/
-│   ├── hooks.json                          ✅ (pending: planner SubagentStop, SubagentStart)
+│   ├── hooks.json                          ✅ (pending: SubagentStart)
 │   ├── validate-tdd-order.sh               ✅ (bash support added in v1.2.0)
 │   ├── auto-run-tests.sh                   ✅ (bash support added in v1.2.0)
-│   └── check-tdd-progress.sh              ✅
+│   ├── check-tdd-progress.sh              ✅
+│   ├── planner-bash-guard.sh               ✅ (added in v1.3.0, M1)
+│   └── validate-plan-output.sh             ✅ (added in v1.3.0, M2/S2)
 ├── docs/
 │   ├── version-control.md                  ✅
 │   └── user-guide.md                       ✅
@@ -272,11 +274,6 @@ tdd-workflow/                               Status
 ├── CHANGELOG.md                            ✅
 ├── README.md                               ✅
 └── LICENSE                                 ✅
-
-Files to add:
-├── hooks/
-│   ├── planner-bash-guard.sh               → M1
-│   └── validate-plan-output.sh             → M2
 ```
 
 ---
@@ -396,6 +393,7 @@ no skill wrapper, no hooks, and no plugin structure. Since then:
 | User guide state management section | ✅ |
 | **Phase 1 audit quick-wins (P1, N1, N2, N5)** | ✅ v1.1.0 |
 | **Bash testing support (bashunit + shellcheck)** | ✅ v1.2.0 — 8 TDD slices, 143 tests, 180 assertions |
+| **Phase 2 planner safety hooks (M1, M2, S2)** | ✅ v1.3.0 — 5 TDD slices, 52 new tests, 195 total |
 
 ---
 
@@ -411,15 +409,15 @@ no skill wrapper, no hooks, and no plugin structure. Since then:
 
 | # | Item | Effort | Rationale | Ref |
 |---|------|--------|-----------|-----|
-| M1 | **Add planner Bash guard hook (allowlist)** | ~40 lines | Planner disallows Write/Edit/MultiEdit but Bash can still write files. PreToolUse command hook on `Bash` uses allowlist (find, grep, cat, wc, ls, git, etc.) — only read-only commands permitted. Blocks everything else. Round 2 consensus: allowlist > denylist | C3, C15 |
-| M2 | **Add planner Stop hook (plan output validator)** | ~40 lines | Planner can stop without producing a plan file or with missing sections. Checks: file in `planning/`, required sections present, zero `refactor:` commit types | C10, C15 |
+| M1 | **Add planner Bash guard hook (allowlist)** | ~40 lines | ✅ Applied in v1.3.0 | C3, C15 |
+| M2 | **Add planner Stop hook (plan output validator)** | ~40 lines | ✅ Applied in v1.3.0 | C10, C15 |
 
 ### S — Should-Have (quality / robustness)
 
 | # | Item | Effort | Rationale | Ref |
 |---|------|--------|-----------|-----|
 | S1 | **Add `memory: project` to tdd-planner** + memory instructions in agent prompt | 1+10 lines | Planner re-discovers codebase patterns every invocation. Memory persists architecture, naming, test framework findings | A9 |
-| S2 | **Add SubagentStop hook for planner (anti-refactoring guard)** | ~15 lines | LLMs leak refactoring despite explicit negative instructions. Command hook scans plan for `refactor:` — defense-in-depth | C9, C15 |
+| S2 | **Add SubagentStop hook for planner (anti-refactoring guard)** | ~15 lines | ✅ Applied in v1.3.0 | C9, C15 |
 | S3 | **Add `additionalContext` via SubagentStart for planner** | ~5 lines | Inject current branch, last commit, dirty file count. Planner gets immediate working context | C8 |
 | S4 | **Add dynamic context injection to /tdd-plan** | ~5 lines | `!` backtick preprocessing auto-detects test runner, test count, git state. Reduces planner research by 2-3 turns | B14 |
 | S5 | **Implement git auto-commit (Layer 1)** | ~15 lines in agent prompt | Implementer commits after each R-G-R phase: `test:`, `feat:`, `refactor:` | version-control.md |
@@ -772,4 +770,5 @@ audits. The v1.0 prompt should be retired.
 *Feature inventory: extensibility-audit-prompt.md v2.1*
 *M1 revised from denylist to allowlist (Round 2).*
 *v1.1.0: Phase 1 applied (P1, N1, N2, N5). v1.2.0: Bash testing support added.*
-*Next audit: after implementing M1/M2 (safety hooks) and S1-S6 (quality items).*
+*v1.3.0: Phase 2 applied (M1, M2, S2) — planner safety hooks.*
+*Next audit: after implementing Phase 3 (S1, S3, S4) and Phase 4 (S5, S6).*
