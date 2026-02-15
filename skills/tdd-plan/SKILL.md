@@ -18,11 +18,7 @@ disable-model-invocation: true
 Plan TDD implementation for: $ARGUMENTS
 
 ## Project Context (auto-detected)
-- Test runner: !`which flutter >/dev/null 2>&1 && echo "flutter test" || (which dart >/dev/null 2>&1 && echo "dart test" || echo "not detected")`
-- Existing tests: !`find . \( -name "*_test.dart" -o -name "*_test.cpp" -o -name "*_test.sh" \) 2>/dev/null | wc -l | tr -d ' '` test files
-- Current branch: !`git branch --show-current 2>/dev/null || echo "unknown"`
-- Uncommitted changes: !`git status --porcelain 2>/dev/null | wc -l | tr -d ' '` files
-- FVM detected: !`test -f .fvmrc && command -v fvm >/dev/null 2>&1 && echo "yes (use fvm flutter)" || echo "no"`
+!`${CLAUDE_PLUGIN_ROOT}/hooks/detect-project-context.sh`
 
 ## Process
 
