@@ -1,7 +1,7 @@
 # TDD Workflow Plugin — Claude Code Extensibility Audit
 
 **Revision date:** 2026-02-14
-**Plugin version:** 1.0.0
+**Plugin version:** 1.2.0
 **Feature inventory:** extensibility-audit-prompt.md v2.1 (2026-02-14)
 **Previous audit:** 2026-02-10 (v3 revision notes, pre-plugin state)
 
@@ -52,10 +52,10 @@ current implementation. Update it after each significant plugin change.
 | A2 | `description` | ✅ | All 3 have task-specific descriptions with trigger phrases |
 | A3 | `tools` | ✅ | Planner: Read, Glob, Grep, Bash, AskUserQuestion. Implementer: Read, Write, Edit, MultiEdit, Bash, Glob, Grep. Verifier: Read, Bash, Glob, Grep |
 | A4 | `disallowedTools` | ✅ | Planner: Write, Edit, MultiEdit, NotebookEdit, Task. Verifier: Write, Edit, MultiEdit |
-| A5 | `model` | ⚠️ | Currently `sonnet` on planner/implementer, `haiku` on verifier. Decision made to upgrade planner/implementer to `opus` — not yet applied. **→ P1** |
+| A5 | `model` | ✅ | Planner/implementer: `opus`. Verifier: `haiku`. Applied in v1.1.0 (P1) |
 | A6 | `permissionMode` | ✅ | Planner: `plan`. Verifier: `plan`. Implementer: default (needs write approval) |
 | A7 | `maxTurns` | ✅ | Planner: 30. Implementer: 50. Verifier: 20 |
-| A8 | `skills` | ✅ | Planner and implementer preload `dart-flutter-conventions` and `cpp-testing-conventions` |
+| A8 | `skills` | ✅ | Planner and implementer preload `dart-flutter-conventions`, `cpp-testing-conventions`, and `bash-testing-conventions` |
 | A9 | `memory` | ⚠️ | Implementer has `memory: project`. Planner does NOT — re-discovers codebase patterns each invocation. **→ S1** |
 | A10 | `mcpServers` | ⊘ | No relevant MCP servers for TDD workflow |
 | A11 | `hooks` (frontmatter) | ✅ | Implementer: PreToolUse + PostToolUse. Verifier: Stop. Planner: none yet **→ M1, M2** |
@@ -93,9 +93,9 @@ current implementation. Update it after each significant plugin change.
 |---|-------|--------|-------|
 | B1 | `name` | ✅ | `tdd-plan`, `tdd-implement`, `dart-flutter-conventions`, `cpp-testing-conventions` |
 | B2 | `description` | ✅ | All skills have descriptions with trigger phrases |
-| B3 | `argument-hint` | ❌ | `/tdd-plan` should have `argument-hint: "[feature description]"`. **→ N1** |
+| B3 | `argument-hint` | ✅ | `/tdd-plan` has `argument-hint: "[feature description]"`. Applied in v1.1.0 (N1) |
 | B4 | `disable-model-invocation` | ✅ | Set on `/tdd-plan` |
-| B5 | `user-invocable` | ⚠️ | Convention skills should have `user-invocable: false` (reference material, not commands). **→ N2** |
+| B5 | `user-invocable` | ✅ | All convention skills have `user-invocable: false`. Applied in v1.1.0 (N2) |
 | B6 | `allowed-tools` | ⊘ | Agent tool restrictions take precedence |
 | B7 | `model` | ⊘ | Agent frontmatter sets model |
 | B8 | `context: fork` | ✅ | `/tdd-plan` uses `context: fork` |
@@ -114,7 +114,7 @@ current implementation. Update it after each significant plugin change.
 
 | # | Feature | Status | Notes |
 |---|---------|--------|-------|
-| B14 | Dynamic context injection (`!`) | ❌ | Should auto-detect test runner, test count, git branch. **→ S4** |
+| B14 | Dynamic context injection (`!`) | ❌ | Should auto-detect test runner, test count, git branch. **→ S4** (bash project detection added in v1.2.0, `!` backtick injection still pending) |
 | B15 | `ultrathink` | ✅ | `/tdd-plan` SKILL.md includes `<!-- ultrathink -->` |
 | B16 | Supporting files | ✅ | `tdd-plan/reference/` (2 templates), convention skills each have `reference/` dirs |
 | B17 | Skills-in-subagents duality | ✅ | Both patterns used: `/tdd-plan` = skill→agent fork; conventions = agent preload |
@@ -204,7 +204,7 @@ current implementation. Update it after each significant plugin change.
 | # | Field | Status | Notes |
 |---|-------|--------|-------|
 | D1 | `name` | ✅ | `"tdd-workflow"` |
-| D2 | `version` | ✅ | `"1.0.0"` |
+| D2 | `version` | ✅ | `"1.2.0"` |
 | D3 | `description` | ✅ | Present and descriptive |
 | D4 | `author` | ⊘ | Optional; can add later |
 | D5 | `homepage` | ⊘ | No published docs yet |
@@ -240,27 +240,30 @@ tdd-workflow/                               Status
 ├── .claude-plugin/
 │   └── plugin.json                         ✅
 ├── agents/
-│   ├── tdd-planner.md                      ✅ (pending: opus, memory, hooks)
-│   ├── tdd-implementer.md                  ✅ (pending: opus, git commits)
+│   ├── tdd-planner.md                      ✅ (pending: memory, hooks)
+│   ├── tdd-implementer.md                  ✅ (pending: git commits)
 │   └── tdd-verifier.md                     ✅
 ├── skills/
 │   ├── tdd-plan/
-│   │   ├── SKILL.md                        ✅ (pending: argument-hint, dynamic context)
+│   │   ├── SKILL.md                        ✅ (pending: dynamic context)
 │   │   └── reference/
 │   │       ├── tdd-task-template.md        ✅
 │   │       └── feature-notes-template.md   ✅
 │   ├── tdd-implement/
 │   │   └── SKILL.md                        ✅ (pending: branch creation)
 │   ├── dart-flutter-conventions/
-│   │   ├── SKILL.md                        ✅ (pending: user-invocable: false)
+│   │   ├── SKILL.md                        ✅
 │   │   └── reference/  (4 files)           ✅
-│   └── cpp-testing-conventions/
-│       ├── SKILL.md                        ✅ (pending: user-invocable: false)
-│       └── reference/  (3 files)           ✅
+│   ├── cpp-testing-conventions/
+│   │   ├── SKILL.md                        ✅
+│   │   └── reference/  (3 files)           ✅
+│   └── bash-testing-conventions/
+│       ├── SKILL.md                        ✅ (added in v1.2.0)
+│       └── reference/  (2 files)           ✅
 ├── hooks/
 │   ├── hooks.json                          ✅ (pending: planner SubagentStop, SubagentStart)
-│   ├── validate-tdd-order.sh               ✅
-│   ├── auto-run-tests.sh                   ✅
+│   ├── validate-tdd-order.sh               ✅ (bash support added in v1.2.0)
+│   ├── auto-run-tests.sh                   ✅ (bash support added in v1.2.0)
 │   └── check-tdd-progress.sh              ✅
 ├── docs/
 │   ├── version-control.md                  ✅
@@ -326,7 +329,7 @@ Files to add:
 | F11 | `allowManagedPermissionRulesOnly` | ⊘ | Enterprise feature |
 | F12 | `language` | ⊘ | Consumer preference |
 | F13 | `outputStyle` | ⊘ | No custom output style |
-| F14 | `$schema` | ⊘ | Minor — could add to hooks.json for IDE autocomplete. **→ N5** |
+| F14 | `$schema` | ✅ | Added to hooks.json in v1.1.0 (N5) |
 
 #### Sandbox Settings
 
@@ -391,6 +394,8 @@ no skill wrapper, no hooks, and no plugin structure. Since then:
 | Version control integration — Layer 3 (release workflow) | Designed, not applied |
 | Project-conventions.md ephemeral state clarification | ✅ |
 | User guide state management section | ✅ |
+| **Phase 1 audit quick-wins (P1, N1, N2, N5)** | ✅ v1.1.0 |
+| **Bash testing support (bashunit + shellcheck)** | ✅ v1.2.0 — 8 TDD slices, 143 tests, 180 assertions |
 
 ---
 
@@ -398,9 +403,9 @@ no skill wrapper, no hooks, and no plugin structure. Since then:
 
 ### P — Pending Decisions (apply immediately)
 
-| # | Item | Effort | Rationale |
-|---|------|--------|-----------|
-| P1 | **Set `model: opus` on tdd-planner and tdd-implementer** | 2 lines | Decision made: quality over cost. Opus has better instruction-following across long contexts. Tradeoff: up to 350 Opus calls per full implementation run |
+| # | Item | Effort | Status |
+|---|------|--------|--------|
+| P1 | **Set `model: opus` on tdd-planner and tdd-implementer** | 2 lines | ✅ Applied in v1.1.0 |
 
 ### M — Must-Have (correctness / safety)
 
@@ -424,11 +429,11 @@ no skill wrapper, no hooks, and no plugin structure. Since then:
 
 | # | Item | Effort | Rationale | Ref |
 |---|------|--------|-----------|-----|
-| N1 | **Add `argument-hint: "[feature description]"` to /tdd-plan** | 1 line | Autocomplete hint in `/` menu | B3 |
-| N2 | **Add `user-invocable: false` to convention skills** | 2 lines | Prevents convention skills appearing as commands in `/` menu | B5 |
+| N1 | **Add `argument-hint: "[feature description]"` to /tdd-plan** | 1 line | ✅ Applied in v1.1.0 | B3 |
+| N2 | **Add `user-invocable: false` to convention skills** | 2 lines | ✅ Applied in v1.1.0 | B5 |
 | N3 | **Add Notification hooks on slice completion** | ~5 lines | Desktop notifications for long multi-slice sessions | C7 |
 | N4 | **Add SessionStart hook for TDD session detection** | ~10 lines | Detect `.tdd-progress.md` and inject state reminder | C1 |
-| N5 | **Add `$schema` to hooks.json** | 1 line | IDE autocomplete: `"$schema": "https://json.schemastore.org/claude-code-settings.json"` | F14 |
+| N5 | **Add `$schema` to hooks.json** | 1 line | ✅ Applied in v1.1.0 | F14 |
 | N6 | **Implement release workflow (Layer 3)** | ~80 lines | `/tdd-release` skill + `tdd-releaser` agent for CHANGELOG, PR creation | version-control.md |
 
 ---
@@ -766,4 +771,5 @@ audits. The v1.0 prompt should be retired.
 *Audit completed 2026-02-14. Round 2 CC×Web consensus reached.*
 *Feature inventory: extensibility-audit-prompt.md v2.1*
 *M1 revised from denylist to allowlist (Round 2).*
-*Next audit: after implementing Layer 1-3 version control integration.*
+*v1.1.0: Phase 1 applied (P1, N1, N2, N5). v1.2.0: Bash testing support added.*
+*Next audit: after implementing M1/M2 (safety hooks) and S1-S6 (quality items).*
