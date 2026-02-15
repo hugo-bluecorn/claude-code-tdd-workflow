@@ -1,7 +1,7 @@
 # TDD Workflow Plugin — Claude Code Extensibility Audit
 
 **Revision date:** 2026-02-15
-**Plugin version:** 1.3.0
+**Plugin version:** 1.3.1
 **Feature inventory:** extensibility-audit-prompt.md v2.1 (2026-02-14)
 **Previous audit:** 2026-02-10 (v3 revision notes, pre-plugin state)
 
@@ -204,7 +204,7 @@ current implementation. Update it after each significant plugin change.
 | # | Field | Status | Notes |
 |---|-------|--------|-------|
 | D1 | `name` | ✅ | `"tdd-workflow"` |
-| D2 | `version` | ✅ | `"1.3.0"` |
+| D2 | `version` | ✅ | `"1.3.1"` |
 | D3 | `description` | ✅ | Present and descriptive |
 | D4 | `author` | ⊘ | Optional; can add later |
 | D5 | `homepage` | ⊘ | No published docs yet |
@@ -394,6 +394,7 @@ no skill wrapper, no hooks, and no plugin structure. Since then:
 | **Phase 1 audit quick-wins (P1, N1, N2, N5)** | ✅ v1.1.0 |
 | **Bash testing support (bashunit + shellcheck)** | ✅ v1.2.0 — 8 TDD slices, 143 tests, 180 assertions |
 | **Phase 2 planner safety hooks (M1, M2, S2)** | ✅ v1.3.0 — 5 TDD slices, 52 new tests, 195 total |
+| **Hook script hardening (retroactive tests + JSON fix)** | ✅ v1.3.1 — 4 slices, 42 new tests, 237 total, 298 assertions |
 
 ---
 
@@ -771,4 +772,5 @@ audits. The v1.0 prompt should be retired.
 *M1 revised from denylist to allowlist (Round 2).*
 *v1.1.0: Phase 1 applied (P1, N1, N2, N5). v1.2.0: Bash testing support added.*
 *v1.3.0: Phase 2 applied (M1, M2, S2) — planner safety hooks.*
+*v1.3.1: Hook hardening — retroactive tests for all 5 hooks, JSON safety fix.*
 *Next audit: after implementing Phase 3 (S1, S3, S4) and Phase 4 (S5, S6).*
