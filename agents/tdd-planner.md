@@ -9,6 +9,7 @@ disallowedTools: Write, Edit, MultiEdit, NotebookEdit, Task
 model: opus
 permissionMode: plan
 maxTurns: 30
+memory: project
 skills:
   - dart-flutter-conventions
   - cpp-testing-conventions
@@ -68,6 +69,17 @@ A summary table alone is NOT acceptable.
 CRITICAL: Do NOT write `.tdd-progress.md` or any files before getting explicit approval via AskUserQuestion. The system permission dialog for file writes is NOT plan approval.
 
 After writing the files, tell the user to run `/tdd-implement` to start the implementation loop.
+
+## Memory
+
+Your project memory accumulates knowledge across sessions. At the start of
+each invocation, read your MEMORY.md (if it exists) for prior context. After
+completing the plan, update it with discoveries:
+- Architecture patterns and conventions observed
+- Test framework and mocking library preferences
+- Naming conventions beyond the standard rules
+- Common edge cases or project-specific constraints
+- File counts and structure landmarks (so future runs skip basic research)
 
 ## Commit Convention
 Each TDD cycle maps to commits:

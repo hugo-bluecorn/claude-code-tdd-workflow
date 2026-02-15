@@ -1,7 +1,7 @@
 # TDD Workflow Plugin — Claude Code Extensibility Audit
 
 **Revision date:** 2026-02-15
-**Plugin version:** 1.3.1
+**Plugin version:** 1.4.0
 **Feature inventory:** extensibility-audit-prompt.md v2.1 (2026-02-14)
 **Previous audit:** 2026-02-10 (v3 revision notes, pre-plugin state)
 
@@ -56,7 +56,7 @@ current implementation. Update it after each significant plugin change.
 | A6 | `permissionMode` | ✅ | Planner: `plan`. Verifier: `plan`. Implementer: default (needs write approval) |
 | A7 | `maxTurns` | ✅ | Planner: 30. Implementer: 50. Verifier: 20 |
 | A8 | `skills` | ✅ | Planner and implementer preload `dart-flutter-conventions`, `cpp-testing-conventions`, and `bash-testing-conventions` |
-| A9 | `memory` | ⚠️ | Implementer has `memory: project`. Planner does NOT — re-discovers codebase patterns each invocation. **→ S1** |
+| A9 | `memory` | ✅ | Both implementer and planner have `memory: project`. Applied in v1.4.0 (S1) |
 | A10 | `mcpServers` | ⊘ | No relevant MCP servers for TDD workflow |
 | A11 | `hooks` (frontmatter) | ✅ | Implementer: PreToolUse + PostToolUse. Verifier: Stop. Planner: PreToolUse (Bash guard) + Stop (plan validator). Applied in v1.3.0 (M1, M2) |
 
@@ -80,7 +80,7 @@ current implementation. Update it after each significant plugin change.
 | Scope | Status | Notes |
 |-------|--------|-------|
 | Implementer `project` | ✅ | `.claude/agent-memory/tdd-implementer/MEMORY.md` — accumulates test fixtures, assertion styles, edge cases |
-| Planner `project` | ❌ | Not set. Should persist codebase research findings. **→ S1** |
+| Planner `project` | ✅ | `.claude/agent-memory/tdd-planner/MEMORY.md` — persists architecture, naming, test framework findings. Applied in v1.4.0 (S1) |
 | Verifier | ⊘ | Procedural work, no cross-session learning needed |
 
 ---
@@ -114,7 +114,7 @@ current implementation. Update it after each significant plugin change.
 
 | # | Feature | Status | Notes |
 |---|---------|--------|-------|
-| B14 | Dynamic context injection (`!`) | ❌ | Should auto-detect test runner, test count, git branch. **→ S4** (bash project detection added in v1.2.0, `!` backtick injection still pending) |
+| B14 | Dynamic context injection (`!`) | ✅ | Auto-detects test runner, test count, git branch, uncommitted changes, FVM. Applied in v1.4.0 (S4) |
 | B15 | `ultrathink` | ✅ | `/tdd-plan` SKILL.md includes `<!-- ultrathink -->` |
 | B16 | Supporting files | ✅ | `tdd-plan/reference/` (2 templates), convention skills each have `reference/` dirs |
 | B17 | Skills-in-subagents duality | ✅ | Both patterns used: `/tdd-plan` = skill→agent fork; conventions = agent preload |
@@ -139,7 +139,7 @@ current implementation. Update it after each significant plugin change.
 | C5 | `PostToolUse` | ✅ | Implementer: `auto-run-tests.sh` on `Write\|Edit\|MultiEdit` |
 | C6 | `PostToolUseFailure` | ⊘ | No failure recovery logic needed |
 | C7 | `Notification` | ⊘ | Desktop notification on slice completion would improve UX. **→ N3** |
-| C8 | `SubagentStart` | ❌ | Should inject git context into planner at startup. **→ S5** |
+| C8 | `SubagentStart` | ✅ | Injects git branch, last commit, dirty file count into planner via `additionalContext`. Applied in v1.4.0 (S3) |
 | C9 | `SubagentStop` | ✅ | `hooks.json`: prompt-based hook on `tdd-implementer` validates R-G-R cycle. Command hook on `tdd-planner` validates plan output. Applied in v1.3.0 (S2) |
 | C10 | `Stop` | ✅ | Main thread: `check-tdd-progress.sh` prevents session end with pending slices. Verifier: prompt-based completeness check. Planner: `validate-plan-output.sh`. Applied in v1.3.0 (M2) |
 | C11 | `TeammateIdle` | ⊘ | No agent teams |
@@ -189,7 +189,7 @@ current implementation. Update it after each significant plugin change.
 |---------|--------|-------|
 | `systemMessage` | ✅ | `auto-run-tests.sh` returns test output as systemMessage |
 | `decision`/`reason` | ✅ | `check-tdd-progress.sh` returns `{"decision": "block", "reason": ...}` |
-| `additionalContext` | ❌ | SubagentStart hook for planner should use this. **→ S5** |
+| `additionalContext` | ✅ | SubagentStart hook for planner injects git context. Applied in v1.4.0 (S3) |
 | `updatedInput` | ⊘ | No need to modify tool parameters |
 | `permissionDecision` | ⊘ | Not using PermissionRequest hooks |
 | `continue`/`stopReason` | ⊘ | Not using session-stopping hooks |
@@ -204,7 +204,7 @@ current implementation. Update it after each significant plugin change.
 | # | Field | Status | Notes |
 |---|-------|--------|-------|
 | D1 | `name` | ✅ | `"tdd-workflow"` |
-| D2 | `version` | ✅ | `"1.3.1"` |
+| D2 | `version` | ✅ | `"1.4.0"` |
 | D3 | `description` | ✅ | Present and descriptive |
 | D4 | `author` | ⊘ | Optional; can add later |
 | D5 | `homepage` | ⊘ | No published docs yet |
@@ -240,12 +240,12 @@ tdd-workflow/                               Status
 ├── .claude-plugin/
 │   └── plugin.json                         ✅
 ├── agents/
-│   ├── tdd-planner.md                      ✅ (pending: memory)
+│   ├── tdd-planner.md                      ✅
 │   ├── tdd-implementer.md                  ✅ (pending: git commits)
 │   └── tdd-verifier.md                     ✅
 ├── skills/
 │   ├── tdd-plan/
-│   │   ├── SKILL.md                        ✅ (pending: dynamic context)
+│   │   ├── SKILL.md                        ✅
 │   │   └── reference/
 │   │       ├── tdd-task-template.md        ✅
 │   │       └── feature-notes-template.md   ✅
@@ -261,7 +261,7 @@ tdd-workflow/                               Status
 │       ├── SKILL.md                        ✅ (added in v1.2.0)
 │       └── reference/  (2 files)           ✅
 ├── hooks/
-│   ├── hooks.json                          ✅ (pending: SubagentStart)
+│   ├── hooks.json                          ✅
 │   ├── validate-tdd-order.sh               ✅ (bash support added in v1.2.0)
 │   ├── auto-run-tests.sh                   ✅ (bash support added in v1.2.0)
 │   ├── check-tdd-progress.sh              ✅
@@ -395,6 +395,7 @@ no skill wrapper, no hooks, and no plugin structure. Since then:
 | **Bash testing support (bashunit + shellcheck)** | ✅ v1.2.0 — 8 TDD slices, 143 tests, 180 assertions |
 | **Phase 2 planner safety hooks (M1, M2, S2)** | ✅ v1.3.0 — 5 TDD slices, 52 new tests, 195 total |
 | **Hook script hardening (retroactive tests + JSON fix)** | ✅ v1.3.1 — 4 slices, 42 new tests, 237 total, 298 assertions |
+| **Phase 3 planner intelligence (S1, S3, S4)** | ✅ v1.4.0 — planner memory, SubagentStart context, dynamic `!` backtick |
 
 ---
 
@@ -417,10 +418,10 @@ no skill wrapper, no hooks, and no plugin structure. Since then:
 
 | # | Item | Effort | Rationale | Ref |
 |---|------|--------|-----------|-----|
-| S1 | **Add `memory: project` to tdd-planner** + memory instructions in agent prompt | 1+10 lines | Planner re-discovers codebase patterns every invocation. Memory persists architecture, naming, test framework findings | A9 |
+| S1 | **Add `memory: project` to tdd-planner** + memory instructions in agent prompt | 1+10 lines | ✅ Applied in v1.4.0 | A9 |
 | S2 | **Add SubagentStop hook for planner (anti-refactoring guard)** | ~15 lines | ✅ Applied in v1.3.0 | C9, C15 |
-| S3 | **Add `additionalContext` via SubagentStart for planner** | ~5 lines | Inject current branch, last commit, dirty file count. Planner gets immediate working context | C8 |
-| S4 | **Add dynamic context injection to /tdd-plan** | ~5 lines | `!` backtick preprocessing auto-detects test runner, test count, git state. Reduces planner research by 2-3 turns | B14 |
+| S3 | **Add `additionalContext` via SubagentStart for planner** | ~5 lines | ✅ Applied in v1.4.0 | C8 |
+| S4 | **Add dynamic context injection to /tdd-plan** | ~5 lines | ✅ Applied in v1.4.0 | B14 |
 | S5 | **Implement git auto-commit (Layer 1)** | ~15 lines in agent prompt | Implementer commits after each R-G-R phase: `test:`, `feat:`, `refactor:` | version-control.md |
 | S6 | **Implement branch creation (Layer 2)** | ~5 lines in SKILL.md | `/tdd-implement` creates `feature/<name>` before first slice; skip if already on feature branch | version-control.md |
 
@@ -773,4 +774,5 @@ audits. The v1.0 prompt should be retired.
 *v1.1.0: Phase 1 applied (P1, N1, N2, N5). v1.2.0: Bash testing support added.*
 *v1.3.0: Phase 2 applied (M1, M2, S2) — planner safety hooks.*
 *v1.3.1: Hook hardening — retroactive tests for all 5 hooks, JSON safety fix.*
-*Next audit: after implementing Phase 3 (S1, S3, S4) and Phase 4 (S5, S6).*
+*v1.4.0: Phase 3 applied (S1, S3, S4) — planner memory, context injection.*
+*Next audit: after implementing Phase 4 (S5, S6) and Phase 5 (N3, N4, N6).*

@@ -2,6 +2,17 @@
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "description": "TDD workflow hooks: enforces R-G-R cycle completion and prevents premature session end",
   "hooks": {
+    "SubagentStart": [
+      {
+        "matcher": "tdd-planner",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"{\\\"additionalContext\\\": \\\"Current branch: $(git branch --show-current 2>/dev/null || echo 'unknown'). Last commit: $(git log --oneline -1 2>/dev/null || echo 'none'). Dirty files: $(git status --porcelain 2>/dev/null | wc -l | tr -d ' ').\\\"}\""
+          }
+        ]
+      }
+    ],
     "SubagentStop": [
       {
         "matcher": "tdd-implementer",
