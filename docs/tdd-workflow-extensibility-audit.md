@@ -242,7 +242,8 @@ tdd-workflow/                               Status
 ├── agents/
 │   ├── tdd-planner.md                      ✅
 │   ├── tdd-implementer.md                  ✅
-│   └── tdd-verifier.md                     ✅
+│   ├── tdd-verifier.md                     ✅
+│   └── tdd-releaser.md                     ✅ (added in v1.6.0, N6)
 ├── skills/
 │   ├── tdd-plan/
 │   │   ├── SKILL.md                        ✅
@@ -251,6 +252,8 @@ tdd-workflow/                               Status
 │   │       └── feature-notes-template.md   ✅
 │   ├── tdd-implement/
 │   │   └── SKILL.md                        ✅
+│   ├── tdd-release/
+│   │   └── SKILL.md                        ✅ (added in v1.6.0, N6)
 │   ├── dart-flutter-conventions/
 │   │   ├── SKILL.md                        ✅
 │   │   └── reference/  (4 files)           ✅
@@ -266,7 +269,8 @@ tdd-workflow/                               Status
 │   ├── auto-run-tests.sh                   ✅ (bash support added in v1.2.0)
 │   ├── check-tdd-progress.sh              ✅
 │   ├── planner-bash-guard.sh               ✅ (added in v1.3.0, M1)
-│   └── validate-plan-output.sh             ✅ (added in v1.3.0, M2/S2)
+│   ├── validate-plan-output.sh             ✅ (added in v1.3.0, M2/S2)
+│   └── check-release-complete.sh           ✅ (added in v1.6.0, N6)
 ├── docs/
 │   ├── version-control.md                  ✅
 │   └── user-guide.md                       ✅
@@ -435,7 +439,7 @@ no skill wrapper, no hooks, and no plugin structure. Since then:
 | N3 | **Add Notification hooks on slice completion** | ~5 lines | Desktop notifications for long multi-slice sessions | C7 |
 | N4 | **Add SessionStart hook for TDD session detection** | ~10 lines | Detect `.tdd-progress.md` and inject state reminder | C1 |
 | N5 | **Add `$schema` to hooks.json** | 1 line | ✅ Applied in v1.1.0 | F14 |
-| N6 | **Implement release workflow (Layer 3)** | ~80 lines | `/tdd-release` skill + `tdd-releaser` agent for CHANGELOG, PR creation | version-control.md |
+| N6 | **Implement release workflow (Layer 3)** | ~80 lines | ✅ Applied in v1.6.0 | version-control.md |
 
 ---
 

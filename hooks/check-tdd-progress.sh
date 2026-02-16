@@ -20,8 +20,10 @@ fi
 # Count slices that are NOT in a terminal state
 # Terminal states: PASS, DONE, COMPLETE, FAIL, SKIP (case-insensitive)
 # Non-terminal: anything else (PENDING, IN_PROGRESS, IN PROGRESS, RED, GREEN, etc.)
-TOTAL_SLICES=$(grep -ciE '^\s*##\s*(slice|step)' "$PROGRESS_FILE" 2>/dev/null || echo "0")
-TERMINAL_SLICES=$(grep -ciE 'status:\s*(pass|done|complete|fail|skip)' "$PROGRESS_FILE" 2>/dev/null || echo "0")
+TOTAL_SLICES=$(grep -ciE '^\s*##\s*(slice|step)\s+[0-9]' "$PROGRESS_FILE" 2>/dev/null || true)
+TOTAL_SLICES=${TOTAL_SLICES:-0}
+TERMINAL_SLICES=$(grep -ciE 'status:\*{0,2}\s*(pass|done|complete|fail|skip)' "$PROGRESS_FILE" 2>/dev/null || true)
+TERMINAL_SLICES=${TERMINAL_SLICES:-0}
 
 if [ "$TOTAL_SLICES" -eq 0 ]; then
   exit 0  # No slices found, allow stop

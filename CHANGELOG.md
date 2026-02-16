@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.6.0] - 2026-02-16
+
+### Added
+- `/tdd-release` skill for orchestrating version releases with CHANGELOG updates,
+  version bumps, and PR creation
+- `tdd-releaser` agent with read-write access for executing the release workflow
+- `check-release-complete.sh` SubagentStop hook validating that all release
+  checklist items are complete before the releaser agent finishes
+
 ## [1.5.0] - 2026-02-15
 
 ### Added

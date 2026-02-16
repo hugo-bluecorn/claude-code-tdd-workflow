@@ -5,11 +5,11 @@ into the TDD workflow plugin as automated behavior rather than advisory document
 
 ---
 
-## The Gap (partially closed)
+## The Gap (closed)
 
 `version-control.md` describes branching, per-phase commits, PRs, releases, and
-changelogs. Layers 1 and 2 are now implemented (v1.5.0). Layer 3 (`/tdd-release`)
-remains unimplemented.
+changelogs. All three layers are now IMPLEMENTED. Layer 3 (`/tdd-release`) IMPLEMENTED v1.6.0,
+completing the version control integration.
 
 The TDD commit pattern maps directly onto the existing R-G-R cycle:
 
@@ -58,7 +58,7 @@ making it the natural place for this.
 
 **Effort:** Small — ~5 lines added to implement skill. Done.
 
-### Layer 3 — `/tdd-release` Skill + Agent — NOT YET IMPLEMENTED
+### Layer 3 — `/tdd-release` Skill + Agent — IMPLEMENTED v1.6.0
 
 A new command for the end-of-feature workflow: validate, document, and publish.
 
@@ -162,10 +162,10 @@ Invoked by `skills/tdd-release/SKILL.md` with `agent: tdd-releaser`.
 |------|-------|--------|--------|
 | Per-phase auto-commits | `agents/tdd-implementer.md` | Small | Done (v1.5.0) |
 | Branch creation at start | `skills/tdd-implement/SKILL.md` | Small | Done (v1.5.0) |
-| `/tdd-release` skill | New: `skills/tdd-release/SKILL.md` | Medium | Not started |
-| `tdd-releaser` agent | New: `agents/tdd-releaser.md` | Medium | Not started |
+| `/tdd-release` skill | New: `skills/tdd-release/SKILL.md` | Medium | Done (v1.6.0) |
+| `tdd-releaser` agent | New: `agents/tdd-releaser.md` | Medium | Done (v1.6.0) |
 | Permission updates | `.claude/settings.local.json` | Small | Not started |
-| Releaser Stop hook | New: `hooks/check-release-complete.sh` | Small | Not started |
+| `check-release-complete.sh` hook | New: `hooks/check-release-complete.sh` | Small | Done (v1.6.0) |
 
 ---
 
