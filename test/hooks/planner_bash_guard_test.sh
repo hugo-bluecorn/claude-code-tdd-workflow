@@ -253,7 +253,7 @@ function test_existing_hooks_unmodified() {
 b93538cd10ff2995e9a548013a765076  hooks/validate-plan-output.sh
 9d6249abc46f477c707d50fa759d412e  hooks/validate-tdd-order.sh
 fa36eb282579bed351c1b32bd08376f4  hooks/auto-run-tests.sh
-7253b50e364e537a1710c36fa2bcb79f  hooks/check-tdd-progress.sh"
+e37c1be2bdb02d28d33157768c5a36cf  hooks/check-tdd-progress.sh"
 
   local actual_checksums
   actual_checksums=$(md5sum \
