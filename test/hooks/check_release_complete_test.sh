@@ -26,8 +26,29 @@ run_hook_in_dir() {
   (cd "$dir" && echo "$json" | bash "$HOOK_ABS")
 }
 
+# Helper: create a git repo with one commit but NO remote tracking
+# Returns the repo directory path
+create_git_env_no_upstream() {
+  local tmp_dir
+  tmp_dir=$(mktemp -d)
+
+  git init "$tmp_dir" >/dev/null 2>&1
+  (
+    cd "$tmp_dir" || exit 1
+    git config user.email "test@test.com"
+    git config user.name "Test"
+    git checkout -b feature-branch >/dev/null 2>&1
+    echo "content" > file.txt
+    git add file.txt
+    git commit -m "initial commit" >/dev/null 2>&1
+  )
+
+  echo "$tmp_dir"
+}
+
 # Helper: create a git repo with a bare remote so we can push/track
 # Sets up: repo_dir (working), bare_dir (remote), branch "main" with upstream
+# Returns: base_dir/repo (line 1), base_dir (line 2)
 create_git_env_with_remote() {
   local base_dir
   base_dir=$(mktemp -d)
@@ -52,9 +73,7 @@ create_git_env_with_remote() {
     git push -u origin main >/dev/null 2>&1
   )
 
-  # Return both paths separated by newline
   echo "$repo_dir"
-  echo "$bare_dir"
   echo "$base_dir"
 }
 
@@ -126,7 +145,7 @@ function test_branch_pushed_exits_zero() {
   local repo_dir
   repo_dir=$(echo "$paths" | sed -n '1p')
   local base_dir
-  base_dir=$(echo "$paths" | sed -n '3p')
+  base_dir=$(echo "$paths" | sed -n '2p')
 
   local json
   json=$(build_json "false")
@@ -144,7 +163,7 @@ function test_branch_pushed_produces_empty_stdout() {
   local repo_dir
   repo_dir=$(echo "$paths" | sed -n '1p')
   local base_dir
-  base_dir=$(echo "$paths" | sed -n '3p')
+  base_dir=$(echo "$paths" | sed -n '2p')
 
   local json
   json=$(build_json "false")
@@ -165,7 +184,7 @@ function test_branch_not_pushed_exits_two() {
   local repo_dir
   repo_dir=$(echo "$paths" | sed -n '1p')
   local base_dir
-  base_dir=$(echo "$paths" | sed -n '3p')
+  base_dir=$(echo "$paths" | sed -n '2p')
 
   # Make a new commit that is NOT pushed
   (
@@ -190,7 +209,7 @@ function test_branch_not_pushed_has_stderr_message() {
   local repo_dir
   repo_dir=$(echo "$paths" | sed -n '1p')
   local base_dir
-  base_dir=$(echo "$paths" | sed -n '3p')
+  base_dir=$(echo "$paths" | sed -n '2p')
 
   # Make a new commit that is NOT pushed
   (
@@ -215,19 +234,7 @@ function test_branch_not_pushed_has_stderr_message() {
 
 function test_no_upstream_exits_two() {
   local tmp_dir
-  tmp_dir=$(mktemp -d)
-
-  # Create a git repo with NO remote tracking
-  git init "$tmp_dir" >/dev/null 2>&1
-  (
-    cd "$tmp_dir" || exit 1
-    git config user.email "test@test.com"
-    git config user.name "Test"
-    git checkout -b feature-branch >/dev/null 2>&1
-    echo "content" > file.txt
-    git add file.txt
-    git commit -m "initial commit" >/dev/null 2>&1
-  )
+  tmp_dir=$(create_git_env_no_upstream)
 
   local json
   json=$(build_json "false")
@@ -240,18 +247,7 @@ function test_no_upstream_exits_two() {
 
 function test_no_upstream_has_stderr_message() {
   local tmp_dir
-  tmp_dir=$(mktemp -d)
-
-  git init "$tmp_dir" >/dev/null 2>&1
-  (
-    cd "$tmp_dir" || exit 1
-    git config user.email "test@test.com"
-    git config user.name "Test"
-    git checkout -b feature-branch >/dev/null 2>&1
-    echo "content" > file.txt
-    git add file.txt
-    git commit -m "initial commit" >/dev/null 2>&1
-  )
+  tmp_dir=$(create_git_env_no_upstream)
 
   local json
   json=$(build_json "false")
@@ -281,18 +277,7 @@ function test_missing_stop_hook_active_proceeds_to_git_validation() {
 
 function test_missing_stop_hook_active_in_git_repo_no_upstream_exits_two() {
   local tmp_dir
-  tmp_dir=$(mktemp -d)
-
-  git init "$tmp_dir" >/dev/null 2>&1
-  (
-    cd "$tmp_dir" || exit 1
-    git config user.email "test@test.com"
-    git config user.name "Test"
-    git checkout -b feature-branch >/dev/null 2>&1
-    echo "content" > file.txt
-    git add file.txt
-    git commit -m "initial commit" >/dev/null 2>&1
-  )
+  tmp_dir=$(create_git_env_no_upstream)
 
   # Empty JSON — missing stop_hook_active — should proceed to git validation
   local json='{}'
@@ -305,7 +290,8 @@ function test_missing_stop_hook_active_in_git_repo_no_upstream_exits_two() {
 
 # ---------- Test 7: Detached HEAD exits 2 ----------
 
-function test_detached_head_exits_two() {
+# Helper: create a git repo in detached HEAD state
+create_git_env_detached_head() {
   local tmp_dir
   tmp_dir=$(mktemp -d)
 
@@ -318,7 +304,6 @@ function test_detached_head_exits_two() {
     git add file.txt
     git commit -m "first commit" >/dev/null 2>&1
 
-    # Create a second commit so we can detach at the first
     echo "second" > file.txt
     git add file.txt
     git commit -m "second commit" >/dev/null 2>&1
@@ -328,6 +313,13 @@ function test_detached_head_exits_two() {
     first_hash=$(git rev-list --max-parents=0 HEAD)
     git checkout "$first_hash" >/dev/null 2>&1
   )
+
+  echo "$tmp_dir"
+}
+
+function test_detached_head_exits_two() {
+  local tmp_dir
+  tmp_dir=$(create_git_env_detached_head)
 
   local json
   json=$(build_json "false")
@@ -340,25 +332,7 @@ function test_detached_head_exits_two() {
 
 function test_detached_head_has_stderr_message() {
   local tmp_dir
-  tmp_dir=$(mktemp -d)
-
-  git init "$tmp_dir" >/dev/null 2>&1
-  (
-    cd "$tmp_dir" || exit 1
-    git config user.email "test@test.com"
-    git config user.name "Test"
-    echo "first" > file.txt
-    git add file.txt
-    git commit -m "first commit" >/dev/null 2>&1
-
-    echo "second" > file.txt
-    git add file.txt
-    git commit -m "second commit" >/dev/null 2>&1
-
-    local first_hash
-    first_hash=$(git rev-list --max-parents=0 HEAD)
-    git checkout "$first_hash" >/dev/null 2>&1
-  )
+  tmp_dir=$(create_git_env_detached_head)
 
   local json
   json=$(build_json "false")
