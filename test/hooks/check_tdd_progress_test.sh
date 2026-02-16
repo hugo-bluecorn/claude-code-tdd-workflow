@@ -380,3 +380,144 @@ function test_missing_stop_hook_active_field_produces_empty_stdout() {
 
   rm -rf "$tmp_dir"
 }
+
+# ---------- Test 10: Bold markdown status format ----------
+
+function test_bold_status_done_recognized_as_terminal() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+
+  # Planner produces **Status:** done (bold markdown), not bare Status: done
+  cat > "$tmp_dir/.tdd-progress.md" <<'EOF'
+## Slice 1: First slice
+**Status:** done
+
+## Slice 2: Second slice
+**Status:** pass
+EOF
+
+  local json
+  json=$(build_json "false")
+
+  local output
+  output=$(run_hook_in_dir "$tmp_dir" "$json")
+
+  # Both bold-formatted statuses should be recognized as terminal -> no block
+  assert_empty "$output"
+
+  rm -rf "$tmp_dir"
+}
+
+function test_bold_status_mixed_with_plain_recognized() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+
+  # Mix of bold and plain status formats — all terminal
+  cat > "$tmp_dir/.tdd-progress.md" <<'EOF'
+## Slice 1: First
+**Status:** done
+
+## Slice 2: Second
+Status: pass
+
+## Slice 3: Third
+**Status:** skip
+EOF
+
+  local json
+  json=$(build_json "false")
+
+  local output
+  output=$(run_hook_in_dir "$tmp_dir" "$json")
+
+  assert_empty "$output"
+
+  rm -rf "$tmp_dir"
+}
+
+function test_bold_status_pending_not_terminal() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+
+  cat > "$tmp_dir/.tdd-progress.md" <<'EOF'
+## Slice 1: First
+**Status:** done
+
+## Slice 2: Second
+**Status:** pending
+EOF
+
+  local json
+  json=$(build_json "false")
+
+  local output
+  output=$(run_hook_in_dir "$tmp_dir" "$json")
+
+  local decision
+  decision=$(echo "$output" | jq -r '.decision')
+  assert_equals "block" "$decision"
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- Test 11: Slice Overview not counted as slice ----------
+
+function test_slice_overview_not_counted_as_slice() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+
+  # ## Slice Overview should NOT be counted as a slice header
+  cat > "$tmp_dir/.tdd-progress.md" <<'EOF'
+## Slice 1: First
+**Status:** done
+
+## Slice 2: Second
+**Status:** done
+
+## Slice Overview
+| # | Slice | Dependencies |
+|---|-------|-------------|
+| 1 | First | None |
+| 2 | Second | Slice 1 |
+EOF
+
+  local json
+  json=$(build_json "false")
+
+  local output
+  output=$(run_hook_in_dir "$tmp_dir" "$json")
+
+  # Only 2 real slices, both done -> no block
+  assert_empty "$output"
+
+  rm -rf "$tmp_dir"
+}
+
+function test_slice_overview_with_pending_slices_correct_count() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+
+  cat > "$tmp_dir/.tdd-progress.md" <<'EOF'
+## Slice 1: First
+**Status:** done
+
+## Slice 2: Second
+**Status:** pending
+
+## Slice Overview
+| # | Slice |
+EOF
+
+  local json
+  json=$(build_json "false")
+
+  local output
+  output=$(run_hook_in_dir "$tmp_dir" "$json")
+
+  local reason
+  reason=$(echo "$output" | jq -r '.reason')
+  # Should say "1 of 2" (not "2 of 3" which would happen if Overview counted)
+  assert_contains "1 of 2" "$reason"
+
+  rm -rf "$tmp_dir"
+}
