@@ -367,7 +367,7 @@ function test_detached_head_has_stderr_message() {
   stderr_output=$(run_hook_in_dir "$tmp_dir" "$json" 2>&1 >/dev/null)
 
   # Should mention detached HEAD or no upstream — not just a bash "file not found" error
-  assert_matches "detached\|upstream\|HEAD" "$stderr_output"
+  assert_matches "detached|upstream|HEAD" "$stderr_output"
 
   rm -rf "$tmp_dir"
 }
