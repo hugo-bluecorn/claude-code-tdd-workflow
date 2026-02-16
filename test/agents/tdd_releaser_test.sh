@@ -73,7 +73,7 @@ function test_body_contains_changelog_workflow() {
   # Must mention CHANGELOG.md
   assert_contains "CHANGELOG" "$body"
   # Must mention using Bash for modifications (sed or echo)
-  assert_matches "sed\|echo" "$body"
+  assert_matches "sed|echo" "$body"
 }
 
 # ---------- Test 7: Body contains PR creation with gh pr create + fallback ----------
@@ -85,7 +85,7 @@ function test_body_contains_pr_creation_workflow() {
   # Must reference gh pr create
   assert_contains "gh pr create" "$body"
   # Must mention fallback/unavailable for when gh is not installed
-  assert_matches "unavailable\|not installed\|not available\|fallback\|copy.paste\|manually" "$body"
+  assert_matches "unavailable|not installed|not available|fallback|copy-paste|manually" "$body"
 }
 
 # ---------- Test 8: Body contains project-type aware formatter ----------
@@ -97,7 +97,7 @@ function test_body_contains_project_type_aware_formatter() {
   # Must mention dart format for Dart projects
   assert_contains "dart format" "$body"
   # Must mention handling for non-Dart projects (skip or appropriate tool)
-  assert_matches "skip\|non-Dart\|Bash\|C++\|shellcheck\|clang-format" "$body"
+  assert_matches "skip|non-Dart|Bash|C[+][+]|shellcheck|clang-format" "$body"
 }
 
 # ---------- Test 9: Task tool NOT in agent tools list ----------
