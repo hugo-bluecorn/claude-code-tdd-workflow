@@ -1,7 +1,7 @@
 # TDD Workflow Plugin — Claude Code Extensibility Audit
 
-**Revision date:** 2026-02-15
-**Plugin version:** 1.5.0
+**Revision date:** 2026-02-16
+**Plugin version:** 1.6.0
 **Feature inventory:** extensibility-audit-prompt.md v2.1 (2026-02-14)
 **Previous audit:** 2026-02-10 (v3 revision notes, pre-plugin state)
 
@@ -48,17 +48,17 @@ current implementation. Update it after each significant plugin change.
 
 | # | Field | Status | Notes |
 |---|-------|--------|-------|
-| A1 | `name` | ✅ | `tdd-planner`, `tdd-implementer`, `tdd-verifier` |
-| A2 | `description` | ✅ | All 3 have task-specific descriptions with trigger phrases |
-| A3 | `tools` | ✅ | Planner: Read, Glob, Grep, Bash, AskUserQuestion. Implementer: Read, Write, Edit, MultiEdit, Bash, Glob, Grep. Verifier: Read, Bash, Glob, Grep |
-| A4 | `disallowedTools` | ✅ | Planner: Write, Edit, MultiEdit, NotebookEdit, Task. Verifier: Write, Edit, MultiEdit |
-| A5 | `model` | ✅ | Planner/implementer: `opus`. Verifier: `haiku`. Applied in v1.1.0 (P1) |
+| A1 | `name` | ✅ | `tdd-planner`, `tdd-implementer`, `tdd-verifier`, `tdd-releaser` |
+| A2 | `description` | ✅ | All 4 have task-specific descriptions with trigger phrases |
+| A3 | `tools` | ✅ | Planner: Read, Glob, Grep, Bash, AskUserQuestion. Implementer: Read, Write, Edit, MultiEdit, Bash, Glob, Grep. Verifier: Read, Bash, Glob, Grep. Releaser: Read, Bash, Glob, Grep, AskUserQuestion |
+| A4 | `disallowedTools` | ✅ | Planner: Write, Edit, MultiEdit, NotebookEdit, Task. Verifier: Write, Edit, MultiEdit. Releaser: Write, Edit, MultiEdit, NotebookEdit |
+| A5 | `model` | ✅ | Planner/implementer: `opus`. Verifier: `haiku`. Releaser: `sonnet`. Applied in v1.1.0 (P1), v1.6.0 (N6) |
 | A6 | `permissionMode` | ✅ | Planner: `plan`. Verifier: `plan`. Implementer: default (needs write approval) |
-| A7 | `maxTurns` | ✅ | Planner: 30. Implementer: 50. Verifier: 20 |
+| A7 | `maxTurns` | ✅ | Planner: 30. Implementer: 50. Verifier: 20. Releaser: 30 |
 | A8 | `skills` | ✅ | Planner and implementer preload `dart-flutter-conventions`, `cpp-testing-conventions`, and `bash-testing-conventions` |
 | A9 | `memory` | ✅ | Both implementer and planner have `memory: project`. Applied in v1.4.0 (S1) |
 | A10 | `mcpServers` | ⊘ | No relevant MCP servers for TDD workflow |
-| A11 | `hooks` (frontmatter) | ✅ | Implementer: PreToolUse + PostToolUse. Verifier: Stop. Planner: PreToolUse (Bash guard) + Stop (plan validator). Applied in v1.3.0 (M1, M2) |
+| A11 | `hooks` (frontmatter) | ✅ | Implementer: PreToolUse + PostToolUse. Verifier: Stop. Planner: PreToolUse (Bash guard) + Stop (plan validator). Releaser: Stop (check-release-complete). Applied in v1.3.0 (M1, M2), v1.6.0 (N6) |
 
 #### Behavioral Features
 
@@ -82,6 +82,7 @@ current implementation. Update it after each significant plugin change.
 | Implementer `project` | ✅ | `.claude/agent-memory/tdd-implementer/MEMORY.md` — accumulates test fixtures, assertion styles, edge cases |
 | Planner `project` | ✅ | `.claude/agent-memory/tdd-planner/MEMORY.md` — persists architecture, naming, test framework findings. Applied in v1.4.0 (S1) |
 | Verifier | ⊘ | Procedural work, no cross-session learning needed |
+| Releaser | ⊘ | Each release is independent, no cross-session learning needed |
 
 ---
 
@@ -91,15 +92,15 @@ current implementation. Update it after each significant plugin change.
 
 | # | Field | Status | Notes |
 |---|-------|--------|-------|
-| B1 | `name` | ✅ | `tdd-plan`, `tdd-implement`, `dart-flutter-conventions`, `cpp-testing-conventions` |
+| B1 | `name` | ✅ | `tdd-plan`, `tdd-implement`, `tdd-release`, `dart-flutter-conventions`, `cpp-testing-conventions`, `bash-testing-conventions` |
 | B2 | `description` | ✅ | All skills have descriptions with trigger phrases |
 | B3 | `argument-hint` | ✅ | `/tdd-plan` has `argument-hint: "[feature description]"`. Applied in v1.1.0 (N1) |
-| B4 | `disable-model-invocation` | ✅ | Set on `/tdd-plan` |
+| B4 | `disable-model-invocation` | ✅ | Set on `/tdd-plan` and `/tdd-release` |
 | B5 | `user-invocable` | ✅ | All convention skills have `user-invocable: false`. Applied in v1.1.0 (N2) |
 | B6 | `allowed-tools` | ⊘ | Agent tool restrictions take precedence |
 | B7 | `model` | ⊘ | Agent frontmatter sets model |
-| B8 | `context: fork` | ✅ | `/tdd-plan` uses `context: fork` |
-| B9 | `agent` | ✅ | `/tdd-plan` specifies `agent: tdd-planner` |
+| B8 | `context: fork` | ✅ | `/tdd-plan` and `/tdd-release` use `context: fork` |
+| B9 | `agent` | ✅ | `/tdd-plan` specifies `agent: tdd-planner`. `/tdd-release` specifies `agent: tdd-releaser` |
 | B10 | `hooks` (skill) | ⊘ | Agent frontmatter hooks sufficient |
 
 #### String Substitutions
@@ -122,7 +123,7 @@ current implementation. Update it after each significant plugin change.
 | B19 | Live change detection | ⊘ | Development convenience |
 | B20 | Invocation matrix | ✅ N/A | `/tdd-plan` = `disable-model-invocation: true` (user only). Conventions = default (Claude can auto-load) |
 | B21 | Subdirectory discovery | ⊘ | Not a monorepo plugin |
-| B22 | Char budget | ⊘ | 4 skills well within 2% budget; no override needed |
+| B22 | Char budget | ⊘ | 6 skills well within 2% budget; no override needed |
 
 ---
 
@@ -140,8 +141,8 @@ current implementation. Update it after each significant plugin change.
 | C6 | `PostToolUseFailure` | ⊘ | No failure recovery logic needed |
 | C7 | `Notification` | ⊘ | Desktop notification on slice completion would improve UX. **→ N3** |
 | C8 | `SubagentStart` | ✅ | Injects git branch, last commit, dirty file count into planner via `additionalContext`. Applied in v1.4.0 (S3) |
-| C9 | `SubagentStop` | ✅ | `hooks.json`: prompt-based hook on `tdd-implementer` validates R-G-R cycle. Command hook on `tdd-planner` validates plan output. Applied in v1.3.0 (S2) |
-| C10 | `Stop` | ✅ | Main thread: `check-tdd-progress.sh` prevents session end with pending slices. Verifier: prompt-based completeness check. Planner: `validate-plan-output.sh`. Applied in v1.3.0 (M2) |
+| C9 | `SubagentStop` | ✅ | `hooks.json`: prompt-based hook on `tdd-implementer` validates R-G-R cycle. Command hook on `tdd-planner` validates plan output. Command hook on `tdd-releaser` validates branch pushed. Applied in v1.3.0 (S2), v1.6.0 (N6) |
+| C10 | `Stop` | ✅ | Main thread: `check-tdd-progress.sh` prevents session end with pending slices. Verifier: prompt-based completeness check. Planner: `validate-plan-output.sh`. Releaser: `check-release-complete.sh`. Applied in v1.3.0 (M2), v1.6.0 (N6) |
 | C11 | `TeammateIdle` | ⊘ | No agent teams |
 | C12 | `TaskCompleted` | ⊘ | Not relevant |
 | C13 | `PreCompact` | ⊘ | Low priority (same reason as C1) |
@@ -151,7 +152,7 @@ current implementation. Update it after each significant plugin change.
 
 | # | Type | Status | Notes |
 |---|------|--------|-------|
-| C15 | `command` | ✅ | All file-based hooks (validate-tdd-order, auto-run-tests, check-tdd-progress, planner-bash-guard, validate-plan-output). Anthropic best practice: prefer command for deterministic logic |
+| C15 | `command` | ✅ | All file-based hooks (validate-tdd-order, auto-run-tests, check-tdd-progress, planner-bash-guard, validate-plan-output, check-release-complete). Anthropic best practice: prefer command for deterministic logic |
 | C16 | `prompt` | ✅ | Verifier Stop hook + implementer SubagentStop (non-deterministic checks) |
 | C17 | `agent` | ⊘ | Too expensive — spawns subagent for validation |
 
@@ -163,7 +164,7 @@ current implementation. Update it after each significant plugin change.
 | C19 | `command` | ✅ | Script paths use `${CLAUDE_PLUGIN_ROOT}` |
 | C20 | `prompt` | ✅ | Verifier Stop + implementer SubagentStop |
 | C21 | `model` (hook) | ⊘ | Default model sufficient for prompt hooks |
-| C22 | `timeout` | ✅ | Set on SubagentStop (30s), Stop (10s) |
+| C22 | `timeout` | ✅ | Set on SubagentStop (30s implementer, 10s planner, 15s releaser), Stop (10s) |
 | C23 | `statusMessage` | ⊘ | Default spinner adequate |
 | C24 | `once` | ⊘ | No one-time initialization needed |
 | C25 | `async` | ⊘ | Sequential execution |
@@ -181,7 +182,7 @@ current implementation. Update it after each significant plugin change.
 | C32 | Exit code 0 | ✅ | Used in all command hooks |
 | C33 | Exit code 2 | ✅ | Used in `validate-tdd-order.sh` to block writes |
 | C34 | Other exit codes | ✅ N/A | Not used; understood |
-| C35 | `stop_hook_active` | ✅ | `check-tdd-progress.sh` and `validate-plan-output.sh` check this to prevent infinite loops |
+| C35 | `stop_hook_active` | ✅ | `check-tdd-progress.sh`, `validate-plan-output.sh`, and `check-release-complete.sh` check this to prevent infinite loops |
 
 #### JSON Output
 
@@ -204,7 +205,7 @@ current implementation. Update it after each significant plugin change.
 | # | Field | Status | Notes |
 |---|-------|--------|-------|
 | D1 | `name` | ✅ | `"tdd-workflow"` |
-| D2 | `version` | ✅ | `"1.5.0"` |
+| D2 | `version` | ✅ | `"1.6.0"` |
 | D3 | `description` | ✅ | Present and descriptive |
 | D4 | `author` | ⊘ | Optional; can add later |
 | D5 | `homepage` | ⊘ | No published docs yet |
@@ -270,7 +271,8 @@ tdd-workflow/                               Status
 │   ├── check-tdd-progress.sh              ✅
 │   ├── planner-bash-guard.sh               ✅ (added in v1.3.0, M1)
 │   ├── validate-plan-output.sh             ✅ (added in v1.3.0, M2/S2)
-│   └── check-release-complete.sh           ✅ (added in v1.6.0, N6)
+│   ├── check-release-complete.sh           ✅ (added in v1.6.0, N6)
+│   └── detect-project-context.sh           ✅ (added in v1.4.0, S4)
 ├── docs/
 │   ├── version-control.md                  ✅
 │   └── user-guide.md                       ✅
@@ -390,9 +392,9 @@ no skill wrapper, no hooks, and no plugin structure. Since then:
 |---|---|
 | Format reliability fixes (re-read step + self-check in SKILL.md) | ✅ |
 | FVM auto-detection in SKILL.md step 1 | ✅ |
-| Version control integration — Layer 1 (auto-commits) | Designed, not applied |
-| Version control integration — Layer 2 (branch creation) | Designed, not applied |
-| Version control integration — Layer 3 (release workflow) | Designed, not applied |
+| Version control integration — Layer 1 (auto-commits) | ✅ v1.5.0 |
+| Version control integration — Layer 2 (branch creation) | ✅ v1.5.0 |
+| Version control integration — Layer 3 (release workflow) | ✅ v1.6.0 |
 | Project-conventions.md ephemeral state clarification | ✅ |
 | User guide state management section | ✅ |
 | **Phase 1 audit quick-wins (P1, N1, N2, N5)** | ✅ v1.1.0 |
@@ -739,7 +741,7 @@ audits. The v1.0 prompt should be retired.
 | B18 | `Skill()` permission | No skills need restriction |
 | B19 | Live change detection | Development convenience |
 | B21 | Subdirectory discovery | Not a monorepo |
-| B22 | Char budget override | 4 skills within budget |
+| B22 | Char budget override | 6 skills within budget |
 | C2 | `UserPromptSubmit` | Not relevant to TDD |
 | C4 | `PermissionRequest` | `permissionMode: plan` eliminates dialogs |
 | C6 | `PostToolUseFailure` | No failure recovery needed |
@@ -781,4 +783,5 @@ audits. The v1.0 prompt should be retired.
 *v1.3.1: Hook hardening — retroactive tests for all 5 hooks, JSON safety fix.*
 *v1.4.0: Phase 3 applied (S1, S3, S4) — planner memory, context injection.*
 *v1.5.0: Phase 4 applied (S5, S6) — git auto-commit, branch creation.*
-*Next audit: after implementing Phase 5 (N3, N4, N6).*
+*v1.6.0: Phase 5 partial — N6 applied (release workflow). N3, N4 remain.*
+*Next audit: after implementing N3, N4.*

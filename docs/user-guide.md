@@ -26,7 +26,7 @@ After installation, verify it loaded:
 claude --debug
 ```
 
-Look for `loading plugin: tdd-workflow` in the output. The `/tdd-plan` and `/tdd-implement` commands should appear in your skill list.
+Look for `loading plugin: tdd-workflow` in the output. The `/tdd-plan`, `/tdd-implement`, and `/tdd-release` commands should appear in your skill list.
 
 ---
 
@@ -171,6 +171,7 @@ The plugin uses hooks to enforce TDD discipline automatically.
 | `planner-bash-guard.sh` | PreToolUse (Bash) | planner | Allowlists read-only commands; blocks writes and destructive operations |
 | `validate-plan-output.sh` | Stop + SubagentStop | planner | Validates plan file has required sections and no refactoring leak |
 | `check-tdd-progress.sh` | Stop | main thread | Prevents session end with pending slices |
+| `check-release-complete.sh` | Stop + SubagentStop | releaser | Validates branch is pushed to remote before release completes |
 | SubagentStart | SubagentStart | planner | Injects git branch, last commit, dirty file count as additional context |
 
 ### Prompt Hooks (LLM-evaluated)
@@ -307,6 +308,7 @@ If a complex slice needs more iterations, edit the `maxTurns` value in the relev
 - `agents/tdd-implementer.md` — default 50
 - `agents/tdd-verifier.md` — default 20
 - `agents/tdd-planner.md` — default 30
+- `agents/tdd-releaser.md` — default 30
 
 ---
 

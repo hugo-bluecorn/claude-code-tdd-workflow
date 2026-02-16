@@ -4,7 +4,7 @@ A Claude Code plugin for Test-Driven Development with context-isolated agents. E
 
 ## Overview
 
-This plugin decomposes TDD into three context-isolated agents that prevent the common failure modes of single-context TDD: training distribution bias toward implementation-first code, context rot under token accumulation, and absence of epistemic boundaries between test and implementation reasoning.
+This plugin decomposes TDD into four context-isolated agents that prevent the common failure modes of single-context TDD: training distribution bias toward implementation-first code, context rot under token accumulation, and absence of epistemic boundaries between test and implementation reasoning.
 
 ## Requirements
 

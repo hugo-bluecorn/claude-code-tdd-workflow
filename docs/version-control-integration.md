@@ -62,15 +62,15 @@ making it the natural place for this.
 
 A new command for the end-of-feature workflow: validate, document, and publish.
 
-**`/tdd-release`** would:
+**`/tdd-release`** does:
 1. Verify all slices in `.tdd-progress.md` are terminal (pass/done)
 2. Run the full test suite one final time
-3. Run static analysis (`dart analyze` / `flutter analyze`)
-4. Run code formatting (`dart format .`)
+3. Run static analysis (project-type aware)
+4. Run formatter (project-type aware, skip for bash)
 5. Update `CHANGELOG.md` — generate entries from slice descriptions
 6. Commit the changelog: `docs: update CHANGELOG for <feature>`
 7. Push the branch: `git push -u origin <branch>`
-8. Create a PR via `gh pr create` with auto-generated summary
+8. Create a PR via `gh pr create` with auto-generated summary (graceful degradation if `gh` unavailable)
 9. Optionally clean up `.tdd-progress.md`
 
 ---
@@ -93,12 +93,7 @@ Claude from "helpfully" fixing a lint issue before committing.
 
 ### It completes a four-phase architecture
 
-Current workflow:
-```
-plan → (implement → verify) × N → ???
-```
-
-With releaser:
+Complete workflow:
 ```
 plan → (implement → verify) × N → release
 ```
@@ -124,19 +119,18 @@ out of the main conversation.
 The planner already proves this pattern. The releaser would use it for:
 - "Approve these CHANGELOG entries?" (Approve / Edit / Skip)
 - "Approve this PR description?" (Create / Edit / Skip)
-- "Version bump type?" (Patch / Minor / Major)
 
-### Proposed agent configuration
+### Agent configuration (implemented)
 
 ```
 agents/tdd-releaser.md:
-  tools: Read, Edit, Bash, Glob, Grep, AskUserQuestion
-  disallowedTools: Write, MultiEdit, NotebookEdit
+  tools: Read, Bash, Glob, Grep, AskUserQuestion
+  disallowedTools: Write, Edit, MultiEdit, NotebookEdit
   model: sonnet
-  permissionMode: (none — needs Bash for git/gh)
+  maxTurns: 30
   memory: none (each release is independent)
   hooks:
-    Stop: verify tests ran, CHANGELOG updated, PR created
+    Stop: check-release-complete.sh (validates branch pushed)
 ```
 
 Invoked by `skills/tdd-release/SKILL.md` with `agent: tdd-releaser`.
@@ -172,6 +166,8 @@ Invoked by `skills/tdd-release/SKILL.md` with `agent: tdd-releaser`.
 ## References
 
 - `docs/version-control.md` — source guidelines this integration automates
-- `agents/tdd-implementer.md` — agent that will gain commit behavior
-- `skills/tdd-implement/SKILL.md` — skill that will gain branch creation
+- `agents/tdd-implementer.md` — agent with per-phase auto-commit behavior
+- `skills/tdd-implement/SKILL.md` — skill with branch creation in Step 0
+- `skills/tdd-release/SKILL.md` — release workflow skill
+- `agents/tdd-releaser.md` — release agent definition
 - `skills/tdd-plan/SKILL.md` — pattern for skill-to-agent delegation
