@@ -7,9 +7,10 @@ This guide walks through using the tdd-workflow plugin from start to finish.
 ## Prerequisites
 
 - Claude Code installed with plugin support
-- A Dart/Flutter or C++ project with test infrastructure already set up
+- A Dart/Flutter, C++, or Bash/Shell project with test infrastructure already set up
   - Dart: `flutter_test` or `package:test` in `pubspec.yaml`
   - C++: GoogleTest available via CMake, with a `build/` directory configured
+  - Bash: bashunit installed, shellcheck available
 
 ---
 
@@ -159,22 +160,24 @@ The **Stop hook** (`check-tdd-progress.sh`) reads this file before allowing your
 
 ## What the Hooks Do
 
-The plugin installs five hooks that enforce TDD discipline automatically.
+The plugin uses hooks to enforce TDD discipline automatically.
 
-### Command Hooks (deterministic, on the implementer)
+### Command Hooks (deterministic)
 
-| Hook | When | What it does |
-|------|------|--------------|
-| `validate-tdd-order.sh` | Before every Write/Edit | Blocks implementation file writes if no test files have been modified yet. Ensures test-first ordering. |
-| `auto-run-tests.sh` | After every Write/Edit | Runs the relevant test file and returns output as a system message. Dart files map `lib/foo.dart` to `test/foo_test.dart`. C++ files trigger `cmake --build`. |
+| Hook | Event | Agent | What it does |
+|------|-------|-------|--------------|
+| `validate-tdd-order.sh` | PreToolUse (Write/Edit) | implementer | Blocks implementation file writes if no test files have been modified yet |
+| `auto-run-tests.sh` | PostToolUse (Write/Edit) | implementer | Runs tests after every file change, returns output as system message |
+| `planner-bash-guard.sh` | PreToolUse (Bash) | planner | Allowlists read-only commands; blocks writes and destructive operations |
+| `validate-plan-output.sh` | Stop + SubagentStop | planner | Validates plan file has required sections and no refactoring leak |
+| `check-tdd-progress.sh` | Stop | main thread | Prevents session end with pending slices |
+| SubagentStart | SubagentStart | planner | Injects git branch, last commit, dirty file count as additional context |
 
 ### Prompt Hooks (LLM-evaluated)
 
 | Hook | When | What it does |
 |------|------|--------------|
 | SubagentStop (implementer) | When implementer finishes | Checks that all three R-G-R phases completed with test output. Blocks if incomplete. |
-| SubagentStop (verifier) | When verifier finishes | Checks that full test suite, static analysis, and structured report were produced. Blocks if incomplete. |
-| check-tdd-progress.sh | When Claude tries to stop | Reads `.tdd-progress.md`, counts slices not in terminal state (PASS/DONE/COMPLETE/FAIL/SKIP). Blocks session end if work remains. Deterministic — no LLM call. |
 
 ### When a hook blocks
 
@@ -191,13 +194,15 @@ These are guardrails, not errors. The agent will self-correct and continue.
 
 ## Committing Your Work
 
-Each TDD slice maps to a natural commit pattern:
+The implementer auto-commits after each confirmed phase transition:
 
 ```
-test: add tests for LocationService          # RED phase
-feat: implement LocationService              # GREEN phase
-refactor: clean up LocationService           # REFACTOR phase (if applicable)
+test(<scope>): add tests for <slice name>      # RED phase
+feat(<scope>): implement <slice name>          # GREEN phase
+refactor(<scope>): clean up <slice name>       # REFACTOR phase (if applicable)
 ```
+
+The `/tdd-implement` skill also auto-creates a `feature/<name>` branch before the first slice if you're on `main` or `master`.
 
 See `docs/version-control.md` for the full commit message format and branching strategy.
 
@@ -216,21 +221,21 @@ The `planning/` archive provides the original plan for reference if `.tdd-progre
 
 ## Configuration
 
-### Switching the planner to Opus
+### Switching the planner to Sonnet
 
-For complex features where plan quality is critical, edit `agents/tdd-planner.md` and change:
-
-```yaml
-model: sonnet
-```
-
-to:
+The planner defaults to `model: opus` for thorough codebase analysis. For faster planning on simpler features, edit `agents/tdd-planner.md` and change:
 
 ```yaml
 model: opus
 ```
 
-The tradeoff is slower planning but more thorough codebase analysis.
+to:
+
+```yaml
+model: sonnet
+```
+
+The tradeoff is faster planning but less thorough analysis.
 
 ### Enabling web access for the planner
 
@@ -315,3 +320,4 @@ The Stop hook prevents Claude from ending the session while `.tdd-progress.md` h
 - `docs/version-control.md` — Git workflow and commit conventions
 - `skills/dart-flutter-conventions/` — Dart/Flutter testing patterns and project conventions
 - `skills/cpp-testing-conventions/` — C++ GoogleTest patterns and CMake integration
+- `skills/bash-testing-conventions/` — Bash testing with bashunit and shellcheck

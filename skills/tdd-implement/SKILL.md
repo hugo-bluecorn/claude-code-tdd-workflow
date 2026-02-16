@@ -12,6 +12,14 @@ description: >
 
 Read `.tdd-progress.md` in the project root. If it does not exist, tell the user to run `/tdd-plan` first and stop.
 
+## Step 0: Ensure Feature Branch
+
+Before processing the first pending slice:
+1. Check the current branch: `git branch --show-current`
+2. If on `main` or `master`: derive a branch name from the feature title in `.tdd-progress.md` and `git checkout -b feature/<kebab-case-feature-name>`
+3. If already on a `feature/` branch, skip (resume case)
+4. If on any other branch, ask the user whether to continue or create a feature branch
+
 ## Implementation Loop
 
 For each slice with a non-terminal status (not done, pass, complete, fail, or skip):

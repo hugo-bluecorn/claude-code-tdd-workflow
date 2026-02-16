@@ -57,6 +57,18 @@ to execute the red-green-refactor cycle for that slice ONLY.
 - Each phase must include running the test and reporting the output
 - If you cannot complete a slice, report what blocked you
 
+## Git Workflow
+
+After each confirmed phase transition, commit the changes:
+
+- **RED confirmed:** `git add <test files>` then `git commit -m "test(<scope>): add tests for <slice name>"`
+- **GREEN confirmed:** `git add <implementation files>` then `git commit -m "feat(<scope>): implement <slice name>"`
+- **REFACTOR confirmed:** `git add <changed files>` then `git commit -m "refactor(<scope>): clean up <slice name>"`
+
+If the REFACTOR phase is skipped, skip the refactor commit.
+`<scope>` = primary module/feature, lowercase with hyphens (e.g., `location-service`).
+Do NOT push — that happens in the release workflow.
+
 ## Memory
 As you work, update your agent memory with patterns you discover:
 - Common test fixtures and setup patterns in this project

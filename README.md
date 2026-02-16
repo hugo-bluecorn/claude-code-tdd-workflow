@@ -38,14 +38,14 @@ User Request
     v
 /tdd-plan (Orchestrating Skill)
     |  context: fork
-    |  agent: tdd-planner (sonnet, read-only)
+    |  agent: tdd-planner (opus, read-only)
     |  Researches codebase, produces slice-oriented plan
     |  Writes: .tdd-progress.md + planning/ archive
     v
 Human Review (approve / revise / reject)
     |
     v  For each slice:
-tdd-implementer (sonnet)
+tdd-implementer (opus)
     |  1. Write failing test (RED)
     |  2. Minimal implementation (GREEN)
     |  3. Refactor (still GREEN)
@@ -67,8 +67,8 @@ PASS -> next slice | FAIL -> retry
 
 | Agent | Model | Purpose |
 |-------|-------|---------|
-| tdd-planner | sonnet | Codebase research, plan creation (read-only) |
-| tdd-implementer | sonnet | Red-green-refactor per slice (full tools) |
+| tdd-planner | opus | Codebase research, plan creation (read-only) |
+| tdd-implementer | opus | Red-green-refactor per slice (full tools) |
 | tdd-verifier | haiku | Blackbox validation (read-only) |
 
 ### Skills
@@ -87,15 +87,17 @@ PASS -> next slice | FAIL -> retry
 |------|------|---------|
 | validate-tdd-order.sh | PreToolUse (command) | Blocks implementation writes before test exists |
 | auto-run-tests.sh | PostToolUse (command) | Runs tests after every file change |
-| SubagentStop (implementer) | prompt | Verifies R-G-R cycle completion |
-| SubagentStop (verifier) | prompt | Verifies full suite + analysis ran |
+| planner-bash-guard.sh | PreToolUse (command) | Allowlists read-only commands for planner |
+| validate-plan-output.sh | Stop + SubagentStop (command) | Validates plan file has required sections |
 | check-tdd-progress.sh | Stop (command) | Prevents session end with pending slices |
+| SubagentStart (planner) | command | Injects git context into planner |
+| SubagentStop (implementer) | prompt | Verifies R-G-R cycle completion |
 
 ## Configuration
 
-### Planner Model (sonnet vs opus)
+### Planner Model
 
-Default: `model: sonnet` with ultrathink. For complex features where a bad plan cascades, change to `model: opus` in `agents/tdd-planner.md`.
+Default: `model: opus`. For faster but less thorough planning, change to `model: sonnet` in `agents/tdd-planner.md`. The `/tdd-plan` skill includes `ultrathink` which works with both models.
 
 ### Web Tools on Planner
 
@@ -117,7 +119,10 @@ tdd-workflow/
 │   └── tdd-verifier.md
 ├── skills/
 │   ├── tdd-plan/
-│   │   └── SKILL.md
+│   │   ├── SKILL.md
+│   │   └── reference/
+│   │       ├── tdd-task-template.md
+│   │       └── feature-notes-template.md
 │   ├── tdd-implement/
 │   │   └── SKILL.md
 │   ├── dart-flutter-conventions/
@@ -142,9 +147,14 @@ tdd-workflow/
 │   ├── hooks.json
 │   ├── validate-tdd-order.sh
 │   ├── auto-run-tests.sh
-│   └── check-tdd-progress.sh
+│   ├── check-tdd-progress.sh
+│   ├── planner-bash-guard.sh
+│   ├── validate-plan-output.sh
+│   └── detect-project-context.sh
 ├── docs/
-│   └── version-control.md
+│   ├── version-control.md
+│   ├── version-control-integration.md
+│   └── user-guide.md
 ├── CLAUDE.md
 ├── README.md
 ├── CHANGELOG.md

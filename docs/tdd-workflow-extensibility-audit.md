@@ -1,7 +1,7 @@
 # TDD Workflow Plugin — Claude Code Extensibility Audit
 
 **Revision date:** 2026-02-15
-**Plugin version:** 1.4.0
+**Plugin version:** 1.5.0
 **Feature inventory:** extensibility-audit-prompt.md v2.1 (2026-02-14)
 **Previous audit:** 2026-02-10 (v3 revision notes, pre-plugin state)
 
@@ -204,7 +204,7 @@ current implementation. Update it after each significant plugin change.
 | # | Field | Status | Notes |
 |---|-------|--------|-------|
 | D1 | `name` | ✅ | `"tdd-workflow"` |
-| D2 | `version` | ✅ | `"1.4.0"` |
+| D2 | `version` | ✅ | `"1.5.0"` |
 | D3 | `description` | ✅ | Present and descriptive |
 | D4 | `author` | ⊘ | Optional; can add later |
 | D5 | `homepage` | ⊘ | No published docs yet |
@@ -241,7 +241,7 @@ tdd-workflow/                               Status
 │   └── plugin.json                         ✅
 ├── agents/
 │   ├── tdd-planner.md                      ✅
-│   ├── tdd-implementer.md                  ✅ (pending: git commits)
+│   ├── tdd-implementer.md                  ✅
 │   └── tdd-verifier.md                     ✅
 ├── skills/
 │   ├── tdd-plan/
@@ -250,7 +250,7 @@ tdd-workflow/                               Status
 │   │       ├── tdd-task-template.md        ✅
 │   │       └── feature-notes-template.md   ✅
 │   ├── tdd-implement/
-│   │   └── SKILL.md                        ✅ (pending: branch creation)
+│   │   └── SKILL.md                        ✅
 │   ├── dart-flutter-conventions/
 │   │   ├── SKILL.md                        ✅
 │   │   └── reference/  (4 files)           ✅
@@ -396,6 +396,7 @@ no skill wrapper, no hooks, and no plugin structure. Since then:
 | **Phase 2 planner safety hooks (M1, M2, S2)** | ✅ v1.3.0 — 5 TDD slices, 52 new tests, 195 total |
 | **Hook script hardening (retroactive tests + JSON fix)** | ✅ v1.3.1 — 4 slices, 42 new tests, 237 total, 298 assertions |
 | **Phase 3 planner intelligence (S1, S3, S4)** | ✅ v1.4.0 — planner memory, SubagentStart context, dynamic `!` backtick |
+| **Phase 4 git workflow (S5, S6)** | ✅ v1.5.0 — implementer auto-commits, branch creation |
 
 ---
 
@@ -422,8 +423,8 @@ no skill wrapper, no hooks, and no plugin structure. Since then:
 | S2 | **Add SubagentStop hook for planner (anti-refactoring guard)** | ~15 lines | ✅ Applied in v1.3.0 | C9, C15 |
 | S3 | **Add `additionalContext` via SubagentStart for planner** | ~5 lines | ✅ Applied in v1.4.0 | C8 |
 | S4 | **Add dynamic context injection to /tdd-plan** | ~5 lines | ✅ Applied in v1.4.0 | B14 |
-| S5 | **Implement git auto-commit (Layer 1)** | ~15 lines in agent prompt | Implementer commits after each R-G-R phase: `test:`, `feat:`, `refactor:` | version-control.md |
-| S6 | **Implement branch creation (Layer 2)** | ~5 lines in SKILL.md | `/tdd-implement` creates `feature/<name>` before first slice; skip if already on feature branch | version-control.md |
+| S5 | **Implement git auto-commit (Layer 1)** | ~15 lines in agent prompt | ✅ Applied in v1.5.0 | version-control.md |
+| S6 | **Implement branch creation (Layer 2)** | ~5 lines in SKILL.md | ✅ Applied in v1.5.0 | version-control.md |
 
 ### N — Nice-to-Have (distribution / UX)
 
@@ -775,4 +776,5 @@ audits. The v1.0 prompt should be retired.
 *v1.3.0: Phase 2 applied (M1, M2, S2) — planner safety hooks.*
 *v1.3.1: Hook hardening — retroactive tests for all 5 hooks, JSON safety fix.*
 *v1.4.0: Phase 3 applied (S1, S3, S4) — planner memory, context injection.*
-*Next audit: after implementing Phase 4 (S5, S6) and Phase 5 (N3, N4, N6).*
+*v1.5.0: Phase 4 applied (S5, S6) — git auto-commit, branch creation.*
+*Next audit: after implementing Phase 5 (N3, N4, N6).*

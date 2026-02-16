@@ -5,11 +5,11 @@ into the TDD workflow plugin as automated behavior rather than advisory document
 
 ---
 
-## The Gap
+## The Gap (partially closed)
 
 `version-control.md` describes branching, per-phase commits, PRs, releases, and
-changelogs — but none of it is wired into the plugin. The settings already permit
-`git add`, `git commit`, and `git push`, yet no agent or skill ever invokes them.
+changelogs. Layers 1 and 2 are now implemented (v1.5.0). Layer 3 (`/tdd-release`)
+remains unimplemented.
 
 The TDD commit pattern maps directly onto the existing R-G-R cycle:
 
@@ -23,9 +23,9 @@ The TDD commit pattern maps directly onto the existing R-G-R cycle:
 
 ## Proposed Integration: Three Layers
 
-### Layer 1 — Per-Phase Auto-Commits (implementer agent)
+### Layer 1 — Per-Phase Auto-Commits (implementer agent) — IMPLEMENTED v1.5.0
 
-**Where:** `agents/tdd-implementer.md` — add a "Git Workflow" section to the
+**Where:** `agents/tdd-implementer.md` — "Git Workflow" section added to the
 mandatory workflow.
 
 After each phase is confirmed, the implementer commits automatically:
@@ -37,11 +37,11 @@ After each phase is confirmed, the implementer commits automatically:
 Every commit is atomic — tests pass at each point. This produces the fine-grained
 history that `version-control.md` recommends.
 
-**Effort:** Small — ~15 lines added to implementer system prompt.
+**Effort:** Small — ~15 lines added to implementer system prompt. Done.
 
-### Layer 2 — Branch Creation (implement skill)
+### Layer 2 — Branch Creation (implement skill) — IMPLEMENTED v1.5.0
 
-**Where:** `skills/tdd-implement/SKILL.md` — add a step 0 before the first slice.
+**Where:** `skills/tdd-implement/SKILL.md` — Step 0 added before the implementation loop.
 
 ```
 0. If not already on a feature branch, create one:
@@ -56,9 +56,9 @@ The planner does NOT create the branch because:
 The `/tdd-implement` orchestrator runs in the main context with full permissions,
 making it the natural place for this.
 
-**Effort:** Small — ~5 lines added to implement skill.
+**Effort:** Small — ~5 lines added to implement skill. Done.
 
-### Layer 3 — `/tdd-release` Skill + Agent
+### Layer 3 — `/tdd-release` Skill + Agent — NOT YET IMPLEMENTED
 
 A new command for the end-of-feature workflow: validate, document, and publish.
 
@@ -158,14 +158,14 @@ Invoked by `skills/tdd-release/SKILL.md` with `agent: tdd-releaser`.
 
 ## Summary of All Changes
 
-| What | Where | Effort |
-|------|-------|--------|
-| Per-phase auto-commits | `agents/tdd-implementer.md` | Small |
-| Branch creation at start | `skills/tdd-implement/SKILL.md` | Small |
-| `/tdd-release` skill | New: `skills/tdd-release/SKILL.md` | Medium |
-| `tdd-releaser` agent | New: `agents/tdd-releaser.md` | Medium |
-| Permission updates | `.claude/settings.local.json` | Small |
-| Releaser Stop hook | New: `hooks/check-release-complete.sh` | Small |
+| What | Where | Effort | Status |
+|------|-------|--------|--------|
+| Per-phase auto-commits | `agents/tdd-implementer.md` | Small | Done (v1.5.0) |
+| Branch creation at start | `skills/tdd-implement/SKILL.md` | Small | Done (v1.5.0) |
+| `/tdd-release` skill | New: `skills/tdd-release/SKILL.md` | Medium | Not started |
+| `tdd-releaser` agent | New: `agents/tdd-releaser.md` | Medium | Not started |
+| Permission updates | `.claude/settings.local.json` | Small | Not started |
+| Releaser Stop hook | New: `hooks/check-release-complete.sh` | Small | Not started |
 
 ---
 
