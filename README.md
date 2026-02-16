@@ -59,6 +59,14 @@ tdd-verifier (haiku, read-only)
     |  - Plan criteria verification
     v
 PASS -> next slice | FAIL -> retry
+    |
+    v  (all slices done)
+/tdd-release (Orchestrating Skill)
+    |  context: fork
+    |  agent: tdd-releaser (sonnet)
+    |  Updates CHANGELOG, pushes branch, creates PR
+    v
+Done
 ```
 
 ## Components
@@ -70,6 +78,7 @@ PASS -> next slice | FAIL -> retry
 | tdd-planner | opus | Codebase research, plan creation (read-only) |
 | tdd-implementer | opus | Red-green-refactor per slice (full tools) |
 | tdd-verifier | haiku | Blackbox validation (read-only) |
+| tdd-releaser | sonnet | Release workflow (CHANGELOG, PR) |
 
 ### Skills
 
@@ -77,6 +86,7 @@ PASS -> next slice | FAIL -> retry
 |-------|------|
 | `/tdd-plan` | Orchestrating entry point (forks context) |
 | `/tdd-implement` | Implementation loop (reads progress, runs slices) |
+| `/tdd-release` | Release entry point (forks context) |
 | dart-flutter-conventions | Convention reference (auto-loaded by agents) |
 | cpp-testing-conventions | Convention reference (auto-loaded by agents) |
 | bash-testing-conventions | Convention reference (auto-loaded by agents) |
@@ -91,6 +101,7 @@ PASS -> next slice | FAIL -> retry
 | validate-plan-output.sh | Stop + SubagentStop (command) | Validates plan file has required sections |
 | check-tdd-progress.sh | Stop (command) | Prevents session end with pending slices |
 | SubagentStart (planner) | command | Injects git context into planner |
+| check-release-complete.sh | SubagentStop (command) | Validates branch is pushed to remote |
 | SubagentStop (implementer) | prompt | Verifies R-G-R cycle completion |
 
 ## Configuration
@@ -116,7 +127,8 @@ tdd-workflow/
 ├── agents/
 │   ├── tdd-planner.md
 │   ├── tdd-implementer.md
-│   └── tdd-verifier.md
+│   ├── tdd-verifier.md
+│   └── tdd-releaser.md
 ├── skills/
 │   ├── tdd-plan/
 │   │   ├── SKILL.md
@@ -124,6 +136,8 @@ tdd-workflow/
 │   │       ├── tdd-task-template.md
 │   │       └── feature-notes-template.md
 │   ├── tdd-implement/
+│   │   └── SKILL.md
+│   ├── tdd-release/
 │   │   └── SKILL.md
 │   ├── dart-flutter-conventions/
 │   │   ├── SKILL.md
@@ -150,6 +164,7 @@ tdd-workflow/
 │   ├── check-tdd-progress.sh
 │   ├── planner-bash-guard.sh
 │   ├── validate-plan-output.sh
+│   ├── check-release-complete.sh
 │   └── detect-project-context.sh
 ├── docs/
 │   ├── version-control.md

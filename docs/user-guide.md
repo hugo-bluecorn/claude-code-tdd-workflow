@@ -208,6 +208,39 @@ See `docs/version-control.md` for the full commit message format and branching s
 
 ---
 
+## Releasing Your Feature
+
+After all slices are complete, run:
+
+```
+/tdd-release
+```
+
+This forks a fresh context and launches the **tdd-releaser** agent, which:
+
+1. Verifies all slices in `.tdd-progress.md` are in a terminal state (pass/done)
+2. Runs the full test suite one final time
+3. Runs static analysis and code formatting
+4. Updates `CHANGELOG.md` with entries generated from slice descriptions
+5. Pushes the branch to the remote
+6. Creates a PR via `gh pr create` with an auto-generated summary
+7. Optionally cleans up `.tdd-progress.md`
+
+### Approval gates
+
+The releaser asks for your approval before each destructive or external action:
+
+- **CHANGELOG entries** — approve, edit, or skip
+- **PR description** — approve, edit, or skip
+
+If `gh` is not installed or not authenticated, the releaser skips PR creation gracefully and prints manual instructions instead.
+
+### Stop hook
+
+The `check-release-complete.sh` hook validates that the branch has been pushed to the remote before allowing the releaser to finish. This ensures no work is lost locally.
+
+---
+
 ## Resuming an Interrupted Session
 
 If your session ends mid-workflow (timeout, crash, manual exit):

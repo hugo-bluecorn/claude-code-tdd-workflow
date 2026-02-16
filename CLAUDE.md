@@ -18,6 +18,7 @@ structured RED -> GREEN -> REFACTOR cycle.
 
 - **`/tdd-plan <feature description>`** — Create a TDD implementation plan
 - **`/tdd-implement`** — Start or resume TDD implementation for pending slices
+- **`/tdd-release`** — Finalize and release a completed TDD feature
 
 ### Session State
 

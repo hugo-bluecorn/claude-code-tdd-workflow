@@ -101,14 +101,14 @@ function test_user_guide_release_mentions_approval_gates() {
   # The release section must mention approval gates
   local release_section
   release_section=$(sed -n '/tdd-release/,/^---/p' "$USER_GUIDE")
-  assert_matches "[Aa]pproval\|[Aa]pprove" "$release_section"
+  assert_matches "[Aa]pproval|[Aa]pprove" "$release_section"
 }
 
 function test_user_guide_release_mentions_pr() {
   # The release section must mention PR creation
   local release_section
   release_section=$(sed -n '/tdd-release/,/^---/p' "$USER_GUIDE")
-  assert_matches "PR\|pull request" "$release_section"
+  assert_matches "PR|pull request" "$release_section"
 }
 
 # ---------- Test 5: extensibility-audit.md N6 updated ----------
@@ -121,7 +121,7 @@ function test_audit_n6_has_applied_marker() {
   # N6 row must include a completion marker
   local n6_line
   n6_line=$(grep "N6" "$AUDIT_MD" | grep -i "release")
-  assert_matches "Applied\|v1\.6\.0" "$n6_line"
+  assert_matches "Applied|v1[.]6[.]0" "$n6_line"
 }
 
 # ---------- Test 6: version-control-integration.md Layer 3 marked as implemented ----------
@@ -151,7 +151,7 @@ function test_vci_summary_table_tdd_release_done() {
   summary_table=$(sed -n '/## Summary/,/^---/p' "$VCI_MD")
   local release_row
   release_row=$(echo "$summary_table" | grep "tdd-release")
-  assert_matches "Done\|v1\.6\.0" "$release_row"
+  assert_matches "Done|v1[.]6[.]0" "$release_row"
 }
 
 function test_vci_summary_table_tdd_releaser_done() {
@@ -160,7 +160,7 @@ function test_vci_summary_table_tdd_releaser_done() {
   summary_table=$(sed -n '/## Summary/,/^---/p' "$VCI_MD")
   local releaser_row
   releaser_row=$(echo "$summary_table" | grep "tdd-releaser")
-  assert_matches "Done\|v1\.6\.0" "$releaser_row"
+  assert_matches "Done|v1[.]6[.]0" "$releaser_row"
 }
 
 function test_vci_summary_table_check_release_hook_done() {
@@ -169,7 +169,7 @@ function test_vci_summary_table_check_release_hook_done() {
   summary_table=$(sed -n '/## Summary/,/^---/p' "$VCI_MD")
   local hook_row
   hook_row=$(echo "$summary_table" | grep "check-release-complete")
-  assert_matches "Done\|v1\.6\.0" "$hook_row"
+  assert_matches "Done|v1[.]6[.]0" "$hook_row"
 }
 
 # ---------- Test 7: Audit directory structure includes new files ----------
