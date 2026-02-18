@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.6.4] - 2026-02-18
+
+### Fixed
+- Deadlock in `validate-plan-output.sh` when user discards plan or planner
+  stops without writing files — hook now allows stop when no `.tdd-progress.md`
+  exists
+- Section validation mismatch: hook now accepts `Overview` and `Requirements
+  Analysis` headings from `feature-notes-template.md`, not just `Feature Analysis`
+- Refactoring leak false positive: markdown headers (`### Iteration 3 (REFACTOR
+  Phase)`) and phase tracking boilerplate (`- **REFACTOR:** pending`) are excluded
+  from the leak check
+- Error message clarity: distinguishes between "no active session" (exit 0) and
+  "progress file exists but archive missing" (exit 2 with specific guidance)
+
 ## [1.6.3] - 2026-02-18
 
 ### Added
