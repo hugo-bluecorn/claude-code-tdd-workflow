@@ -68,11 +68,27 @@ function test_exits_zero_when_stop_hook_active_is_true() {
   rm -rf "$tmp_dir"
 }
 
-# ---------- Test 2: Exits 2 when no plan file exists in planning/ ----------
+# ---------- Bug 1: Deadlock fix — no plan file + no .tdd-progress.md = allow stop ----------
 
-function test_exits_two_when_no_plan_file_in_planning() {
+function test_exits_zero_when_no_plan_file_and_no_progress_file() {
   local tmp_dir
   tmp_dir=$(create_tmp_env)
+  # Neither planning/*.md nor .tdd-progress.md exist — discard scenario
+
+  local json
+  json=$(build_json "false")
+
+  run_hook_in_dir "$tmp_dir" "$json"
+  assert_exit_code 0
+
+  rm -rf "$tmp_dir"
+}
+
+function test_exits_two_when_no_plan_file_but_progress_file_exists() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+  # .tdd-progress.md exists but no planning/*.md — inconsistent state
+  echo "# TDD Progress" > "$tmp_dir/.tdd-progress.md"
 
   local json
   json=$(build_json "false")
@@ -85,9 +101,10 @@ function test_exits_two_when_no_plan_file_in_planning() {
   rm -rf "$tmp_dir"
 }
 
-function test_stderr_contains_no_plan_file_message() {
+function test_stderr_message_when_progress_exists_but_no_plan_file() {
   local tmp_dir
   tmp_dir=$(create_tmp_env)
+  echo "# TDD Progress" > "$tmp_dir/.tdd-progress.md"
 
   local json
   json=$(build_json "false")
@@ -95,7 +112,7 @@ function test_stderr_contains_no_plan_file_message() {
   local stderr_output
   stderr_output=$(run_hook_in_dir_stderr "$tmp_dir" "$json")
 
-  assert_contains "No plan file found" "$stderr_output"
+  assert_contains ".tdd-progress.md exists" "$stderr_output"
 
   rm -rf "$tmp_dir"
 }
@@ -124,26 +141,42 @@ function test_missing_stop_hook_active_proceeds_to_validation() {
   local tmp_dir
   tmp_dir=$(create_tmp_env)
 
-  # No stop_hook_active field, no plan file -> should exit 2
+  # No stop_hook_active field, no plan file, no .tdd-progress.md -> should exit 0 (discard)
   local json='{"some_other_field": "value"}'
 
   run_hook_in_dir "$tmp_dir" "$json"
-  local rc=$?
-
-  assert_equals 2 "$rc"
+  assert_exit_code 0
 
   rm -rf "$tmp_dir"
 }
 
 # ---------- Edge Case 2: Plan file older than 30 minutes ----------
 
-function test_stale_plan_file_exits_two() {
+function test_stale_plan_file_no_progress_exits_zero() {
   local tmp_dir
   tmp_dir=$(create_tmp_env)
 
-  # Create a plan file, then set modification time to 60 minutes ago
+  # Stale plan file (>30 min) and no .tdd-progress.md -> exit 0 (no active session)
   echo "# Old Plan" > "$tmp_dir/planning/old-plan.md"
   touch -t "$(date -d '60 minutes ago' '+%Y%m%d%H%M.%S')" "$tmp_dir/planning/old-plan.md"
+
+  local json
+  json=$(build_json "false")
+
+  run_hook_in_dir "$tmp_dir" "$json"
+  assert_exit_code 0
+
+  rm -rf "$tmp_dir"
+}
+
+function test_stale_plan_file_with_progress_exits_two() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+
+  # Stale plan file BUT .tdd-progress.md exists -> exit 2 (need fresh archive)
+  echo "# Old Plan" > "$tmp_dir/planning/old-plan.md"
+  touch -t "$(date -d '60 minutes ago' '+%Y%m%d%H%M.%S')" "$tmp_dir/planning/old-plan.md"
+  echo "# TDD Progress" > "$tmp_dir/.tdd-progress.md"
 
   local json
   json=$(build_json "false")
@@ -231,6 +264,56 @@ function test_exits_zero_when_all_required_sections_present() {
   rm -rf "$tmp_dir"
 }
 
+# ---------- Bug 4: Section mismatch — accept feature-notes-template.md headings ----------
+
+function test_exits_zero_when_overview_section_used_instead_of_feature_analysis() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+
+  # feature-notes-template.md uses "## Overview" not "## Feature Analysis"
+  cat > "$tmp_dir/planning/feature-plan.md" <<PLAN
+## Overview
+
+This is the overview section.
+
+## Slice 1: Core implementation
+
+This is the first slice.
+PLAN
+
+  local json
+  json=$(build_json "false")
+
+  run_hook_in_dir "$tmp_dir" "$json"
+  assert_exit_code 0
+
+  rm -rf "$tmp_dir"
+}
+
+function test_exits_zero_when_requirements_analysis_used() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+
+  # feature-notes-template.md has "## Requirements Analysis"
+  cat > "$tmp_dir/planning/feature-plan.md" <<PLAN
+## Requirements Analysis
+
+This is the requirements analysis.
+
+## Slice 1: Core implementation
+
+This is the first slice.
+PLAN
+
+  local json
+  json=$(build_json "false")
+
+  run_hook_in_dir "$tmp_dir" "$json"
+  assert_exit_code 0
+
+  rm -rf "$tmp_dir"
+}
+
 # ---------- Slice 4, Test 4: Exits 2 when refactoring leak (refactor: commit type) ----------
 
 function test_exits_two_when_refactoring_leak_refactor_commit_type() {
@@ -254,13 +337,13 @@ function test_exits_two_when_refactoring_leak_refactor_commit_type() {
   rm -rf "$tmp_dir"
 }
 
-# ---------- Slice 4, Test 5: Exits 2 when refactoring leak (REFACTOR Phase) ----------
+# ---------- Slice 4, Test 5: Exits 2 when refactoring leak in prose (not header/boilerplate) ----------
 
-function test_exits_two_when_refactoring_leak_refactor_phase() {
+function test_exits_two_when_refactoring_leak_in_prose() {
   local tmp_dir
   tmp_dir=$(create_tmp_env)
 
-  write_valid_plan "$tmp_dir" "REFACTOR Phase"
+  write_valid_plan "$tmp_dir" "In the REFACTOR phase we should reorganize the modules"
 
   local json
   json=$(build_json "false")
@@ -273,6 +356,39 @@ function test_exits_two_when_refactoring_leak_refactor_phase() {
   local stderr_output
   stderr_output=$(run_hook_in_dir_stderr "$tmp_dir" "$json")
   assert_contains "REFACTORING LEAK" "$stderr_output"
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- Bug 3: Markdown headers should NOT trigger refactoring leak ----------
+
+function test_refactor_phase_in_markdown_header_does_not_trigger_leak() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+
+  write_valid_plan "$tmp_dir" "### Iteration 3 (REFACTOR Phase)"
+
+  local json
+  json=$(build_json "false")
+
+  run_hook_in_dir "$tmp_dir" "$json"
+  assert_exit_code 0
+
+  rm -rf "$tmp_dir"
+}
+
+function test_refactoring_phase_in_markdown_header_does_not_trigger_leak() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+
+  # Phase tracking header with "REFACTOR:" as a bold label (template boilerplate)
+  write_valid_plan "$tmp_dir" "- **REFACTOR:** pending"
+
+  local json
+  json=$(build_json "false")
+
+  run_hook_in_dir "$tmp_dir" "$json"
+  assert_exit_code 0
 
   rm -rf "$tmp_dir"
 }
