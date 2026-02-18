@@ -8,7 +8,7 @@ tools: Read, Glob, Grep, Bash, AskUserQuestion
 disallowedTools: Write, Edit, MultiEdit, NotebookEdit, Task
 model: opus
 permissionMode: plan
-maxTurns: 30
+# maxTurns: 30
 memory: project
 skills:
   - dart-flutter-conventions

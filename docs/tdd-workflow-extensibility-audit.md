@@ -54,7 +54,7 @@ current implementation. Update it after each significant plugin change.
 | A4 | `disallowedTools` | ✅ | Planner: Write, Edit, MultiEdit, NotebookEdit, Task. Verifier: Write, Edit, MultiEdit. Releaser: Write, Edit, MultiEdit, NotebookEdit |
 | A5 | `model` | ✅ | Planner/implementer: `opus`. Verifier: `haiku`. Releaser: `sonnet`. Applied in v1.1.0 (P1), v1.6.0 (N6) |
 | A6 | `permissionMode` | ✅ | Planner: `plan`. Verifier: `plan`. Implementer: default (needs write approval) |
-| A7 | `maxTurns` | ✅ | Planner: 30. Implementer: 50. Verifier: 20. Releaser: 30 |
+| A7 | `maxTurns` | ✅ | Planner: disabled (commented out). Implementer: 50. Verifier: 20. Releaser: 30 |
 | A8 | `skills` | ✅ | Planner and implementer preload `dart-flutter-conventions`, `cpp-testing-conventions`, and `bash-testing-conventions` |
 | A9 | `memory` | ✅ | Both implementer and planner have `memory: project`. Applied in v1.4.0 (S1) |
 | A10 | `mcpServers` | ⊘ | No relevant MCP servers for TDD workflow |

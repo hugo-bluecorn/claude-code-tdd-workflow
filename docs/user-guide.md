@@ -340,7 +340,7 @@ If a complex slice needs more iterations, edit the `maxTurns` value in the relev
 
 - `agents/tdd-implementer.md` — default 50
 - `agents/tdd-verifier.md` — default 20
-- `agents/tdd-planner.md` — default 30
+- `agents/tdd-planner.md` — no limit (maxTurns commented out)
 - `agents/tdd-releaser.md` — default 30
 
 ---

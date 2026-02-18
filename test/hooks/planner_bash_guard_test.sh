@@ -235,9 +235,9 @@ function test_frontmatter_preserves_permission_mode_field() {
   assert_file_contains "$PLANNER_MD" "permissionMode: plan"
 }
 
-function test_frontmatter_preserves_max_turns_field() {
-  assert_file_contains "$PLANNER_MD" "maxTurns: 30"
-}
+# function test_frontmatter_preserves_max_turns_field() {
+#   assert_file_contains "$PLANNER_MD" "maxTurns: 30"
+# }
 
 function test_frontmatter_preserves_skills_list() {
   assert_file_contains "$PLANNER_MD" "dart-flutter-conventions"
