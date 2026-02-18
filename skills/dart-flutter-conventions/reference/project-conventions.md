@@ -88,7 +88,7 @@ lib/
 - Data organized by type (repositories/services used across features)
 - Scalable and maintainable
 
-### ViewModel Example
+### ViewModel Example (Synchronous Notifier)
 
 ```dart
 // lib/ui/home/home_viewmodel.dart
@@ -115,7 +115,7 @@ class HomeState {
   }
 }
 
-// ViewModel using Notifier
+// ViewModel using Notifier (Riverpod 3.x, no codegen)
 class HomeViewModel extends Notifier<HomeState> {
   @override
   HomeState build() => const HomeState();
@@ -125,8 +125,12 @@ class HomeViewModel extends Notifier<HomeState> {
 
     try {
       final user = await ref.read(userRepositoryProvider).getUser(userId);
+      // Always check ref.mounted after async gaps to prevent
+      // state updates on disposed providers
+      if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, user: user);
     } catch (e) {
+      if (!ref.mounted) return;
       state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
@@ -138,7 +142,48 @@ final homeViewModelProvider = NotifierProvider<HomeViewModel, HomeState>(
 );
 ```
 
-### View Example
+### ViewModel Example (AsyncNotifier)
+
+```dart
+// lib/ui/users/users_viewmodel.dart
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+// AsyncNotifier: build() returns FutureOr<T>, state is AsyncValue<T>
+class UsersViewModel extends AsyncNotifier<List<User>> {
+  @override
+  FutureOr<List<User>> build() async {
+    // Riverpod 3.x: ref.onDispose for cleanup
+    final cancelToken = CancelToken();
+    ref.onDispose(cancelToken.cancel);
+
+    return await ref.read(userRepositoryProvider).getUsers(
+      cancelToken: cancelToken,
+    );
+  }
+
+  Future<void> addUser(String name) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      final users = await ref
+          .read(userRepositoryProvider)
+          .addUser(name);
+      return users;
+    });
+  }
+
+  Future<void> refresh() async {
+    ref.invalidateSelf();
+  }
+}
+
+// Provider definition
+final usersViewModelProvider =
+    AsyncNotifierProvider<UsersViewModel, List<User>>(
+  UsersViewModel.new,
+);
+```
+
+### View Example (Sync State)
 
 ```dart
 // lib/ui/home/home_screen.dart
@@ -163,6 +208,40 @@ class HomeScreen extends ConsumerWidget {
         HomeState(user: final user?) =>
           Center(child: Text('Welcome, ${user.name}')),
         _ => const Center(child: Text('Load a user')),
+      },
+    );
+  }
+}
+```
+
+### View Example (AsyncValue Pattern Matching)
+
+```dart
+// lib/ui/users/users_screen.dart
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'users_viewmodel.dart';
+
+class UsersScreen extends ConsumerWidget {
+  const UsersScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // AsyncNotifier state is AsyncValue<T> — a sealed class
+    final usersAsync = ref.watch(usersViewModelProvider);
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Users')),
+      // Exhaustive switch on sealed AsyncValue
+      body: switch (usersAsync) {
+        AsyncData(:final value) => ListView.builder(
+          itemCount: value.length,
+          itemBuilder: (_, i) => ListTile(title: Text(value[i].name)),
+        ),
+        AsyncError(:final error) =>
+          Center(child: Text('Error: $error')),
+        AsyncLoading() =>
+          const Center(child: CircularProgressIndicator()),
       },
     );
   }
@@ -267,11 +346,27 @@ test/
 
 ## State Management
 
-**Riverpod (Recommended):** Use `flutter_riverpod` for app-level state management and dependency injection. It provides compile-time safety, no BuildContext requirement, and excellent testability.
+**Riverpod 3.x (Required):** Use `flutter_riverpod: ^3.2.1` for app-level state
+management and dependency injection. **No code generation** — use the manual
+provider API throughout. Do NOT add `riverpod_annotation` or `riverpod_generator`.
+
+### Provider Types
+
+| Provider | Use Case | State Type |
+|----------|----------|------------|
+| `NotifierProvider` | Mutable sync state (ViewModels) | `T` |
+| `AsyncNotifierProvider` | Mutable async state (data loading) | `AsyncValue<T>` |
+| `StreamNotifierProvider` | Mutable stream state (WebSocket, realtime) | `AsyncValue<T>` |
+| `Provider` | Computed/derived values, DI | `T` |
+| `FutureProvider` | Read-only async data | `AsyncValue<T>` |
+| `StreamProvider` | Read-only stream data | `AsyncValue<T>` |
+
+### Basic Notifier Pattern
 
 ```dart
-// Define a provider
-final counterProvider = NotifierProvider<CounterNotifier, int>(CounterNotifier.new);
+final counterProvider = NotifierProvider<CounterNotifier, int>(
+  CounterNotifier.new,
+);
 
 class CounterNotifier extends Notifier<int> {
   @override
@@ -282,12 +377,113 @@ class CounterNotifier extends Notifier<int> {
 
 // Use in widget with ConsumerWidget
 class CounterWidget extends ConsumerWidget {
+  const CounterWidget({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final count = ref.watch(counterProvider);
     return Text('Count: $count');
   }
 }
+```
+
+### AutoDispose
+
+Providers are disposed when no widget is listening. Use `.autoDispose` for
+screen-scoped state that should not persist across navigation:
+
+```dart
+final detailProvider = NotifierProvider.autoDispose<DetailViewModel, DetailState>(
+  DetailViewModel.new,
+);
+
+final userProvider = FutureProvider.autoDispose<User>((ref) async {
+  // ref.keepAlive() to prevent disposal during navigation transitions
+  ref.keepAlive();
+  return await ref.read(userRepositoryProvider).getUser();
+});
+```
+
+### Family Providers
+
+Pass arguments to providers via constructor injection (3.x pattern):
+
+```dart
+final cropDetailProvider =
+    NotifierProvider.family<CropDetailViewModel, CropDetailState, int>(
+  (int cropId) => CropDetailViewModel(cropId),
+);
+
+class CropDetailViewModel extends Notifier<CropDetailState> {
+  CropDetailViewModel(this.cropId);
+  final int cropId;
+
+  @override
+  CropDetailState build() => const CropDetailState();
+}
+
+// Usage: ref.watch(cropDetailProvider(42))
+```
+
+Combine with autoDispose: `NotifierProvider.autoDispose.family<N, S, A>(...)`.
+Order matters: `.autoDispose` must come before `.family`.
+
+### Ref in Riverpod 3.x
+
+`Ref` is a sealed class with no type parameters. Key methods:
+
+```dart
+// In Notifier methods (ref available via Notifier base class):
+ref.read(provider)              // Read once, no rebuild
+ref.watch(provider)             // Watch and rebuild on change
+ref.listen(provider, callback)  // Listen without rebuild
+ref.invalidateSelf()            // Force this provider to rebuild
+ref.onDispose(() => cleanup())  // Lifecycle cleanup
+ref.mounted                     // Check if still active (critical for async!)
+```
+
+### Async Safety with ref.mounted
+
+After any `await` in a Notifier method, always check `ref.mounted` before
+updating state. This prevents race conditions when a provider is disposed
+during an async gap:
+
+```dart
+Future<void> loadData() async {
+  final data = await fetchData();
+  if (!ref.mounted) return;  // Provider was disposed during await
+  state = data;
+}
+```
+
+### Legacy Providers (Do NOT Use)
+
+These are moved to `import 'package:riverpod/legacy.dart'` and should NOT
+be used in new code:
+- `StateProvider` — replaced by `NotifierProvider`
+- `StateNotifierProvider` — replaced by `NotifierProvider`
+- `ChangeNotifierProvider` — replaced by `NotifierProvider`
+
+### Equality Filtering
+
+Riverpod 3.x uses `==` to filter state updates by default. Providers only
+notify listeners when the new state is not equal to the previous state.
+Override `updateShouldNotify` in a Notifier to customize this behavior.
+
+### Testing with Provider Overrides
+
+```dart
+testWidgets('test with overrides', (tester) async {
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: [
+        userRepositoryProvider.overrideWithValue(FakeUserRepository()),
+        counterProvider.overrideWith(() => Counter()),
+      ],
+      child: const MyApp(),
+    ),
+  );
+});
 ```
 
 **Built-in Solutions for Ephemeral State Only:** For widget-local state that does not
@@ -323,7 +519,7 @@ Key takeaways from Flutter AI Rules:
 
 | Need | Official | Recommended |
 |------|----------|-------------|
-| State Management (app state) | Riverpod | Riverpod |
+| State Management (app state) | Riverpod 3.x | flutter_riverpod ^3.2.1 (no codegen) |
 | State Management (ephemeral) | Built-in (ValueNotifier, ChangeNotifier) | Built-in |
 | Navigation | go_router | go_router |
 | Serialization | json_serializable | dart_mappable |
