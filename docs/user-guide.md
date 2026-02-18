@@ -30,6 +30,58 @@ Look for `loading plugin: tdd-workflow` in the output. The `/tdd-plan`, `/tdd-im
 
 ---
 
+## Updating the Plugin
+
+How you update depends on how the plugin was installed.
+
+### Marketplace-managed plugin
+
+If the plugin was installed via a local or remote marketplace (check `~/.claude/settings.json` for an entry like `tdd-workflow@<marketplace-name>`):
+
+```bash
+claude plugin marketplace update <marketplace-name>
+```
+
+For example, with a local marketplace called `local-plugins`:
+
+```bash
+claude plugin marketplace update local-plugins
+```
+
+This refreshes the marketplace index, picks up the new version from `plugin.json`, and updates the cached copy.
+
+### Directly installed plugin
+
+If the plugin was installed directly (not through a marketplace):
+
+```bash
+claude plugin update tdd-workflow
+```
+
+You can target a specific scope with `-s user`, `-s project`, or `-s local`.
+
+### Local development
+
+If you're loading the plugin with `--plugin-dir`:
+
+```bash
+claude --plugin-dir ./path/to/tdd-workflow
+```
+
+No update step is needed — changes are picked up immediately since there's no caching.
+
+### Version bumps matter
+
+The plugin system uses the `version` field in `.claude-plugin/plugin.json` to detect updates. Always bump the version before updating:
+
+```json
+{
+  "version": "1.6.2"
+}
+```
+
+---
+
 ## Starting a TDD Session
 
 ### 1. Invoke the planner
