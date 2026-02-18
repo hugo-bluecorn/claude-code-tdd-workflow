@@ -1,5 +1,5 @@
 {
   "name": "tdd-workflow",
   "description": "Test-Driven Development workflow with context-isolated planning, implementation, and verification agents. Enforces red-green-refactor discipline via hooks.",
-  "version": "1.6.0"
+  "version": "1.6.1"
 }
