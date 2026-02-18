@@ -301,6 +301,39 @@ The plugin itself has no opinion about state management — it reads the convent
 doc and follows it. You never need to edit SKILL.md or agent files to change
 architecture choices.
 
+### Changing the test specification format
+
+The planner outputs test specs in a compact Given/When/Then format:
+
+```
+### Test 1: Shows app name and version
+Given: Settings screen rendered
+When: Scrolling to the bottom of the screen
+Then: Shows "Oogstbord" and a version string (e.g., "0.1.0")
+```
+
+To change this format (e.g., table rows, single-line, or multi-line blocks),
+edit these three files:
+
+1. **`skills/tdd-plan/reference/tdd-task-template.md`** — The template the
+   planner reads for output structure. Change the test examples in the
+   "Test Specifications" section to your preferred format.
+
+2. **`skills/tdd-plan/SKILL.md`** — The planner's instructions. Update three
+   places:
+   - **Step 6** (inline example structure) — change the `### Test N` block
+   - **Step 7** (self-check) — update the Given/When/Then checklist item to
+     describe your format
+   - The enforcement line after the code block in step 6 — adjust the
+     description of what's acceptable
+
+3. **`agents/tdd-planner.md`** — The agent's Output section references the
+   format briefly. Update the description to match.
+
+The implementer and verifier do not parse Given/When/Then — they read the
+test file paths and slice status from `.tdd-progress.md`. So changing the
+format only affects the planner's output and has no downstream impact.
+
 ### Increasing agent turn limits
 
 If a complex slice needs more iterations, edit the `maxTurns` value in the relevant agent file:

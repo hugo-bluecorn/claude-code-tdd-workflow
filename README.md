@@ -114,6 +114,10 @@ Default: `model: opus`. For faster but less thorough planning, change to `model:
 
 Default: not included. To let the planner check pub.dev or API docs, add `WebFetch, WebSearch` to the planner's tools list.
 
+### Test Specification Format
+
+Default: compact single-line Given/When/Then. Customizable via the template and planner instructions. See [Changing the test specification format](docs/user-guide.md#changing-the-test-specification-format).
+
 ### permissionMode on Planner
 
 Default: `permissionMode: plan`. If plan mode blocks Bash writes to `.tdd-progress.md`, remove `permissionMode: plan` and rely on `disallowedTools` instead.

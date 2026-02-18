@@ -37,51 +37,21 @@ derived from the user's /tdd-plan input and codebase context.}
 **Status:** pending
 
 #### Test 1: {Test Name}
-
-**Description:** {What this test validates}
-
-**Given:**
-- {Precondition 1}
-- {Precondition 2}
-
-**When:**
-- {Action or trigger}
-
-**Then:**
-- {Expected outcome 1}
-- {Expected outcome 2}
-
-**Test Code Location:** `test/{path}_test.dart` or `test/{path}_test.cpp`
+Given: {Precondition 1}; {Precondition 2}
+When: {Action or trigger}
+Then: {Expected outcome 1}; {Expected outcome 2}
 
 #### Test 2: {Test Name}
-
-**Description:** {What this test validates}
-
-**Given:**
-- {Precondition}
-
-**When:**
-- {Action}
-
-**Then:**
-- {Expected outcome}
-
-**Test Code Location:** `test/{path}_test.dart` or `test/{path}_test.cpp`
+Given: {Precondition}
+When: {Action}
+Then: {Expected outcome}
 
 #### Edge Cases / Error Conditions
 
-**Description:** Handle edge cases and error scenarios
-
-**Given:**
-- {Edge case condition}
-
-**When:**
-- {Action under edge case}
-
-**Then:**
-- {Expected behavior for edge case}
-
-**Test Code Location:** `test/{path}_test.dart` or `test/{path}_test.cpp`
+#### Test 3: {Edge Case Test Name}
+Given: {Edge case condition}
+When: {Action under edge case}
+Then: {Expected behavior for edge case}
 
 ---
 

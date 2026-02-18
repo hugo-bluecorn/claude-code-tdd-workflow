@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+- Test specification format: compact single-line Given/When/Then replacing
+  multi-line bold blocks with bullet points
+- User guide: added "Changing the test specification format" configuration section
+- README: added Test Specification Format to Configuration section
+
 ## [1.6.0] - 2026-02-16
 
 ### Added

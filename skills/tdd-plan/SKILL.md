@@ -73,26 +73,16 @@ Plan TDD implementation for: $ARGUMENTS
    **Tests:** `{test file path}`
 
    ### Test 1: {Test Name}
-
-   **Given:**
-   - {precondition}
-
-   **When:**
-   - {action}
-
-   **Then:**
-   - {expected outcome}
+   Given: {precondition}
+   When: {action}
+   Then: {expected outcome}
 
    ### Edge Cases
 
-   **Given:**
-   - {edge case condition}
-
-   **When:**
-   - {action}
-
-   **Then:**
-   - {expected behavior}
+   ### Test 2: {Edge Case Test Name}
+   Given: {edge case condition}
+   When: {action}
+   Then: {expected behavior}
 
    ### Acceptance Criteria
    - [ ] All tests pass
@@ -108,12 +98,12 @@ Plan TDD implementation for: $ARGUMENTS
    ```
 
    Do NOT summarize tests as bullet points or table rows. Each test MUST have
-   explicit Given/When/Then blocks. This is the format that gets written to
-   `.tdd-progress.md`.
+   explicit Given/When/Then on compact single lines (no bold, no bullet points).
+   This is the format that gets written to `.tdd-progress.md`.
 
 7. **Self-check before presenting** — verify EVERY slice has all of these.
    If any are missing, fix the plan before showing it:
-   - [ ] Given/When/Then as multi-line blocks (not compressed to single lines)
+   - [ ] Given/When/Then as compact single lines (e.g., `Given: {precondition}`)
    - [ ] Acceptance Criteria section with checkboxes
    - [ ] Phase Tracking section (RED: pending, GREEN: pending, REFACTOR: pending)
    - [ ] Source and Test file paths

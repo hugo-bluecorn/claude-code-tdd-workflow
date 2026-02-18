@@ -52,7 +52,7 @@ When exploring:
 ## Output
 
 Each slice must use the exact structure from `reference/tdd-task-template.md` —
-Given-When-Then test blocks, edge cases, acceptance criteria, and phase tracking.
+compact Given/When/Then lines, edge cases, acceptance criteria, and phase tracking.
 A summary table alone is NOT acceptable.
 
 ### Mandatory approval sequence
