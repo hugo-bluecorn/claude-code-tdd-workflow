@@ -228,6 +228,131 @@ function test_guard_pipe_sponge_to_arbitrary_path_stderr_contains_blocked() {
 }
 
 # =====================================================================
+# Slice 2 — Lock-file gate and rm exception
+# =====================================================================
+
+# Helper: create an isolated temp directory with the hook script copied in
+create_tmp_env() {
+  local tmp_dir
+  tmp_dir=$(mktemp -d)
+  cp "$HOOK_ABS" "$tmp_dir/"
+  echo "$tmp_dir"
+}
+
+# Helper: run hook inside a given directory, suppressing stderr
+run_hook_in_dir() {
+  local dir="$1"
+  local cmd="$2"
+  local json
+  json=$(build_json "$cmd")
+  (cd "$dir" && echo "$json" | bash "$dir/planner-bash-guard.sh" 2>/dev/null)
+}
+
+# Helper: run hook inside a given directory, capturing stderr (stdout suppressed)
+run_hook_in_dir_stderr() {
+  local dir="$1"
+  local cmd="$2"
+  local json
+  json=$(build_json "$cmd")
+  # shellcheck disable=SC2069
+  (cd "$dir" && echo "$json" | bash "$dir/planner-bash-guard.sh" 2>&1 >/dev/null)
+}
+
+# ---------- Test L1: Blocks .tdd-progress.md reference while locked ----------
+
+function test_guard_lock_gate_blocks_progress_ref_when_locked_exits_two() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+  touch "$tmp_dir/.tdd-plan-locked"
+
+  run_hook_in_dir "$tmp_dir" "cat .tdd-progress.md"
+  assert_exit_code 2
+
+  rm -rf "$tmp_dir"
+}
+
+function test_guard_lock_gate_blocks_progress_ref_when_locked_stderr_contains_blocked() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+  touch "$tmp_dir/.tdd-plan-locked"
+
+  local stderr_output
+  stderr_output=$(run_hook_in_dir_stderr "$tmp_dir" "cat .tdd-progress.md")
+
+  assert_contains "BLOCKED" "$stderr_output"
+
+  rm -rf "$tmp_dir"
+}
+
+function test_guard_lock_gate_blocks_progress_ref_when_locked_stderr_contains_not_yet_approved() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+  touch "$tmp_dir/.tdd-plan-locked"
+
+  local stderr_output
+  stderr_output=$(run_hook_in_dir_stderr "$tmp_dir" "cat .tdd-progress.md")
+
+  assert_contains "not yet approved" "$stderr_output"
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- Test L2: Allows .tdd-progress.md reference when unlocked ----------
+
+function test_guard_lock_gate_allows_progress_ref_when_unlocked_exits_zero() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+  # No .tdd-plan-locked file created
+
+  run_hook_in_dir "$tmp_dir" "cat .tdd-progress.md"
+  assert_exit_code 0
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- Test L3: Allows rm .tdd-plan-locked ----------
+
+function test_guard_rm_exception_allows_rm_lockfile_exits_zero() {
+  run_hook "rm .tdd-plan-locked"
+  assert_exit_code 0
+}
+
+# ---------- Test L4: Allows rm -f .tdd-plan-locked ----------
+
+function test_guard_rm_exception_allows_rm_f_lockfile_exits_zero() {
+  run_hook "rm -f .tdd-plan-locked"
+  assert_exit_code 0
+}
+
+# ---------- Test L5 (Edge Case): Blocks rm of arbitrary files ----------
+
+function test_guard_rm_exception_blocks_rm_arbitrary_file_exits_two() {
+  run_hook "rm somefile.txt"
+  assert_exit_code 2
+}
+
+function test_guard_rm_exception_blocks_rm_arbitrary_file_stderr_contains_blocked() {
+  local stderr_output
+  stderr_output=$(run_hook_stderr "rm somefile.txt")
+
+  assert_contains "BLOCKED" "$stderr_output"
+}
+
+# ---------- Test L6 (Edge Case): Blocks rm -rf ----------
+
+function test_guard_rm_exception_blocks_rm_rf_exits_two() {
+  run_hook "rm -rf /"
+  assert_exit_code 2
+}
+
+function test_guard_rm_exception_blocks_rm_rf_stderr_contains_blocked() {
+  local stderr_output
+  stderr_output=$(run_hook_stderr "rm -rf /")
+
+  assert_contains "BLOCKED" "$stderr_output"
+}
+
+# =====================================================================
 # Slice 5 — Integration: Planner frontmatter hooks wiring
 # =====================================================================
 
