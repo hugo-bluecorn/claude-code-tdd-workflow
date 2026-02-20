@@ -58,7 +58,7 @@ function test_guard_blocked_command_stderr_contains_blocked() {
 
 function test_guard_blocked_command_stderr_contains_allowlist_message() {
   local stderr_output
-  stderr_output=$(run_hook_stderr "rm -rf /tmp/data")
+  stderr_output=$(run_hook_stderr "python3 -c 'import os'")
 
   assert_contains "not in the planner's allowlist" "$stderr_output"
 }

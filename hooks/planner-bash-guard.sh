@@ -21,6 +21,23 @@ done
 # Extract the base command (first word)
 BASE_CMD="${STRIPPED%% *}"
 
+# --- rm exception: only allow rm .tdd-plan-locked and rm -f .tdd-plan-locked ---
+if [ "$BASE_CMD" = "rm" ]; then
+  if [[ "$COMMAND" =~ ^rm[[:space:]]+(-f[[:space:]]+)?\.tdd-plan-locked$ ]]; then
+    exit 0
+  fi
+  echo "BLOCKED: rm is only allowed for .tdd-plan-locked" >&2
+  exit 2
+fi
+
+# --- Lock-file gate: block .tdd-progress.md access while plan is unapproved ---
+if echo "$COMMAND" | grep -qF '.tdd-progress.md'; then
+  if [ -f ".tdd-plan-locked" ]; then
+    echo "BLOCKED: Cannot write .tdd-progress.md — plan not yet approved." >&2
+    exit 2
+  fi
+fi
+
 # Check whether a write target path is in the allowed set.
 # Returns 0 if allowed, 1 if blocked.
 is_allowed_target() {
