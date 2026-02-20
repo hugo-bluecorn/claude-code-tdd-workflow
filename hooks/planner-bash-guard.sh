@@ -21,6 +21,34 @@ done
 # Extract the base command (first word)
 BASE_CMD="${STRIPPED%% *}"
 
+# --- rm exception: only allow rm .tdd-plan-locked and rm -f .tdd-plan-locked ---
+if [ "$BASE_CMD" = "rm" ]; then
+  if [[ "$COMMAND" =~ ^rm[[:space:]]+(-f[[:space:]]+)?\.tdd-plan-locked$ ]]; then
+    exit 0
+  fi
+  echo "BLOCKED: rm is only allowed for .tdd-plan-locked" >&2
+  exit 2
+fi
+
+# --- Lock-file gate: block .tdd-progress.md access while plan is unapproved ---
+if echo "$COMMAND" | grep -qF '.tdd-progress.md'; then
+  if [ -f ".tdd-plan-locked" ]; then
+    echo "BLOCKED: Cannot write .tdd-progress.md — plan not yet approved." >&2
+    exit 2
+  fi
+fi
+
+# Check whether a write target path is in the allowed set.
+# Returns 0 if allowed, 1 if blocked.
+is_allowed_target() {
+  case "$1" in
+    /dev/null)    return 0 ;;
+    planning/*)   return 0 ;;
+    ./planning/*) return 0 ;;
+    *)            return 1 ;;
+  esac
+}
+
 # Allowlist of read-only commands
 readonly ALLOWED="find grep rg cat head tail wc ls tree file stat du df git flutter dart fvm test command which type pwd echo"
 
@@ -28,17 +56,19 @@ for cmd in $ALLOWED; do
   if [ "$BASE_CMD" = "$cmd" ]; then
     # Check for output redirection to disallowed targets
     if echo "$COMMAND" | grep -q '>'; then
-      # Extract the final redirection target (text after last >)
       REDIR_TARGET=$(echo "$COMMAND" | sed 's/.*>//;s/^[[:space:]]*//' | cut -d' ' -f1)
-      case "$REDIR_TARGET" in
-        /dev/null) ;;
-        planning/*) ;;
-        ./planning/*) ;;
-        *)
-          echo "BLOCKED: Output redirection outside planning/ directory." >&2
-          exit 2
-          ;;
-      esac
+      if ! is_allowed_target "$REDIR_TARGET"; then
+        echo "BLOCKED: Output redirection outside planning/ directory." >&2
+        exit 2
+      fi
+    fi
+    # Check for pipe-to-file via tee or sponge
+    if echo "$COMMAND" | grep -qE '\|\s*(tee|sponge)\s'; then
+      PIPE_TARGET=$(echo "$COMMAND" | sed -E 's/.*\|\s*(tee|sponge)\s+//' | cut -d' ' -f1)
+      if ! is_allowed_target "$PIPE_TARGET"; then
+        echo "BLOCKED: Pipe to file outside planning/ directory." >&2
+        exit 2
+      fi
     fi
     exit 0
   fi

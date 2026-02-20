@@ -17,6 +17,11 @@ if [ ! -f "$PROGRESS_FILE" ]; then
   exit 0
 fi
 
+# Approval marker check: unapproved plans allow session exit
+if ! grep -qiE '^\*{0,2}Approved:\*{0,2}' "$PROGRESS_FILE" 2>/dev/null; then
+  exit 0
+fi
+
 # Count slices that are NOT in a terminal state
 # Terminal states: PASS, DONE, COMPLETE, FAIL, SKIP (case-insensitive)
 # Non-terminal: anything else (PENDING, IN_PROGRESS, IN PROGRESS, RED, GREEN, etc.)
@@ -32,7 +37,7 @@ fi
 REMAINING=$((TOTAL_SLICES - TERMINAL_SLICES))
 
 if [ "$REMAINING" -gt 0 ]; then
-  jq -n --arg reason "TDD session has $REMAINING of $TOTAL_SLICES slices remaining. Continue implementing." \
+  jq -n --arg reason "TDD session has $REMAINING of $TOTAL_SLICES slices remaining." \
     '{"decision": "block", "reason": $reason}'
   exit 0
 fi
