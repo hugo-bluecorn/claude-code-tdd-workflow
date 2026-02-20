@@ -12,6 +12,13 @@ description: >
 
 Read `.tdd-progress.md` in the project root. If it does not exist, tell the user to run `/tdd-plan` first and stop.
 
+## Step -1: Verify Plan Approval
+
+Read `.tdd-progress.md`. If the file does not contain an `**Approved:**` line
+in the header, tell the user: "This plan has not been approved. Please run
+`/tdd-plan` to review and approve it first." Then STOP — do not proceed to
+Step 0 or any implementation work.
+
 ## Step 0: Ensure Feature Branch
 
 Before processing the first pending slice:

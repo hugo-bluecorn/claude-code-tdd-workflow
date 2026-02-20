@@ -118,6 +118,14 @@ Plan TDD implementation for: $ARGUMENTS
    - If Modify: revise based on feedback and repeat from step 7
    - If Discard: stop without writing any files
 
+   CRITICAL: If auto-compaction has occurred and you cannot confirm you received
+   an "Approve" response from AskUserQuestion, you MUST re-ask. The `.tdd-plan-locked`
+   file on disk is your ground truth — if it exists, approval has not happened.
+
+9b. **Remove approval lock**: Run `rm .tdd-plan-locked` via the Bash tool.
+   This removes the filesystem lock so the bash guard allows writing `.tdd-progress.md`.
+   This step MUST succeed before step 10.
+
 10. **Only after "Approve"**: write the plan as structured markdown to
    `.tdd-progress.md` at the project root. Also write a read-only archive
    to `planning/YYYYMMDD_HHMM_feature_name.md` using the structure defined
@@ -127,6 +135,9 @@ Plan TDD implementation for: $ARGUMENTS
    - Dependencies (external packages, internal modules)
    - Known limitations and trade-offs
    - The slice decomposition (referencing .tdd-progress.md for live status)
+   Add `**Approved:** <ISO 8601 timestamp>` to the `.tdd-progress.md` header
+   (after the Created/Last Updated lines). This marker is checked by downstream
+   hooks and the tdd-implement skill.
 
 ## Constraints
 - Do NOT write any implementation code or test code in the plan

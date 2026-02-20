@@ -63,10 +63,19 @@ A summary table alone is NOT acceptable.
    - "Modify" — user provides feedback, you revise the plan and ask again
    - "Discard" — abandon the plan, stop immediately
 3. **Only after explicit "Approve"**: write `.tdd-progress.md` at the project root and a read-only archive to `planning/`
+   Include `**Approved:** <ISO 8601 timestamp>` in the `.tdd-progress.md` header (after Created/Last Updated lines).
+3b. **Remove approval lock**: Run `rm .tdd-plan-locked` via Bash before writing any files
 4. If the user chooses "Modify", revise based on their feedback and repeat from step 1
 5. If the user chooses "Discard", do NOT write any files — just stop
 
 CRITICAL: Do NOT write `.tdd-progress.md` or any files before getting explicit approval via AskUserQuestion. The system permission dialog for file writes is NOT plan approval.
+
+### COMPACTION GUARD
+
+CRITICAL: If auto-compaction has occurred and you cannot confirm you received
+an "Approve" response from AskUserQuestion, you MUST re-ask for approval.
+The `.tdd-plan-locked` file on disk is your ground truth — if it exists,
+approval has NOT happened. Do NOT proceed to write files.
 
 After writing the files, tell the user to run `/tdd-implement` to start the implementation loop.
 
