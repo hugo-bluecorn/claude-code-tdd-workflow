@@ -436,6 +436,76 @@ PLAN
 }
 
 # =====================================================================
+# Slice 3 — Lock lifecycle: creation and cleanup
+# =====================================================================
+
+# ---------- S3-Test2: Lock file removed before stop_hook_active check ----------
+
+function test_lock_file_removed_when_stop_hook_active_true() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+
+  # Create the lock file
+  touch "$tmp_dir/.tdd-plan-locked"
+
+  local json
+  json=$(build_json "true")
+
+  run_hook_in_dir "$tmp_dir" "$json"
+  assert_exit_code 0
+
+  # Lock file must be removed even though stop_hook_active=true
+  assert_file_not_exists "$tmp_dir/.tdd-plan-locked"
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- S3-Test3: Lock file removed on normal stop ----------
+
+function test_lock_file_removed_on_normal_stop_with_valid_plan() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+
+  # Create the lock file
+  touch "$tmp_dir/.tdd-plan-locked"
+
+  # Create a valid plan
+  write_valid_plan "$tmp_dir"
+
+  local json
+  json=$(build_json "false")
+
+  run_hook_in_dir "$tmp_dir" "$json"
+  assert_exit_code 0
+
+  # Lock file must be removed
+  assert_file_not_exists "$tmp_dir/.tdd-plan-locked"
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- S3-Test4: Lock cleaned up even on discard (no plan, no progress) ----------
+
+function test_lock_file_removed_on_discard_no_plan_no_progress() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+
+  # Create the lock file but no plan and no progress
+  touch "$tmp_dir/.tdd-plan-locked"
+
+  local json
+  json=$(build_json "false")
+
+  run_hook_in_dir "$tmp_dir" "$json"
+  assert_exit_code 0
+
+  # Lock file must be removed
+  assert_file_not_exists "$tmp_dir/.tdd-plan-locked"
+
+  rm -rf "$tmp_dir"
+}
+
+# =====================================================================
 # Slice 5 — Integration: hooks.json SubagentStop entry for tdd-planner
 # =====================================================================
 
@@ -484,4 +554,12 @@ function test_hooks_json_existing_stop_hook_preserved() {
   local result
   result=$(jq -r '.hooks.Stop[0].hooks[0].command' "$HOOKS_JSON")
   assert_contains "check-tdd-progress.sh" "$result"
+}
+
+# ---------- S3-Test1: hooks.json SubagentStart for tdd-planner includes lock creation ----------
+
+function test_hooks_json_subagent_start_tdd_planner_creates_lock() {
+  local result
+  result=$(jq -r '.hooks.SubagentStart[] | select(.matcher == "tdd-planner") | .hooks[0].command' "$HOOKS_JSON")
+  assert_contains "touch .tdd-plan-locked" "$result"
 }
