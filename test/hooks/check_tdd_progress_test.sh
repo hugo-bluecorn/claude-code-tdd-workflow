@@ -119,8 +119,10 @@ function test_block_when_slices_remain_exits_zero() {
   local tmp_dir
   tmp_dir=$(create_tmp_env)
 
-  # 3 slice headers, only 1 in terminal state
+  # 3 slice headers, only 1 in terminal state; approved plan
   cat > "$tmp_dir/.tdd-progress.md" <<'EOF'
+**Approved:** 2026-02-20
+
 ## Slice 1: Setup
 Status: done
 
@@ -145,6 +147,8 @@ function test_block_when_slices_remain_outputs_block_decision() {
   tmp_dir=$(create_tmp_env)
 
   cat > "$tmp_dir/.tdd-progress.md" <<'EOF'
+**Approved:** 2026-02-20
+
 ## Slice 1: Setup
 Status: done
 
@@ -174,6 +178,8 @@ function test_block_when_slices_remain_reason_contains_count() {
   tmp_dir=$(create_tmp_env)
 
   cat > "$tmp_dir/.tdd-progress.md" <<'EOF'
+**Approved:** 2026-02-20
+
 ## Slice 1: Setup
 Status: done
 
@@ -440,6 +446,8 @@ function test_bold_status_pending_not_terminal() {
   tmp_dir=$(create_tmp_env)
 
   cat > "$tmp_dir/.tdd-progress.md" <<'EOF'
+**Approved:** 2026-02-20
+
 ## Slice 1: First
 **Status:** done
 
@@ -498,6 +506,8 @@ function test_slice_overview_with_pending_slices_correct_count() {
   tmp_dir=$(create_tmp_env)
 
   cat > "$tmp_dir/.tdd-progress.md" <<'EOF'
+**Approved:** 2026-02-20
+
 ## Slice 1: First
 **Status:** done
 
@@ -518,6 +528,223 @@ EOF
   reason=$(echo "$output" | jq -r '.reason')
   # Should say "1 of 2" (not "2 of 3" which would happen if Overview counted)
   assert_contains "1 of 2" "$reason"
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- Test 12: Approval marker check and simplified messaging ----------
+
+function test_unapproved_plan_allows_session_exit() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+
+  # Progress file with slices but NO Approved: line
+  cat > "$tmp_dir/.tdd-progress.md" <<'EOF'
+## Slice 1: Setup
+**Status:** pending
+
+## Slice 2: Core logic
+**Status:** pending
+
+## Slice 3: Cleanup
+**Status:** pending
+EOF
+
+  local json
+  json=$(build_json "false")
+
+  local output
+  output=$(run_hook_in_dir "$tmp_dir" "$json")
+
+  # Unapproved plan should NOT block — exit 0 with no output
+  assert_exit_code 0
+  assert_empty "$output"
+
+  rm -rf "$tmp_dir"
+}
+
+function test_approved_plan_with_remaining_slices_blocks_exit() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+
+  cat > "$tmp_dir/.tdd-progress.md" <<'EOF'
+**Approved:** 2026-02-20
+
+## Slice 1: Setup
+**Status:** done
+
+## Slice 2: Core logic
+**Status:** pending
+
+## Slice 3: Cleanup
+**Status:** pending
+EOF
+
+  local json
+  json=$(build_json "false")
+
+  local output
+  output=$(run_hook_in_dir "$tmp_dir" "$json")
+
+  local decision
+  decision=$(echo "$output" | jq -r '.decision')
+  assert_equals "block" "$decision"
+
+  local reason
+  reason=$(echo "$output" | jq -r '.reason')
+  assert_contains "2 of 3 slices remaining" "$reason"
+
+  rm -rf "$tmp_dir"
+}
+
+function test_approved_plan_with_all_pending_slices_blocks_exit() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+
+  cat > "$tmp_dir/.tdd-progress.md" <<'EOF'
+**Approved:** 2026-02-20
+
+## Slice 1: Setup
+**Status:** pending
+
+## Slice 2: Core logic
+**Status:** pending
+
+## Slice 3: Cleanup
+**Status:** pending
+EOF
+
+  local json
+  json=$(build_json "false")
+
+  local output
+  output=$(run_hook_in_dir "$tmp_dir" "$json")
+
+  local decision
+  decision=$(echo "$output" | jq -r '.decision')
+  assert_equals "block" "$decision"
+
+  local reason
+  reason=$(echo "$output" | jq -r '.reason')
+  assert_contains "3 of 3 slices remaining" "$reason"
+
+  rm -rf "$tmp_dir"
+}
+
+function test_block_reason_does_not_contain_imperative_language() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+
+  cat > "$tmp_dir/.tdd-progress.md" <<'EOF'
+**Approved:** 2026-02-20
+
+## Slice 1: Setup
+**Status:** done
+
+## Slice 2: Core logic
+**Status:** pending
+EOF
+
+  local json
+  json=$(build_json "false")
+
+  local output
+  output=$(run_hook_in_dir "$tmp_dir" "$json")
+
+  local reason
+  reason=$(echo "$output" | jq -r '.reason')
+  assert_not_contains "Continue implementing" "$reason"
+
+  rm -rf "$tmp_dir"
+}
+
+function test_single_pending_approved_slice_blocks_exit() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+
+  cat > "$tmp_dir/.tdd-progress.md" <<'EOF'
+**Approved:** 2026-02-20
+
+## Slice 1: Setup
+**Status:** pending
+EOF
+
+  local json
+  json=$(build_json "false")
+
+  local output
+  output=$(run_hook_in_dir "$tmp_dir" "$json")
+
+  local decision
+  decision=$(echo "$output" | jq -r '.decision')
+  assert_equals "block" "$decision"
+
+  local reason
+  reason=$(echo "$output" | jq -r '.reason')
+  assert_contains "1 of 1" "$reason"
+
+  rm -rf "$tmp_dir"
+}
+
+function test_approved_marker_with_bold_markdown_recognized() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+
+  # Bold markdown Approved with timestamp
+  cat > "$tmp_dir/.tdd-progress.md" <<'EOF'
+**Approved:** 2026-02-20T10:00:00Z
+
+## Slice 1: Setup
+**Status:** pending
+
+## Slice 2: Core logic
+**Status:** pending
+EOF
+
+  local json
+  json=$(build_json "false")
+
+  local output
+  output=$(run_hook_in_dir "$tmp_dir" "$json")
+
+  local decision
+  decision=$(echo "$output" | jq -r '.decision')
+  assert_equals "block" "$decision"
+
+  local reason
+  reason=$(echo "$output" | jq -r '.reason')
+  assert_contains "2 of 2 slices remaining" "$reason"
+
+  rm -rf "$tmp_dir"
+}
+
+function test_all_in_progress_slices_with_approved_marker_blocks_exit() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+
+  cat > "$tmp_dir/.tdd-progress.md" <<'EOF'
+**Approved:** 2026-02-20
+
+## Slice 1: Setup
+**Status:** in_progress
+
+## Slice 2: Core logic
+**Status:** in_progress
+EOF
+
+  local json
+  json=$(build_json "false")
+
+  local output
+  output=$(run_hook_in_dir "$tmp_dir" "$json")
+
+  local decision
+  decision=$(echo "$output" | jq -r '.decision')
+  assert_equals "block" "$decision"
+
+  local reason
+  reason=$(echo "$output" | jq -r '.reason')
+  assert_contains "2 of 2" "$reason"
 
   rm -rf "$tmp_dir"
 }
