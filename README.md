@@ -173,7 +173,10 @@ tdd-workflow/
 ├── docs/
 │   ├── version-control.md
 │   ├── version-control-integration.md
-│   └── user-guide.md
+│   ├── user-guide.md
+│   ├── tdd-workflow-extensibility-audit.md
+│   ├── extensibility-audit-prompt.md
+│   └── new-feature_documentation_skill.md
 ├── CLAUDE.md
 ├── README.md
 ├── CHANGELOG.md

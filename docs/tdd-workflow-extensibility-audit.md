@@ -1,7 +1,7 @@
 # TDD Workflow Plugin — Claude Code Extensibility Audit
 
-**Revision date:** 2026-02-16
-**Plugin version:** 1.6.0
+**Revision date:** 2026-02-20
+**Plugin version:** 1.6.6
 **Feature inventory:** extensibility-audit-prompt.md v2.1 (2026-02-14)
 **Previous audit:** 2026-02-10 (v3 revision notes, pre-plugin state)
 
@@ -205,7 +205,7 @@ current implementation. Update it after each significant plugin change.
 | # | Field | Status | Notes |
 |---|-------|--------|-------|
 | D1 | `name` | ✅ | `"tdd-workflow"` |
-| D2 | `version` | ✅ | `"1.6.0"` |
+| D2 | `version` | ✅ | `"1.6.6"` |
 | D3 | `description` | ✅ | Present and descriptive |
 | D4 | `author` | ⊘ | Optional; can add later |
 | D5 | `homepage` | ⊘ | No published docs yet |
@@ -275,7 +275,11 @@ tdd-workflow/                               Status
 │   └── detect-project-context.sh           ✅ (added in v1.4.0, S4)
 ├── docs/
 │   ├── version-control.md                  ✅
-│   └── user-guide.md                       ✅
+│   ├── version-control-integration.md      ✅
+│   ├── user-guide.md                       ✅
+│   ├── tdd-workflow-extensibility-audit.md  ✅
+│   ├── extensibility-audit-prompt.md       ✅
+│   └── new-feature_documentation_skill.md  ✅
 ├── CLAUDE.md                               ✅
 ├── CHANGELOG.md                            ✅
 ├── README.md                               ✅
@@ -403,6 +407,8 @@ no skill wrapper, no hooks, and no plugin structure. Since then:
 | **Hook script hardening (retroactive tests + JSON fix)** | ✅ v1.3.1 — 4 slices, 42 new tests, 237 total, 298 assertions |
 | **Phase 3 planner intelligence (S1, S3, S4)** | ✅ v1.4.0 — planner memory, SubagentStart context, dynamic `!` backtick |
 | **Phase 4 git workflow (S5, S6)** | ✅ v1.5.0 — implementer auto-commits, branch creation |
+| **Riverpod 3.x conventions update** | ✅ v1.6.5 — project-conventions.md migrated to Riverpod 3.x (no codegen) |
+| **Compaction cascade fix (6 slices)** | ✅ v1.6.6 — pipe bypass, lock-file gate, lock lifecycle, approval marker, prompt updates |
 
 ---
 
@@ -784,4 +790,6 @@ audits. The v1.0 prompt should be retired.
 *v1.4.0: Phase 3 applied (S1, S3, S4) — planner memory, context injection.*
 *v1.5.0: Phase 4 applied (S5, S6) — git auto-commit, branch creation.*
 *v1.6.0: Phase 5 partial — N6 applied (release workflow). N3, N4 remain.*
+*v1.6.5: Riverpod 3.x conventions update.*
+*v1.6.6: Compaction cascade fix — pipe bypass, lock-file gate, approval marker.*
 *Next audit: after implementing N3, N4.*

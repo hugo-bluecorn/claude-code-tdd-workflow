@@ -28,6 +28,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Step -1 approval verification gate in tdd-implement skill
 
 
+## [1.6.5] - 2026-02-20
+
+### Changed
+- Project conventions: migrated from Riverpod 2.x to Riverpod 3.x (v3.2.1)
+  with no-codegen stance, updated provider types, sealed Ref class, and
+  `ref.mounted` async safety checks
+
 ## [1.6.4] - 2026-02-18
 
 ### Fixed
