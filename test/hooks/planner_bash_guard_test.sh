@@ -414,6 +414,56 @@ function test_frontmatter_preserves_skills_list() {
   assert_file_contains "$PLANNER_MD" "bash-testing-conventions"
 }
 
+# =====================================================================
+# Prompt file content assertions — approval flow
+# =====================================================================
+
+SKILL_PLAN="skills/tdd-plan/SKILL.md"
+SKILL_IMPLEMENT="skills/tdd-implement/SKILL.md"
+
+# ---------- Test PF1: SKILL.md contains compaction guard instruction ----------
+
+function test_skill_plan_contains_compaction_guard() {
+  assert_file_contains "$SKILL_PLAN" "CRITICAL"
+  assert_file_contains "$SKILL_PLAN" ".tdd-plan-locked"
+  assert_file_contains "$SKILL_PLAN" "re-ask"
+}
+
+# ---------- Test PF2: SKILL.md contains lock removal step ----------
+
+function test_skill_plan_contains_lock_removal_step() {
+  assert_file_contains "$SKILL_PLAN" "rm .tdd-plan-locked"
+}
+
+# ---------- Test PF3: SKILL.md contains Approved header instruction ----------
+
+function test_skill_plan_contains_approved_header_instruction() {
+  assert_file_contains "$SKILL_PLAN" "Approved:"
+}
+
+# ---------- Test PF4: tdd-planner.md contains compaction guard and lock removal ----------
+
+function test_planner_md_contains_compaction_guard_and_lock_removal() {
+  assert_file_contains "$PLANNER_MD" ".tdd-plan-locked"
+  assert_file_contains "$PLANNER_MD" "rm .tdd-plan-locked"
+}
+
+# ---------- Test PF5: tdd-implement SKILL.md contains approval verification gate ----------
+
+function test_implement_skill_contains_approval_verification_gate() {
+  assert_file_contains "$SKILL_IMPLEMENT" "Approved:"
+  assert_file_contains "$SKILL_IMPLEMENT" "/tdd-plan"
+}
+
+# ---------- Test PF6 (Edge Case): tdd-planner.md preserves existing mandatory approval sequence ----------
+
+function test_planner_md_preserves_mandatory_approval_sequence() {
+  assert_file_contains "$PLANNER_MD" "AskUserQuestion"
+  assert_file_contains "$PLANNER_MD" "Approve"
+  assert_file_contains "$PLANNER_MD" "Modify"
+  assert_file_contains "$PLANNER_MD" "Discard"
+}
+
 # ---------- Test S5-5: Existing hook scripts unmodified ----------
 
 function test_existing_hooks_unmodified() {
