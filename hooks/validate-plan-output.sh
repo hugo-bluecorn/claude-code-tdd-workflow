@@ -4,6 +4,10 @@
 
 INPUT=$(cat)
 
+# Unconditionally remove the lock file before any early-exit checks.
+# This ensures cleanup on abort, discard, crash, or normal stop.
+rm -f .tdd-plan-locked 2>/dev/null
+
 STOP_ACTIVE=$(echo "$INPUT" | jq -r '.stop_hook_active // false')
 if [ "$STOP_ACTIVE" = "true" ]; then
   exit 0
