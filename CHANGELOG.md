@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.6.6] - 2026-02-20
+
+### Fixed
+- Pipe bypass in planner bash guard: `cat | tee .tdd-progress.md` now blocked
+  alongside `>` redirects; covers `tee` and `sponge` patterns
+- Auto-compaction unapproved plan cascade: `.tdd-plan-locked` filesystem lock
+  prevents `.tdd-progress.md` writes until explicit approval via AskUserQuestion
+- Stop hook imperative language: "Continue implementing." replaced with
+  declarative "TDD session has N of M slices remaining."
+- Unapproved plans no longer trap user in session: missing `Approved:` marker
+  allows session exit instead of blocking
+
+### Added
+- Lock-file gate in planner bash guard with targeted `rm .tdd-plan-locked`
+  exception
+- Lock lifecycle: SubagentStart creates `.tdd-plan-locked`, SubagentStop
+  unconditionally removes it (before stop_hook_active check)
+- `Approved:` marker in `.tdd-progress.md` header for downstream validation
+- Compaction guard in SKILL.md and tdd-planner.md referencing lock file as
+  ground truth
+- Step -1 approval verification gate in tdd-implement skill
+
+
 ## [1.6.4] - 2026-02-18
 
 ### Fixed
