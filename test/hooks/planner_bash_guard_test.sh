@@ -183,6 +183,50 @@ function test_guard_stderr_redirect_to_dev_null_exits_zero() {
   assert_exit_code 0
 }
 
+# ---------- Pipe Bypass Detection Tests ----------
+
+# ---------- Test P1: Blocks pipe-to-file via tee to arbitrary path ----------
+
+function test_guard_pipe_tee_to_arbitrary_path_exits_two() {
+  run_hook "cat README.md | tee .tdd-progress.md"
+  assert_exit_code 2
+}
+
+function test_guard_pipe_tee_to_arbitrary_path_stderr_contains_blocked() {
+  local stderr_output
+  stderr_output=$(run_hook_stderr "cat README.md | tee .tdd-progress.md")
+
+  assert_contains "BLOCKED" "$stderr_output"
+}
+
+# ---------- Test P2: Allows pipe-to-file via tee to planning/ directory ----------
+
+function test_guard_pipe_tee_to_planning_dir_exits_zero() {
+  run_hook "cat notes.md | tee planning/notes.md"
+  assert_exit_code 0
+}
+
+# ---------- Test P3: Allows pipe-to-file via tee to /dev/null ----------
+
+function test_guard_pipe_tee_to_dev_null_exits_zero() {
+  run_hook "cat README.md | tee /dev/null"
+  assert_exit_code 0
+}
+
+# ---------- Test P4 (Edge Case): Blocks pipe-to-file via sponge to arbitrary path ----------
+
+function test_guard_pipe_sponge_to_arbitrary_path_exits_two() {
+  run_hook "cat README.md | sponge .tdd-progress.md"
+  assert_exit_code 2
+}
+
+function test_guard_pipe_sponge_to_arbitrary_path_stderr_contains_blocked() {
+  local stderr_output
+  stderr_output=$(run_hook_stderr "cat README.md | sponge .tdd-progress.md")
+
+  assert_contains "BLOCKED" "$stderr_output"
+}
+
 # =====================================================================
 # Slice 5 — Integration: Planner frontmatter hooks wiring
 # =====================================================================
