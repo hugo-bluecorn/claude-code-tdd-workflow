@@ -40,6 +40,19 @@ for cmd in $ALLOWED; do
           ;;
       esac
     fi
+    # Check for pipe-to-file via tee or sponge
+    if echo "$COMMAND" | grep -qE '\|\s*(tee|sponge)\s'; then
+      PIPE_TARGET=$(echo "$COMMAND" | sed -E 's/.*\|\s*(tee|sponge)\s+//' | cut -d' ' -f1)
+      case "$PIPE_TARGET" in
+        /dev/null) ;;
+        planning/*) ;;
+        ./planning/*) ;;
+        *)
+          echo "BLOCKED: Pipe to file outside planning/ directory." >&2
+          exit 2
+          ;;
+      esac
+    fi
     exit 0
   fi
 done
