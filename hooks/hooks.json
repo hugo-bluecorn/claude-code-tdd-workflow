@@ -11,6 +11,16 @@
             "command": "touch .tdd-plan-locked && echo \"{\\\"additionalContext\\\": \\\"Current branch: $(git branch --show-current 2>/dev/null || echo 'unknown'). Last commit: $(git log --oneline -1 2>/dev/null || echo 'none'). Dirty files: $(git status --porcelain 2>/dev/null | wc -l | tr -d ' ').\\\"}\""
           }
         ]
+      },
+      {
+        "matcher": "context-updater",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"{\\\"additionalContext\\\": \\\"Current branch: $(git branch --show-current 2>/dev/null || echo 'unknown'). Last commit: $(git log --oneline -1 2>/dev/null || echo 'none'). Dirty files: $(git status --porcelain 2>/dev/null | wc -l | tr -d ' '). WARNING: If dirty files > 0, warn user before making edits.\\\"}\"",
+            "timeout": 5
+          }
+        ]
       }
     ],
     "SubagentStop": [
