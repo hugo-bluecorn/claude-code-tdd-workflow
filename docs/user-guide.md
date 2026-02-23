@@ -76,7 +76,7 @@ The plugin system uses the `version` field in `.claude-plugin/plugin.json` to de
 
 ```json
 {
-  "version": "1.6.6"
+  "version": "1.8.0"
 }
 ```
 
@@ -434,10 +434,28 @@ The Stop hook prevents Claude from ending the session while `.tdd-progress.md` h
 
 ---
 
+## Updating Convention References
+
+Run `/tdd-update-context` to update the plugin's convention reference files to the latest framework versions. This is useful when a new major version of GoogleTest, Flutter, or another framework is released and the plugin's documentation becomes stale.
+
+The context-updater agent will:
+
+1. Read all current reference files and note documented versions
+2. Research latest stable versions from canonical sources (GitHub repos, official sites)
+3. Analyze breaking changes between documented and latest versions
+4. Perform a gap analysis (stale patterns, missing docs, incorrect examples)
+5. Present a structured proposal with priority ratings
+6. Ask for approval before editing any files
+7. Apply approved changes and commit
+
+This workflow only modifies reference content files and SKILL.md quick references — it never touches agent definitions, hook scripts, or workflow logic.
+
+---
+
 ## Reference
 
 - `README.md` — Architecture overview and component listing
 - `docs/version-control.md` — Git workflow and commit conventions
-- `skills/dart-flutter-conventions/` — Dart/Flutter testing patterns and project conventions
-- `skills/cpp-testing-conventions/` — C++ GoogleTest patterns and CMake integration
+- `skills/dart-flutter-conventions/` — Dart/Flutter testing patterns, project conventions, Riverpod guide, and test recipes
+- `skills/cpp-testing-conventions/` — C++ GoogleTest patterns, CMake integration, and Clang tooling
 - `skills/bash-testing-conventions/` — Bash testing with bashunit and shellcheck

@@ -152,8 +152,8 @@ The plugin auto-loads convention skills based on file type:
 
 | Skill | Triggers On | Reference Docs |
 |-------|------------|----------------|
-| `dart-flutter-conventions` | `.dart` files | test-patterns, mocking-guide, widget-testing, project-conventions |
-| `cpp-testing-conventions` | `.cpp`, `.h` files | googletest-patterns, cmake-integration, googlemock-guide |
+| `dart-flutter-conventions` | `.dart` files | test-patterns, test-recipes, mocking-guide, widget-testing, project-conventions, riverpod-guide |
+| `cpp-testing-conventions` | `.cpp`, `.h` files | googletest-patterns, cmake-integration, googlemock-guide, clang-tooling |
 | `bash-testing-conventions` | `.sh` files | bashunit-patterns, shellcheck-guide |
 
 Planning reference templates (used by tdd-planner agent):

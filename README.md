@@ -4,7 +4,7 @@ A Claude Code plugin for Test-Driven Development with context-isolated agents. E
 
 ## Overview
 
-This plugin decomposes TDD into four context-isolated agents that prevent the common failure modes of single-context TDD: training distribution bias toward implementation-first code, context rot under token accumulation, and absence of epistemic boundaries between test and implementation reasoning.
+This plugin decomposes TDD into five context-isolated agents that prevent the common failure modes of single-context TDD: training distribution bias toward implementation-first code, context rot under token accumulation, and absence of epistemic boundaries between test and implementation reasoning.
 
 ## Requirements
 
@@ -79,6 +79,7 @@ Done
 | tdd-implementer | opus | Red-green-refactor per slice (full tools) |
 | tdd-verifier | haiku | Blackbox validation (read-only) |
 | tdd-releaser | sonnet | Release workflow (CHANGELOG, PR) |
+| context-updater | sonnet | Updates convention reference files to latest versions |
 
 ### Skills
 
@@ -87,6 +88,7 @@ Done
 | `/tdd-plan` | Orchestrating entry point (forks context) |
 | `/tdd-implement` | Implementation loop (reads progress, runs slices) |
 | `/tdd-release` | Release entry point (forks context) |
+| `/tdd-update-context` | Updates convention reference files to latest versions |
 | dart-flutter-conventions | Convention reference (auto-loaded by agents) |
 | cpp-testing-conventions | Convention reference (auto-loaded by agents) |
 | bash-testing-conventions | Convention reference (auto-loaded by agents) |
@@ -101,6 +103,7 @@ Done
 | validate-plan-output.sh | Stop + SubagentStop (command) | Validates plan file has required sections |
 | check-tdd-progress.sh | Stop (command) | Prevents session end with pending slices |
 | SubagentStart (planner) | command | Injects git context into planner |
+| SubagentStart (context-updater) | command | Injects git context with edit warning |
 | check-release-complete.sh | SubagentStop (command) | Validates branch is pushed to remote |
 | SubagentStop (implementer) | prompt | Verifies R-G-R cycle completion |
 
@@ -132,7 +135,8 @@ tdd-workflow/
 │   ├── tdd-planner.md
 │   ├── tdd-implementer.md
 │   ├── tdd-verifier.md
-│   └── tdd-releaser.md
+│   ├── tdd-releaser.md
+│   └── context-updater.md
 ├── skills/
 │   ├── tdd-plan/
 │   │   ├── SKILL.md
@@ -143,19 +147,24 @@ tdd-workflow/
 │   │   └── SKILL.md
 │   ├── tdd-release/
 │   │   └── SKILL.md
+│   ├── tdd-update-context/
+│   │   └── SKILL.md
 │   ├── dart-flutter-conventions/
 │   │   ├── SKILL.md
 │   │   └── reference/
 │   │       ├── test-patterns.md
+│   │       ├── test-recipes.md
 │   │       ├── mocking-guide.md
 │   │       ├── widget-testing.md
-│   │       └── project-conventions.md
+│   │       ├── project-conventions.md
+│   │       └── riverpod-guide.md
 │   ├── cpp-testing-conventions/
 │   │   ├── SKILL.md
 │   │   └── reference/
 │   │       ├── googletest-patterns.md
 │   │       ├── cmake-integration.md
-│   │       └── googlemock-guide.md
+│   │       ├── googlemock-guide.md
+│   │       └── clang-tooling.md
 │   └── bash-testing-conventions/
 │       ├── SKILL.md
 │       └── reference/
@@ -180,6 +189,7 @@ tdd-workflow/
 ├── CLAUDE.md
 ├── README.md
 ├── CHANGELOG.md
+├── MEMORY.md
 └── LICENSE
 ```
 

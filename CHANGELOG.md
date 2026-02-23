@@ -24,6 +24,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   replaced with `tester.view` in golden test examples
 - Bash conventions: added ShellCheck 0.11.0 warning codes SC2329/SC2330
   (unused function detection) to shellcheck-guide.md
+- README: added context-updater agent, `/tdd-update-context` skill, new
+  reference files, and SubagentStart hook to component tables and file tree
+- User guide: added "Updating Convention References" section documenting
+  `/tdd-update-context` workflow; updated reference list with new files
+- CLAUDE.md: updated convention skills table with new reference file names
 
 ## [1.7.0] - 2026-02-23
 
