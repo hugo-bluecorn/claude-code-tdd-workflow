@@ -149,6 +149,35 @@ read line
 read -r line
 ```
 
+### SC2329/SC2330 -- Function not used / not called (ShellCheck 0.11.0+)
+
+ShellCheck 0.11.0 added warnings for functions that are defined but never
+invoked within the script. SC2329 warns about the function definition and
+SC2330 warns at each unused function.
+
+```bash
+# Bad -- triggers SC2329/SC2330
+my_helper() {
+  echo "never called"
+}
+echo "done"
+
+# Good -- either call the function or remove it
+my_helper() {
+  echo "called below"
+}
+my_helper
+```
+
+Suppress if the function is invoked by a sourcing script:
+
+```bash
+# shellcheck disable=SC2329
+my_exported_helper() {
+  echo "called by parent script"
+}
+```
+
 ## ShellCheck Directives
 
 Directives are special comments that control ShellCheck behavior for specific

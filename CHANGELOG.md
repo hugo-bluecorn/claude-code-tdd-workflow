@@ -15,6 +15,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   to reference content files only
 - SubagentStart hook for context-updater injecting git branch, last commit,
   and dirty file count with edit warning
+- C++ conventions: `clang-tooling.md` reference covering clang-format,
+  clang-tidy testing checks, and sanitizer (ASan/UBSan/TSan) CMake integration
+
+### Changed
+- C++ conventions: GoogleTest updated from v1.14.0 to v1.17.0 (requires C++17);
+  CMake minimum raised from 3.14 to 3.16 with `CMAKE_CXX_STANDARD 17` enforced
+- C++ conventions: added `DistanceFrom()` matcher (GoogleTest 1.17+) and CMake
+  4.x compatibility note
+- Dart/Flutter conventions: split `project-conventions.md` (536 lines) into
+  `project-conventions.md` (~200 lines) and `riverpod-guide.md` (~190 lines)
+- Dart/Flutter conventions: split `test-patterns.md` (411 lines) into
+  `test-patterns.md` (~220 lines) and `test-recipes.md` (~160 lines)
+- Dart/Flutter conventions: fixed deprecated `tester.binding.window` API
+  replaced with `tester.view` in golden test examples
+- Bash conventions: added ShellCheck 0.11.0 warning codes SC2329/SC2330
+  (unused function detection) to shellcheck-guide.md
 
 ## [1.6.6] - 2026-02-20
 

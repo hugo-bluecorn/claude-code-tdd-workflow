@@ -1,17 +1,24 @@
 # CMake Integration for GoogleTest
 
+> **GoogleTest 1.17.0+ requires C++17.** Ensure your toolchain supports it.
+> CMake 4.x removes backward compatibility with cmake_minimum_required < 3.5.
+
 ## CMakeLists.txt Setup
 
 ```cmake
-cmake_minimum_required(VERSION 3.14.0)
+cmake_minimum_required(VERSION 3.16)
 project(my_project VERSION 0.1.0 LANGUAGES C CXX)
+
+# GoogleTest 1.17+ requires C++17
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Fetch Google Test
 include(FetchContent)
 FetchContent_Declare(
   googletest
   GIT_REPOSITORY https://github.com/google/googletest.git
-  GIT_TAG v1.14.0
+  GIT_TAG v1.17.0
 )
 FetchContent_MakeAvailable(googletest)
 

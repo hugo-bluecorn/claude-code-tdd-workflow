@@ -20,6 +20,11 @@ See `reference/test-patterns.md` for complete examples including:
 - BLoC testing with bloc_test package
 - Group and setUp/tearDown patterns
 
+See `reference/test-recipes.md` for:
+- Common scenarios (form validation, navigation, async operations)
+- Best practices (test behavior not implementation, edge cases, golden tests)
+- TDD phase commands and analysis commands
+
 ## Mocking
 See `reference/mocking-guide.md` for:
 - mockito with @GenerateMocks
@@ -40,6 +45,14 @@ See `reference/project-conventions.md` for:
 - File size guidelines
 - Conventional Commits format
 - CHANGELOG.md requirements
+
+## State Management (Riverpod 3.x)
+See `reference/riverpod-guide.md` for:
+- Provider types (Notifier, AsyncNotifier, Family, AutoDispose)
+- ViewModel and View patterns with ConsumerWidget
+- Ref API and async safety with ref.mounted
+- Testing with provider overrides
+- Legacy provider migration
 
 ## Running Tests
 - Single file: `flutter test test/path/to_test.dart`

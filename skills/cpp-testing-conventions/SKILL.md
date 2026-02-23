@@ -8,6 +8,8 @@ user-invocable: false
 
 # C++ Testing Conventions
 
+> **GoogleTest 1.17.0+ requires C++17.** See cmake-integration.md for setup.
+
 ## GoogleTest Structure
 See `reference/googletest-patterns.md` for:
 - TEST and TEST_F macros
@@ -26,6 +28,13 @@ See `reference/googlemock-guide.md` for:
 - MOCK_METHOD macro
 - EXPECT_CALL with matchers
 - Action specification (Return, Throw, Invoke)
+
+## Clang Tooling
+See `reference/clang-tooling.md` for:
+- clang-format configuration for test files
+- clang-tidy checks relevant to testing (bugprone, modernize, performance)
+- Sanitizers (ASan, UBSan, TSan) CMake integration for test targets
+- Integration with the TDD verification phase
 
 ## Running Tests
 - Build: `cmake --build build/`

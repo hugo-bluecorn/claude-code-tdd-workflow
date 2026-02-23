@@ -1,5 +1,7 @@
 # GoogleTest Patterns
 
+> **Version note:** GoogleTest 1.17.0+ requires C++17 (raised from C++14).
+
 ## Test Structure (TEST Macro)
 
 ```cpp
@@ -79,6 +81,9 @@ EXPECT_STRNE(str1, str2);     // C strings not equal
 // Floating point
 EXPECT_FLOAT_EQ(val1, val2);  // Almost equal
 EXPECT_NEAR(val1, val2, abs_error);
+
+// Distance comparison (1.17+)
+EXPECT_THAT(val, DistanceFrom(target, Le(tolerance)));  // General distance
 
 // Exceptions
 EXPECT_THROW(statement, exception_type);
