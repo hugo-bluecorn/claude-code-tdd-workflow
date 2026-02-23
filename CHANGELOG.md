@@ -5,16 +5,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [1.7.0] - 2026-02-23
+## [1.8.0] - 2026-02-23
 
 ### Added
-- `/tdd-update-context` skill for updating convention reference files to latest
-  framework versions, best practices, and gap analysis with breaking-change
-  detection
-- `context-updater` agent with web search, approval gate, and targeted edits
-  to reference content files only
-- SubagentStart hook for context-updater injecting git branch, last commit,
-  and dirty file count with edit warning
 - C++ conventions: `clang-tooling.md` reference covering clang-format,
   clang-tidy testing checks, and sanitizer (ASan/UBSan/TSan) CMake integration
 
@@ -31,6 +24,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   replaced with `tester.view` in golden test examples
 - Bash conventions: added ShellCheck 0.11.0 warning codes SC2329/SC2330
   (unused function detection) to shellcheck-guide.md
+
+## [1.7.0] - 2026-02-23
+
+### Added
+- `/tdd-update-context` skill for updating convention reference files to latest
+  framework versions, best practices, and gap analysis with breaking-change
+  detection
+- `context-updater` agent with web search, approval gate, and targeted edits
+  to reference content files only
+- SubagentStart hook for context-updater injecting git branch, last commit,
+  and dirty file count with edit warning
 
 ## [1.6.6] - 2026-02-20
 
