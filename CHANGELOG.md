@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.8.1] - 2026-02-24
+
+### Changed
+- tdd-planner agent: fixed misleading frontmatter description from "Codebase
+  research agent... Read-only" to "Autonomous TDD planning agent" with accurate
+  capability listing (approval flow, file writing, AskUserQuestion)
+- tdd-planner agent: added `## Identity & Invocation` section to system prompt
+  with invocation detection and graceful degradation to research-only mode when
+  manually launched outside `/tdd-plan`
+- CLAUDE.md: updated Plugin Architecture table — tdd-planner row now says
+  "Read-write (gated by approval lock)" instead of "Read-only"
+- CLAUDE.md: added invocation warning after Available Commands section advising
+  against manual Task tool invocation of tdd-planner
+
+### Added
+- `test/agents/tdd_planner_identity_test.sh` — 26 tests verifying agent
+  description accuracy, identity guard content, and CLAUDE.md documentation
+
 ## [1.8.0] - 2026-02-23
 
 ### Added
