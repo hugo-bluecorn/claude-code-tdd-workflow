@@ -10,7 +10,7 @@ structured RED -> GREEN -> REFACTOR cycle.
 
 | Agent | Role | Mode |
 |-------|------|------|
-| **tdd-planner** | Researches codebase, decomposes features into testable slices, produces structured plans | Read-only |
+| **tdd-planner** | Full planning lifecycle: research, decompose, present for approval, write .tdd-progress.md and planning/ archive. Invoke via `/tdd-plan` only | Read-write (gated by approval lock) |
 | **tdd-implementer** | Writes tests first, then implementation, following the plan | Read-write |
 | **tdd-verifier** | Runs the complete test suite and static analysis to validate each phase | Read-only |
 | **tdd-releaser** | Finalizes completed features: CHANGELOG, push, PR creation | Read-write (Bash only) |
@@ -22,6 +22,11 @@ structured RED -> GREEN -> REFACTOR cycle.
 - **`/tdd-implement`** — Start or resume TDD implementation for pending slices
 - **`/tdd-release`** — Finalize and release a completed TDD feature
 - **`/tdd-update-context`** — Update convention reference files to latest versions
+
+> **Important:** Do NOT manually invoke `tdd-workflow:tdd-planner` via the Task
+> tool. It is designed to run through `/tdd-plan`, which provides the structured
+> planning process. Manual invocation produces degraded results because the
+> agent's 10-step process (from the skill definition) is absent.
 
 ### Session State
 
