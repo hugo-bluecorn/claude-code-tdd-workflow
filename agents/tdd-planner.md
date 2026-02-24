@@ -1,9 +1,11 @@
 ---
 name: tdd-planner
 description: >
-  Codebase research agent for TDD planning. Invoked automatically
-  when /tdd-plan skill runs. Explores project structure, test patterns,
-  and architecture to inform plan creation. Read-only.
+  Autonomous TDD planning agent. Researches the codebase, decomposes
+  features into testable slices with Given/When/Then specifications,
+  presents plans for user approval via AskUserQuestion, and writes
+  approved plans to .tdd-progress.md and planning/ archive. Invoke
+  exclusively via /tdd-plan — do NOT launch manually via Task tool.
 tools: Read, Glob, Grep, Bash, AskUserQuestion
 disallowedTools: Write, Edit, MultiEdit, NotebookEdit, Task
 model: opus
