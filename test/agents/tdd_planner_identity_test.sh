@@ -81,3 +81,84 @@ function test_planner_description_mentions_tdd_progress_file() {
   frontmatter=$(get_frontmatter)
   assert_contains ".tdd-progress.md" "$frontmatter"
 }
+
+# ===== Slice 2: Identity & Invocation Guard =====
+
+# Helper: extract body content (everything after the closing --- of frontmatter),
+# stripping leading blank lines.
+get_body() {
+  sed -n '/^---$/,/^---$/d; p' "$AGENT_FILE" | sed '/./,$!d'
+}
+
+# ---------- Test S2-1: Body contains Identity section heading ----------
+
+function test_planner_body_contains_identity_section_heading() {
+  local body
+  body=$(get_body)
+  assert_contains "## Identity" "$body"
+}
+
+# ---------- Test S2-2: Identity section declares agent is NOT research-only ----------
+
+function test_planner_identity_declares_not_research_only() {
+  local body
+  body=$(get_body)
+  assert_contains "NOT a research-only helper" "$body"
+}
+
+# ---------- Test S2-3: Identity section contains invocation detection instruction ----------
+
+function test_planner_identity_contains_process_detection_instruction() {
+  local body
+  body=$(get_body)
+  assert_contains '## Process' "$body"
+}
+
+# ---------- Test S2-4: Identity section contains fallback behavior ----------
+
+function test_planner_identity_contains_fallback_behavior() {
+  local body
+  body=$(get_body)
+  assert_contains "return only raw research findings as a fallback" "$body"
+}
+
+# ---------- Test S2-5: Existing body sections preserved ----------
+
+function test_planner_body_preserves_planning_process() {
+  local body
+  body=$(get_body)
+  assert_contains "## Planning Process" "$body"
+}
+
+function test_planner_body_preserves_key_principles() {
+  local body
+  body=$(get_body)
+  assert_contains "## Key Principles" "$body"
+}
+
+function test_planner_body_preserves_output_section() {
+  local body
+  body=$(get_body)
+  assert_contains "## Output" "$body"
+}
+
+function test_planner_body_preserves_mandatory_approval_sequence() {
+  local body
+  body=$(get_body)
+  assert_contains "### Mandatory approval sequence" "$body"
+}
+
+# ---------- Test S2-6: Identity section appears before Planning Process ----------
+
+function test_planner_identity_appears_before_planning_process() {
+  local identity_line planning_line
+  identity_line=$(grep -n "## Identity" "$AGENT_FILE" | head -1 | cut -d: -f1)
+  planning_line=$(grep -n "## Planning Process" "$AGENT_FILE" | head -1 | cut -d: -f1)
+
+  assert_not_empty "$identity_line"
+  assert_not_empty "$planning_line"
+
+  if [[ "$identity_line" -ge "$planning_line" ]]; then
+    fail "## Identity (line $identity_line) should appear before ## Planning Process (line $planning_line)"
+  fi
+}
