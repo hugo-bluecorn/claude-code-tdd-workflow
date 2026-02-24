@@ -38,7 +38,7 @@ User Request
     v
 /tdd-plan (Orchestrating Skill)
     |  context: fork
-    |  agent: tdd-planner (opus, read-only)
+    |  agent: tdd-planner (opus, approval-gated writes)
     |  Researches codebase, produces slice-oriented plan
     |  Writes: .tdd-progress.md + planning/ archive
     v
@@ -75,7 +75,7 @@ Done
 
 | Agent | Model | Purpose |
 |-------|-------|---------|
-| tdd-planner | opus | Codebase research, plan creation (read-only) |
+| tdd-planner | opus | Full planning lifecycle: research, plan creation, approval, file writing (approval-gated) |
 | tdd-implementer | opus | Red-green-refactor per slice (full tools) |
 | tdd-verifier | haiku | Blackbox validation (read-only) |
 | tdd-releaser | sonnet | Release workflow (CHANGELOG, PR) |

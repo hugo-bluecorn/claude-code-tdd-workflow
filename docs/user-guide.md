@@ -76,7 +76,7 @@ The plugin system uses the `version` field in `.claude-plugin/plugin.json` to de
 
 ```json
 {
-  "version": "1.8.0"
+  "version": "1.8.1"
 }
 ```
 
