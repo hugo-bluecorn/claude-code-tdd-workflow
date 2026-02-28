@@ -839,3 +839,54 @@ function test_planner_md_existing_approval_sequence_preserved_after_discard_fix(
 function test_skill_plan_constraints_preserved_after_discard_fix() {
   assert_file_contains "$SKILL_PLAN" "Do NOT write any implementation code"
 }
+
+# =====================================================================
+# Slice 3 — hooks.json retry counter cleanup + .gitignore
+# =====================================================================
+
+# ---------- S3-1: SubagentStart command cleans up stale retry counter ----------
+
+function test_hooks_json_subagent_start_cleans_up_retry_counter() {
+  local result
+  result=$(jq -r '.hooks.SubagentStart[] | select(.matcher == "tdd-planner") | .hooks[0].command' "$HOOKS_JSON")
+  assert_contains "rm -f .tdd-plan-approval-retries" "$result"
+}
+
+# ---------- S3-2: SubagentStart still creates lock file (preservation) ----------
+
+function test_hooks_json_subagent_start_still_creates_lock() {
+  local result
+  result=$(jq -r '.hooks.SubagentStart[] | select(.matcher == "tdd-planner") | .hooks[0].command' "$HOOKS_JSON")
+  assert_contains "touch .tdd-plan-locked" "$result"
+}
+
+# ---------- S3-3: All existing hook configurations preserved ----------
+
+function test_hooks_json_existing_configs_preserved_after_retry_counter_fix() {
+  # tdd-implementer SubagentStop
+  local impl_result
+  impl_result=$(jq -r '.hooks.SubagentStop[] | select(.matcher == "tdd-implementer") | .matcher' "$HOOKS_JSON")
+  assert_equals "tdd-implementer" "$impl_result"
+
+  # tdd-releaser SubagentStop
+  local rel_result
+  rel_result=$(jq -r '.hooks.SubagentStop[] | select(.matcher == "tdd-releaser") | .matcher' "$HOOKS_JSON")
+  assert_equals "tdd-releaser" "$rel_result"
+
+  # context-updater SubagentStart
+  local ctx_result
+  ctx_result=$(jq -r '.hooks.SubagentStart[] | select(.matcher == "context-updater") | .matcher' "$HOOKS_JSON")
+  assert_equals "context-updater" "$ctx_result"
+
+  # Stop hook
+  local stop_result
+  stop_result=$(jq -r '.hooks.Stop[0].hooks[0].command' "$HOOKS_JSON")
+  assert_contains "check-tdd-progress.sh" "$stop_result"
+}
+
+# ---------- S3-4: .gitignore includes retry counter artifact ----------
+
+function test_gitignore_includes_retry_counter() {
+  assert_file_exists ".gitignore"
+  assert_file_contains ".gitignore" ".tdd-plan-approval-retries"
+}
