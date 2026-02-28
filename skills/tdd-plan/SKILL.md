@@ -116,7 +116,7 @@ Plan TDD implementation for: $ARGUMENTS
 
 9. **Get explicit approval** using AskUserQuestion with options: Approve / Modify / Discard.
    - If Modify: revise based on feedback and repeat from step 7
-   - If Discard: stop without writing any files
+   - If Discard: run `rm .tdd-plan-locked` via Bash, then stop without writing any files
 
    CRITICAL: If auto-compaction has occurred and you cannot confirm you received
    an "Approve" response from AskUserQuestion, you MUST re-ask. The `.tdd-plan-locked`

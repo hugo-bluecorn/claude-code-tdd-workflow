@@ -85,7 +85,7 @@ A summary table alone is NOT acceptable.
    Include `**Approved:** <ISO 8601 timestamp>` in the `.tdd-progress.md` header (after Created/Last Updated lines).
 3b. **Remove approval lock**: Run `rm .tdd-plan-locked` via Bash before writing any files
 4. If the user chooses "Modify", revise based on their feedback and repeat from step 1
-5. If the user chooses "Discard", do NOT write any files — just stop
+5. If the user chooses "Discard", run `rm .tdd-plan-locked` via Bash, then stop — do NOT write any files
 
 CRITICAL: Do NOT write `.tdd-progress.md` or any files before getting explicit approval via AskUserQuestion. The system permission dialog for file writes is NOT plan approval.
 
@@ -114,3 +114,7 @@ Each TDD cycle maps to commits:
 - `test: add tests for <component>` (RED phase)
 - `feat: implement <component>` (GREEN phase)
 - `refactor: clean up <component>` (REFACTOR phase, if applicable)
+
+## IMPORTANT — Tool Use Reminder
+
+After presenting the plan, you MUST call the AskUserQuestion tool. Do NOT output text asking for approval — use the tool.
