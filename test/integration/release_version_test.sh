@@ -51,11 +51,11 @@ function test_plugin_json_exists() {
   assert_file_exists "$PLUGIN_JSON"
 }
 
-function test_plugin_json_version_is_1_8_2() {
-  # The version field in plugin.json must be 1.8.2
+function test_plugin_json_version_is_1_9_0() {
+  # The version field in plugin.json must be 1.9.0
   local version
   version=$(grep '"version"' "$PLUGIN_JSON" | sed 's/.*: *"\([^"]*\)".*/\1/')
-  assert_equals "1.8.2" "$version"
+  assert_equals "1.9.0" "$version"
 }
 
 # ---------- Test 3: CHANGELOG version matches plugin.json version ----------
@@ -69,7 +69,31 @@ function test_changelog_latest_version_matches_plugin_json() {
   assert_equals "$changelog_version" "$plugin_version"
 }
 
-# ---------- Edge Case Test 4: Previous CHANGELOG entries unchanged ----------
+# ---------- Test 4: CHANGELOG has 1.9.0 section with doc-finalizer entries ----------
+
+function test_changelog_has_1_9_0_section() {
+  assert_file_contains "$CHANGELOG_MD" "## [1.9.0]"
+}
+
+function test_changelog_1_9_0_has_added_section() {
+  local section_1_9_0
+  section_1_9_0=$(sed -n '/## \[1\.9\.0\]/,/## \[/p' "$CHANGELOG_MD")
+  assert_contains "### Added" "$section_1_9_0"
+}
+
+function test_changelog_1_9_0_mentions_tdd_doc_finalizer_agent() {
+  local section_1_9_0
+  section_1_9_0=$(sed -n '/## \[1\.9\.0\]/,/## \[/p' "$CHANGELOG_MD")
+  assert_contains "tdd-doc-finalizer" "$section_1_9_0"
+}
+
+function test_changelog_1_9_0_mentions_tdd_finalize_docs_skill() {
+  local section_1_9_0
+  section_1_9_0=$(sed -n '/## \[1\.9\.0\]/,/## \[/p' "$CHANGELOG_MD")
+  assert_contains "/tdd-finalize-docs" "$section_1_9_0"
+}
+
+# ---------- Edge Case Test 5: Previous CHANGELOG entries unchanged ----------
 
 function test_changelog_still_has_1_5_0_section() {
   # The [1.5.0] section must still be present

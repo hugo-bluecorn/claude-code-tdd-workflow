@@ -66,8 +66,8 @@ function test_existing_subagent_stop_entries_preserved() {
   planner_timeout=$(jq -r '.hooks.SubagentStop[] | select(.matcher == "tdd-planner") | .hooks[0].timeout' "$HOOKS_JSON")
   assert_equals "10" "$planner_timeout"
 
-  # Verify total SubagentStop entries count is 3 (implementer + planner + releaser)
+  # Verify total SubagentStop entries count is at least 3 (implementer + planner + releaser + others)
   local count
   count=$(jq '.hooks.SubagentStop | length' "$HOOKS_JSON")
-  assert_equals "3" "$count"
+  assert_equals "4" "$count"
 }

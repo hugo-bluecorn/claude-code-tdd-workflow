@@ -26,7 +26,7 @@ After installation, verify it loaded:
 claude --debug
 ```
 
-Look for `loading plugin: tdd-workflow` in the output. The `/tdd-plan`, `/tdd-implement`, and `/tdd-release` commands should appear in your skill list.
+Look for `loading plugin: tdd-workflow` in the output. The `/tdd-plan`, `/tdd-implement`, `/tdd-release`, and `/tdd-finalize-docs` commands should appear in your skill list.
 
 ---
 
@@ -76,7 +76,7 @@ The plugin system uses the `version` field in `.claude-plugin/plugin.json` to de
 
 ```json
 {
-  "version": "1.8.2"
+  "version": "1.9.0"
 }
 ```
 
@@ -291,6 +291,30 @@ If `gh` is not installed or not authenticated, the releaser skips PR creation gr
 ### Stop hook
 
 The `check-release-complete.sh` hook validates that the branch has been pushed to the remote before allowing the releaser to finish. This ensures no work is lost locally.
+
+---
+
+## Finalizing Documentation
+
+After `/tdd-release` creates the PR, run:
+
+```
+/tdd-finalize-docs
+```
+
+This forks a fresh context and launches the **tdd-doc-finalizer** agent, which:
+
+1. Reads `CHANGELOG.md` to determine the target version
+2. Bumps the version in `.claude-plugin/plugin.json` and `docs/user-guide.md`
+3. Assesses documentation impact from the CHANGELOG entries
+4. Updates affected documentation files (README, CLAUDE.md, user-guide) with targeted edits
+5. Updates release integration tests with new version assertions and component checks
+6. Runs the test suite to verify consistency
+7. Commits and pushes to the same branch — the existing PR auto-updates
+
+The doc-finalizer is fully automated with no approval gates. It only modifies documentation, version numbers, and release tests — it never touches CHANGELOG, source code, agent definitions, or skill definitions.
+
+The same `check-release-complete.sh` hook validates that the push succeeded before the agent finishes.
 
 ---
 

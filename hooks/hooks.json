@@ -53,6 +53,16 @@
             "timeout": 15
           }
         ]
+      },
+      {
+        "matcher": "tdd-doc-finalizer",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/check-release-complete.sh",
+            "timeout": 15
+          }
+        ]
       }
     ],
     "Stop": [

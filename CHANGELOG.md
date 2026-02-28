@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.9.0] - 2026-02-28
+
+### Added
+- `tdd-doc-finalizer` agent at `agents/tdd-doc-finalizer.md`: post-release
+  documentation finalization agent handling version bumps in `plugin.json`,
+  documentation updates (README, CLAUDE.md, user-guide.md), release integration
+  test maintenance, and pushing changes to the existing PR branch
+- `/tdd-finalize-docs` skill at `skills/tdd-finalize-docs/SKILL.md`:
+  orchestrating skill that invokes `tdd-doc-finalizer` with `context: fork`
+  and `disable-model-invocation: true`
+- SubagentStop hook entry for `tdd-doc-finalizer` in `hooks/hooks.json`
+  reusing the existing `check-release-complete.sh` (timeout 15s)
+- 3 new test files: `test/agents/tdd_doc_finalizer_test.sh` (13 tests),
+  `test/skills/tdd_finalize_docs_test.sh` (9 tests),
+  `test/hooks/hooks_json_doc_finalizer_test.sh` (9 tests)
+
 ## [1.8.2] - 2026-02-28
 
 ### Fixed

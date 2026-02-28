@@ -1,7 +1,7 @@
 # Claude Code Configuration — TDD Workflow Plugin
 
 This project uses the **tdd-workflow** plugin for test-driven development.
-The plugin provides five specialized agents that collaborate through a
+The plugin provides six specialized agents that collaborate through a
 structured RED -> GREEN -> REFACTOR cycle.
 
 ## TDD Workflow
@@ -14,6 +14,7 @@ structured RED -> GREEN -> REFACTOR cycle.
 | **tdd-implementer** | Writes tests first, then implementation, following the plan | Read-write |
 | **tdd-verifier** | Runs the complete test suite and static analysis to validate each phase | Read-only |
 | **tdd-releaser** | Finalizes completed features: CHANGELOG, push, PR creation | Read-write (Bash only) |
+| **tdd-doc-finalizer** | Post-release: version bumps, doc updates, release test maintenance | Read-write (Edit only) |
 | **context-updater** | Researches latest framework versions, updates reference files | Read-write |
 
 ### Available Commands
@@ -21,6 +22,7 @@ structured RED -> GREEN -> REFACTOR cycle.
 - **`/tdd-plan <feature description>`** — Create a TDD implementation plan
 - **`/tdd-implement`** — Start or resume TDD implementation for pending slices
 - **`/tdd-release`** — Finalize and release a completed TDD feature
+- **`/tdd-finalize-docs`** — Post-release documentation updates, version bumps, and release test maintenance
 - **`/tdd-update-context`** — Update convention reference files to latest versions
 
 > **Important:** Do NOT manually invoke `tdd-workflow:tdd-planner` via the Task
