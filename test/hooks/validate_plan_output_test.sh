@@ -460,15 +460,13 @@ function test_lock_file_removed_when_stop_hook_active_true() {
   rm -rf "$tmp_dir"
 }
 
-# ---------- S3-Test3: Lock file removed on normal stop ----------
+# ---------- S3-Test3: Normal approved flow — lock already removed by agent ----------
 
 function test_lock_file_removed_on_normal_stop_with_valid_plan() {
   local tmp_dir
   tmp_dir=$(create_tmp_env)
 
-  # Create the lock file
-  touch "$tmp_dir/.tdd-plan-locked"
-
+  # No lock file — agent removed it after AskUserQuestion approval
   # Create a valid plan
   write_valid_plan "$tmp_dir"
 
@@ -478,20 +476,17 @@ function test_lock_file_removed_on_normal_stop_with_valid_plan() {
   run_hook_in_dir "$tmp_dir" "$json"
   assert_exit_code 0
 
-  # Lock file must be removed
-  assert_file_not_exists "$tmp_dir/.tdd-plan-locked"
-
   rm -rf "$tmp_dir"
 }
 
-# ---------- S3-Test4: Lock cleaned up even on discard (no plan, no progress) ----------
+# ---------- S3-Test4: Discard flow — lock already removed by agent ----------
 
 function test_lock_file_removed_on_discard_no_plan_no_progress() {
   local tmp_dir
   tmp_dir=$(create_tmp_env)
 
-  # Create the lock file but no plan and no progress
-  touch "$tmp_dir/.tdd-plan-locked"
+  # No lock file — agent removed it after AskUserQuestion discard
+  # No plan and no progress — discard scenario
 
   local json
   json=$(build_json "false")
@@ -499,8 +494,231 @@ function test_lock_file_removed_on_discard_no_plan_no_progress() {
   run_hook_in_dir "$tmp_dir" "$json"
   assert_exit_code 0
 
-  # Lock file must be removed
+  rm -rf "$tmp_dir"
+}
+
+# =====================================================================
+# Approval Enforcement Gate — Lock-based approval detection
+# =====================================================================
+
+# ---------- AEG-Test1: Lock present exits 2 with AskUserQuestion feedback ----------
+
+function test_lock_present_exits_two_with_ask_user_question_feedback() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+
+  # Lock exists = agent never called AskUserQuestion
+  touch "$tmp_dir/.tdd-plan-locked"
+
+  local json
+  json=$(build_json "false")
+
+  run_hook_in_dir "$tmp_dir" "$json"
+  local rc=$?
+
+  assert_equals 2 "$rc"
+
+  # Stderr should contain AskUserQuestion guidance
+  local stderr_output
+  stderr_output=$(run_hook_in_dir_stderr "$tmp_dir" "$json")
+  assert_contains "AskUserQuestion" "$stderr_output"
+
+  # Retry counter should be created with "1"
+  assert_file_exists "$tmp_dir/.tdd-plan-approval-retries"
+  local counter
+  counter=$(cat "$tmp_dir/.tdd-plan-approval-retries")
+  assert_equals "1" "$counter"
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- AEG-Test2: Lock present with max retries exits 0 and cleans up ----------
+
+function test_lock_present_with_max_retries_exits_zero_and_cleans_up() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+
+  touch "$tmp_dir/.tdd-plan-locked"
+  echo "2" > "$tmp_dir/.tdd-plan-approval-retries"
+
+  local json
+  json=$(build_json "false")
+
+  run_hook_in_dir "$tmp_dir" "$json"
+  assert_exit_code 0
+
+  # Both files should be cleaned up
   assert_file_not_exists "$tmp_dir/.tdd-plan-locked"
+  assert_file_not_exists "$tmp_dir/.tdd-plan-approval-retries"
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- AEG-Test3: Lock absent proceeds to normal validation ----------
+
+function test_lock_absent_proceeds_to_normal_validation() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+
+  # No lock file, valid plan -> exits 0 (normal flow)
+  write_valid_plan "$tmp_dir"
+
+  local json
+  json=$(build_json "false")
+
+  run_hook_in_dir "$tmp_dir" "$json"
+  assert_exit_code 0
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- AEG-Test4: stop_hook_active cleans up both lock and retry counter ----------
+
+function test_stop_hook_active_cleans_up_lock_and_retry_counter() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+
+  touch "$tmp_dir/.tdd-plan-locked"
+  echo "1" > "$tmp_dir/.tdd-plan-approval-retries"
+
+  local json
+  json=$(build_json "true")
+
+  run_hook_in_dir "$tmp_dir" "$json"
+  assert_exit_code 0
+
+  # Both files should be cleaned up
+  assert_file_not_exists "$tmp_dir/.tdd-plan-locked"
+  assert_file_not_exists "$tmp_dir/.tdd-plan-approval-retries"
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- AEG-Test5: Lock present with missing retry counter = first retry ----------
+
+function test_lock_present_missing_retry_counter_is_first_retry() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+
+  touch "$tmp_dir/.tdd-plan-locked"
+  # No .tdd-plan-approval-retries file
+
+  local json
+  json=$(build_json "false")
+
+  run_hook_in_dir "$tmp_dir" "$json"
+  local rc=$?
+
+  assert_equals 2 "$rc"
+
+  # Counter created with "1"
+  assert_file_exists "$tmp_dir/.tdd-plan-approval-retries"
+  local counter
+  counter=$(cat "$tmp_dir/.tdd-plan-approval-retries")
+  assert_equals "1" "$counter"
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- AEG-Test6: Retry counter cleaned up on normal stop when lock absent ----------
+
+function test_stale_retry_counter_cleaned_up_when_lock_absent() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+
+  # No lock file, but stale retry counter exists from previous session
+  echo "1" > "$tmp_dir/.tdd-plan-approval-retries"
+  write_valid_plan "$tmp_dir"
+
+  local json
+  json=$(build_json "false")
+
+  run_hook_in_dir "$tmp_dir" "$json"
+  assert_exit_code 0
+
+  # Stale retry counter should be cleaned up
+  assert_file_not_exists "$tmp_dir/.tdd-plan-approval-retries"
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- AEG-Test7: Lock present stderr feedback is actionable ----------
+
+function test_lock_present_stderr_is_actionable() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+
+  touch "$tmp_dir/.tdd-plan-locked"
+
+  local json
+  json=$(build_json "false")
+
+  local stderr_output
+  stderr_output=$(run_hook_in_dir_stderr "$tmp_dir" "$json")
+
+  assert_contains "MUST call" "$stderr_output"
+  assert_contains "AskUserQuestion" "$stderr_output"
+  assert_contains "Approve" "$stderr_output"
+  assert_contains "Discard" "$stderr_output"
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- AEG-Test8: Existing stop_hook_active lock cleanup still works ----------
+
+function test_existing_stop_hook_active_lock_cleanup_still_works() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+
+  touch "$tmp_dir/.tdd-plan-locked"
+
+  local json
+  json=$(build_json "true")
+
+  run_hook_in_dir "$tmp_dir" "$json"
+  assert_exit_code 0
+
+  assert_file_not_exists "$tmp_dir/.tdd-plan-locked"
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- AEG-Test9: Lock present with valid plan still blocks ----------
+
+function test_lock_present_with_valid_plan_still_blocks() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+
+  touch "$tmp_dir/.tdd-plan-locked"
+  write_valid_plan "$tmp_dir"
+
+  local json
+  json=$(build_json "false")
+
+  run_hook_in_dir "$tmp_dir" "$json"
+  local rc=$?
+
+  assert_equals 2 "$rc"
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- AEG-Test10: Lock present with no plan no progress blocks ----------
+
+function test_lock_present_no_plan_no_progress_blocks() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+
+  touch "$tmp_dir/.tdd-plan-locked"
+  # No plan file, no .tdd-progress.md
+
+  local json
+  json=$(build_json "false")
+
+  run_hook_in_dir "$tmp_dir" "$json"
+  local rc=$?
+
+  assert_equals 2 "$rc"
 
   rm -rf "$tmp_dir"
 }
