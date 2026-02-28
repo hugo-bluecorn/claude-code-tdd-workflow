@@ -781,3 +781,61 @@ function test_hooks_json_subagent_start_tdd_planner_creates_lock() {
   result=$(jq -r '.hooks.SubagentStart[] | select(.matcher == "tdd-planner") | .hooks[0].command' "$HOOKS_JSON")
   assert_contains "touch .tdd-plan-locked" "$result"
 }
+
+# =====================================================================
+# Slice 2 — Prompt Updates: Discard lock removal + AskUserQuestion reminder
+# =====================================================================
+
+SKILL_PLAN="skills/tdd-plan/SKILL.md"
+PLANNER_MD="agents/tdd-planner.md"
+
+# ---------- S2-1: SKILL.md Discard path contains lock removal ----------
+
+function test_skill_plan_discard_path_contains_lock_removal() {
+  # Extract the Discard bullet from step 9 area and check for rm .tdd-plan-locked
+  local discard_context
+  discard_context=$(grep -A1 -i "discard" "$SKILL_PLAN" | head -4)
+  assert_contains "rm .tdd-plan-locked" "$discard_context"
+}
+
+# ---------- S2-2: tdd-planner.md Discard path contains lock removal ----------
+
+function test_planner_md_discard_path_contains_lock_removal() {
+  local discard_context
+  discard_context=$(grep -A1 -i "discard.*do NOT\|Discard.*stop\|Discard.*rm" "$PLANNER_MD" | head -4)
+  assert_contains "rm .tdd-plan-locked" "$discard_context"
+}
+
+# ---------- S2-3: tdd-planner.md contains post-compaction AskUserQuestion reminder ----------
+
+function test_planner_md_contains_post_compaction_askuser_reminder() {
+  assert_file_contains "$PLANNER_MD" "MUST call the AskUserQuestion tool"
+  assert_file_contains "$PLANNER_MD" "Do NOT output text asking for approval"
+}
+
+# ---------- S2-4: Reminder section appears after Compaction Guard ----------
+
+function test_planner_md_reminder_appears_after_compaction_guard() {
+  local guard_line reminder_line
+  guard_line=$(grep -n "COMPACTION GUARD" "$PLANNER_MD" | head -1 | cut -d: -f1)
+  reminder_line=$(grep -n "Tool Use Reminder" "$PLANNER_MD" | head -1 | cut -d: -f1)
+  assert_not_empty "$guard_line"
+  assert_not_empty "$reminder_line"
+  # reminder_line must be greater than guard_line
+  assert_greater_than "$guard_line" "$reminder_line"
+}
+
+# ---------- S2-5: Existing approval sequence preserved ----------
+
+function test_planner_md_existing_approval_sequence_preserved_after_discard_fix() {
+  assert_file_contains "$PLANNER_MD" "AskUserQuestion"
+  assert_file_contains "$PLANNER_MD" "Approve"
+  assert_file_contains "$PLANNER_MD" "Modify"
+  assert_file_contains "$PLANNER_MD" "Discard"
+}
+
+# ---------- S2-6: Existing SKILL.md constraints preserved ----------
+
+function test_skill_plan_constraints_preserved_after_discard_fix() {
+  assert_file_contains "$SKILL_PLAN" "Do NOT write any implementation code"
+}
