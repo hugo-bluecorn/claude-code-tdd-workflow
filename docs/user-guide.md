@@ -76,7 +76,7 @@ The plugin system uses the `version` field in `.claude-plugin/plugin.json` to de
 
 ```json
 {
-  "version": "1.8.1"
+  "version": "1.8.2"
 }
 ```
 
@@ -221,7 +221,7 @@ The plugin uses hooks to enforce TDD discipline automatically.
 | `validate-tdd-order.sh` | PreToolUse (Write/Edit) | implementer | Blocks implementation file writes if no test files have been modified yet |
 | `auto-run-tests.sh` | PostToolUse (Write/Edit) | implementer | Runs tests after every file change, returns output as system message |
 | `planner-bash-guard.sh` | PreToolUse (Bash) | planner | Allowlists read-only commands; blocks writes and destructive operations |
-| `validate-plan-output.sh` | Stop + SubagentStop | planner | Validates plan file has required sections and no refactoring leak |
+| `validate-plan-output.sh` | Stop + SubagentStop | planner | Enforces plan approval via AskUserQuestion with retry counter; validates required sections and no refactoring leak |
 | `check-tdd-progress.sh` | Stop | main thread | Prevents session end with pending slices |
 | `check-release-complete.sh` | Stop + SubagentStop | releaser | Validates branch is pushed to remote before release completes |
 | SubagentStart | SubagentStart | planner | Injects git branch, last commit, dirty file count as additional context |

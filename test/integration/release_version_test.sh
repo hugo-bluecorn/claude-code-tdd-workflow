@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Test suite for CHANGELOG and version bump: verifies CHANGELOG has a [1.6.6]
-# section with correct entries and plugin.json version is bumped to 1.6.6.
+# Test suite for CHANGELOG and version bump: verifies CHANGELOG has the latest
+# version section with correct entries and plugin.json version matches.
 
 CHANGELOG_MD="CHANGELOG.md"
 PLUGIN_JSON=".claude-plugin/plugin.json"
@@ -51,11 +51,11 @@ function test_plugin_json_exists() {
   assert_file_exists "$PLUGIN_JSON"
 }
 
-function test_plugin_json_version_is_1_6_6() {
-  # The version field in plugin.json must be 1.6.6
+function test_plugin_json_version_is_1_8_2() {
+  # The version field in plugin.json must be 1.8.2
   local version
   version=$(grep '"version"' "$PLUGIN_JSON" | sed 's/.*: *"\([^"]*\)".*/\1/')
-  assert_equals "1.6.6" "$version"
+  assert_equals "1.8.2" "$version"
 }
 
 # ---------- Test 3: CHANGELOG version matches plugin.json version ----------
