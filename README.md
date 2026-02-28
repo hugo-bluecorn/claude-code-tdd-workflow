@@ -4,7 +4,7 @@ A Claude Code plugin for Test-Driven Development with context-isolated agents. E
 
 ## Overview
 
-This plugin decomposes TDD into five context-isolated agents that prevent the common failure modes of single-context TDD: training distribution bias toward implementation-first code, context rot under token accumulation, and absence of epistemic boundaries between test and implementation reasoning.
+This plugin decomposes TDD into six context-isolated agents that prevent the common failure modes of single-context TDD: training distribution bias toward implementation-first code, context rot under token accumulation, and absence of epistemic boundaries between test and implementation reasoning.
 
 ## Requirements
 
@@ -66,6 +66,11 @@ PASS -> next slice | FAIL -> retry
     |  agent: tdd-releaser (sonnet)
     |  Updates CHANGELOG, pushes branch, creates PR
     v
+/tdd-finalize-docs (Orchestrating Skill)
+    |  context: fork
+    |  agent: tdd-doc-finalizer (sonnet)
+    |  Bumps versions, updates docs, updates release tests, pushes
+    v
 Done
 ```
 
@@ -79,6 +84,7 @@ Done
 | tdd-implementer | opus | Red-green-refactor per slice (full tools) |
 | tdd-verifier | haiku | Blackbox validation (read-only) |
 | tdd-releaser | sonnet | Release workflow (CHANGELOG, PR) |
+| tdd-doc-finalizer | sonnet | Post-release documentation updates, version bumps, release test maintenance |
 | context-updater | sonnet | Updates convention reference files to latest versions |
 
 ### Skills
@@ -88,6 +94,7 @@ Done
 | `/tdd-plan` | Orchestrating entry point (forks context) |
 | `/tdd-implement` | Implementation loop (reads progress, runs slices) |
 | `/tdd-release` | Release entry point (forks context) |
+| `/tdd-finalize-docs` | Post-release documentation finalization (forks context) |
 | `/tdd-update-context` | Updates convention reference files to latest versions |
 | dart-flutter-conventions | Convention reference (auto-loaded by agents) |
 | cpp-testing-conventions | Convention reference (auto-loaded by agents) |
@@ -104,7 +111,7 @@ Done
 | check-tdd-progress.sh | Stop (command) | Prevents session end with pending slices |
 | SubagentStart (planner) | command | Injects git context into planner |
 | SubagentStart (context-updater) | command | Injects git context with edit warning |
-| check-release-complete.sh | SubagentStop (command) | Validates branch is pushed to remote |
+| check-release-complete.sh | SubagentStop (command) | Validates branch is pushed to remote (releaser + doc-finalizer) |
 | SubagentStop (implementer) | prompt | Verifies R-G-R cycle completion |
 
 ## Configuration
@@ -136,6 +143,7 @@ tdd-workflow/
 │   ├── tdd-implementer.md
 │   ├── tdd-verifier.md
 │   ├── tdd-releaser.md
+│   ├── tdd-doc-finalizer.md
 │   └── context-updater.md
 ├── skills/
 │   ├── tdd-plan/
@@ -146,6 +154,8 @@ tdd-workflow/
 │   ├── tdd-implement/
 │   │   └── SKILL.md
 │   ├── tdd-release/
+│   │   └── SKILL.md
+│   ├── tdd-finalize-docs/
 │   │   └── SKILL.md
 │   ├── tdd-update-context/
 │   │   └── SKILL.md

@@ -195,6 +195,70 @@ function test_audit_directory_has_check_release_complete() {
   assert_contains "check-release-complete.sh" "$dir_section"
 }
 
+# ---------- Test 8: README mentions tdd-doc-finalizer agent ----------
+
+function test_readme_agents_table_has_tdd_doc_finalizer() {
+  local agents_section
+  agents_section=$(sed -n '/### Agents/,/^###/p' "$README_MD")
+  assert_contains "tdd-doc-finalizer" "$agents_section"
+}
+
+function test_readme_skills_table_has_tdd_finalize_docs() {
+  local skills_section
+  skills_section=$(sed -n '/### Skills/,/^###/p' "$README_MD")
+  assert_contains "/tdd-finalize-docs" "$skills_section"
+}
+
+function test_readme_file_structure_has_tdd_doc_finalizer_agent() {
+  local file_structure
+  file_structure=$(sed -n '/## File Structure/,/^##/p' "$README_MD")
+  assert_contains "tdd-doc-finalizer.md" "$file_structure"
+}
+
+function test_readme_file_structure_has_tdd_finalize_docs_skill() {
+  local file_structure
+  file_structure=$(sed -n '/## File Structure/,/^##/p' "$README_MD")
+  assert_contains "tdd-finalize-docs/" "$file_structure"
+}
+
+function test_readme_workflow_diagram_has_tdd_doc_finalizer() {
+  local diagram
+  diagram=$(sed -n '/## How It Works/,/^##/p' "$README_MD")
+  assert_contains "tdd-doc-finalizer" "$diagram"
+}
+
+# ---------- Test 9: CLAUDE.md mentions /tdd-finalize-docs ----------
+
+function test_claude_md_available_commands_has_tdd_finalize_docs() {
+  local commands_section
+  commands_section=$(sed -n '/### Available Commands/,/^###/p' "$CLAUDE_MD")
+  assert_contains "/tdd-finalize-docs" "$commands_section"
+}
+
+function test_claude_md_architecture_table_has_tdd_doc_finalizer() {
+  local arch_section
+  arch_section=$(sed -n '/### Plugin Architecture/,/^###/p' "$CLAUDE_MD")
+  assert_contains "tdd-doc-finalizer" "$arch_section"
+}
+
+# ---------- Test 10: user-guide.md documents /tdd-finalize-docs ----------
+
+function test_user_guide_has_finalize_docs_section() {
+  assert_file_contains "$USER_GUIDE" "/tdd-finalize-docs"
+}
+
+function test_user_guide_finalize_docs_mentions_version_bump() {
+  local finalize_section
+  finalize_section=$(sed -n '/tdd-finalize-docs/,/^---/p' "$USER_GUIDE")
+  assert_matches "version|plugin.json" "$finalize_section"
+}
+
+function test_user_guide_finalize_docs_mentions_push() {
+  local finalize_section
+  finalize_section=$(sed -n '/tdd-finalize-docs/,/^---/p' "$USER_GUIDE")
+  assert_matches "push|PR auto-updates" "$finalize_section"
+}
+
 # ---------- Edge Cases: Additive-only ----------
 
 function test_readme_still_has_tdd_planner() {
