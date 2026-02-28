@@ -460,15 +460,13 @@ function test_lock_file_removed_when_stop_hook_active_true() {
   rm -rf "$tmp_dir"
 }
 
-# ---------- S3-Test3: Lock file removed on normal stop ----------
+# ---------- S3-Test3: Normal approved flow — lock already removed by agent ----------
 
 function test_lock_file_removed_on_normal_stop_with_valid_plan() {
   local tmp_dir
   tmp_dir=$(create_tmp_env)
 
-  # Create the lock file
-  touch "$tmp_dir/.tdd-plan-locked"
-
+  # No lock file — agent removed it after AskUserQuestion approval
   # Create a valid plan
   write_valid_plan "$tmp_dir"
 
@@ -478,20 +476,17 @@ function test_lock_file_removed_on_normal_stop_with_valid_plan() {
   run_hook_in_dir "$tmp_dir" "$json"
   assert_exit_code 0
 
-  # Lock file must be removed
-  assert_file_not_exists "$tmp_dir/.tdd-plan-locked"
-
   rm -rf "$tmp_dir"
 }
 
-# ---------- S3-Test4: Lock cleaned up even on discard (no plan, no progress) ----------
+# ---------- S3-Test4: Discard flow — lock already removed by agent ----------
 
 function test_lock_file_removed_on_discard_no_plan_no_progress() {
   local tmp_dir
   tmp_dir=$(create_tmp_env)
 
-  # Create the lock file but no plan and no progress
-  touch "$tmp_dir/.tdd-plan-locked"
+  # No lock file — agent removed it after AskUserQuestion discard
+  # No plan and no progress — discard scenario
 
   local json
   json=$(build_json "false")
@@ -499,8 +494,231 @@ function test_lock_file_removed_on_discard_no_plan_no_progress() {
   run_hook_in_dir "$tmp_dir" "$json"
   assert_exit_code 0
 
-  # Lock file must be removed
+  rm -rf "$tmp_dir"
+}
+
+# =====================================================================
+# Approval Enforcement Gate — Lock-based approval detection
+# =====================================================================
+
+# ---------- AEG-Test1: Lock present exits 2 with AskUserQuestion feedback ----------
+
+function test_lock_present_exits_two_with_ask_user_question_feedback() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+
+  # Lock exists = agent never called AskUserQuestion
+  touch "$tmp_dir/.tdd-plan-locked"
+
+  local json
+  json=$(build_json "false")
+
+  # Capture exit code and stderr in a single invocation to avoid double-incrementing counter
+  local stderr_output
+  stderr_output=$(cd "$tmp_dir" && echo "$json" | bash "$tmp_dir/validate-plan-output.sh" 2>&1 >/dev/null)
+  local rc=$?
+
+  assert_equals 2 "$rc"
+
+  # Stderr should contain AskUserQuestion guidance
+  assert_contains "AskUserQuestion" "$stderr_output"
+
+  # Retry counter should be created with "1"
+  assert_file_exists "$tmp_dir/.tdd-plan-approval-retries"
+  local counter
+  counter=$(cat "$tmp_dir/.tdd-plan-approval-retries")
+  assert_equals "1" "$counter"
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- AEG-Test2: Lock present with max retries exits 0 and cleans up ----------
+
+function test_lock_present_with_max_retries_exits_zero_and_cleans_up() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+
+  touch "$tmp_dir/.tdd-plan-locked"
+  echo "2" > "$tmp_dir/.tdd-plan-approval-retries"
+
+  local json
+  json=$(build_json "false")
+
+  run_hook_in_dir "$tmp_dir" "$json"
+  assert_exit_code 0
+
+  # Both files should be cleaned up
   assert_file_not_exists "$tmp_dir/.tdd-plan-locked"
+  assert_file_not_exists "$tmp_dir/.tdd-plan-approval-retries"
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- AEG-Test3: Lock absent proceeds to normal validation ----------
+
+function test_lock_absent_proceeds_to_normal_validation() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+
+  # No lock file, valid plan -> exits 0 (normal flow)
+  write_valid_plan "$tmp_dir"
+
+  local json
+  json=$(build_json "false")
+
+  run_hook_in_dir "$tmp_dir" "$json"
+  assert_exit_code 0
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- AEG-Test4: stop_hook_active cleans up both lock and retry counter ----------
+
+function test_stop_hook_active_cleans_up_lock_and_retry_counter() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+
+  touch "$tmp_dir/.tdd-plan-locked"
+  echo "1" > "$tmp_dir/.tdd-plan-approval-retries"
+
+  local json
+  json=$(build_json "true")
+
+  run_hook_in_dir "$tmp_dir" "$json"
+  assert_exit_code 0
+
+  # Both files should be cleaned up
+  assert_file_not_exists "$tmp_dir/.tdd-plan-locked"
+  assert_file_not_exists "$tmp_dir/.tdd-plan-approval-retries"
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- AEG-Test5: Lock present with missing retry counter = first retry ----------
+
+function test_lock_present_missing_retry_counter_is_first_retry() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+
+  touch "$tmp_dir/.tdd-plan-locked"
+  # No .tdd-plan-approval-retries file
+
+  local json
+  json=$(build_json "false")
+
+  run_hook_in_dir "$tmp_dir" "$json"
+  local rc=$?
+
+  assert_equals 2 "$rc"
+
+  # Counter created with "1"
+  assert_file_exists "$tmp_dir/.tdd-plan-approval-retries"
+  local counter
+  counter=$(cat "$tmp_dir/.tdd-plan-approval-retries")
+  assert_equals "1" "$counter"
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- AEG-Test6: Retry counter cleaned up on normal stop when lock absent ----------
+
+function test_stale_retry_counter_cleaned_up_when_lock_absent() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+
+  # No lock file, but stale retry counter exists from previous session
+  echo "1" > "$tmp_dir/.tdd-plan-approval-retries"
+  write_valid_plan "$tmp_dir"
+
+  local json
+  json=$(build_json "false")
+
+  run_hook_in_dir "$tmp_dir" "$json"
+  assert_exit_code 0
+
+  # Stale retry counter should be cleaned up
+  assert_file_not_exists "$tmp_dir/.tdd-plan-approval-retries"
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- AEG-Test7: Lock present stderr feedback is actionable ----------
+
+function test_lock_present_stderr_is_actionable() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+
+  touch "$tmp_dir/.tdd-plan-locked"
+
+  local json
+  json=$(build_json "false")
+
+  local stderr_output
+  stderr_output=$(run_hook_in_dir_stderr "$tmp_dir" "$json")
+
+  assert_contains "MUST call" "$stderr_output"
+  assert_contains "AskUserQuestion" "$stderr_output"
+  assert_contains "Approve" "$stderr_output"
+  assert_contains "Discard" "$stderr_output"
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- AEG-Test8: Existing stop_hook_active lock cleanup still works ----------
+
+function test_existing_stop_hook_active_lock_cleanup_still_works() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+
+  touch "$tmp_dir/.tdd-plan-locked"
+
+  local json
+  json=$(build_json "true")
+
+  run_hook_in_dir "$tmp_dir" "$json"
+  assert_exit_code 0
+
+  assert_file_not_exists "$tmp_dir/.tdd-plan-locked"
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- AEG-Test9: Lock present with valid plan still blocks ----------
+
+function test_lock_present_with_valid_plan_still_blocks() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+
+  touch "$tmp_dir/.tdd-plan-locked"
+  write_valid_plan "$tmp_dir"
+
+  local json
+  json=$(build_json "false")
+
+  run_hook_in_dir "$tmp_dir" "$json"
+  local rc=$?
+
+  assert_equals 2 "$rc"
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- AEG-Test10: Lock present with no plan no progress blocks ----------
+
+function test_lock_present_no_plan_no_progress_blocks() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+
+  touch "$tmp_dir/.tdd-plan-locked"
+  # No plan file, no .tdd-progress.md
+
+  local json
+  json=$(build_json "false")
+
+  run_hook_in_dir "$tmp_dir" "$json"
+  local rc=$?
+
+  assert_equals 2 "$rc"
 
   rm -rf "$tmp_dir"
 }
@@ -562,4 +780,113 @@ function test_hooks_json_subagent_start_tdd_planner_creates_lock() {
   local result
   result=$(jq -r '.hooks.SubagentStart[] | select(.matcher == "tdd-planner") | .hooks[0].command' "$HOOKS_JSON")
   assert_contains "touch .tdd-plan-locked" "$result"
+}
+
+# =====================================================================
+# Slice 2 — Prompt Updates: Discard lock removal + AskUserQuestion reminder
+# =====================================================================
+
+SKILL_PLAN="skills/tdd-plan/SKILL.md"
+PLANNER_MD="agents/tdd-planner.md"
+
+# ---------- S2-1: SKILL.md Discard path contains lock removal ----------
+
+function test_skill_plan_discard_path_contains_lock_removal() {
+  # Extract the Discard bullet from step 9 area and check for rm .tdd-plan-locked
+  local discard_context
+  discard_context=$(grep -A1 -i "discard" "$SKILL_PLAN" | head -4)
+  assert_contains "rm .tdd-plan-locked" "$discard_context"
+}
+
+# ---------- S2-2: tdd-planner.md Discard path contains lock removal ----------
+
+function test_planner_md_discard_path_contains_lock_removal() {
+  local discard_context
+  discard_context=$(grep -A1 -i "discard.*do NOT\|Discard.*stop\|Discard.*rm" "$PLANNER_MD" | head -4)
+  assert_contains "rm .tdd-plan-locked" "$discard_context"
+}
+
+# ---------- S2-3: tdd-planner.md contains post-compaction AskUserQuestion reminder ----------
+
+function test_planner_md_contains_post_compaction_askuser_reminder() {
+  assert_file_contains "$PLANNER_MD" "MUST call the AskUserQuestion tool"
+  assert_file_contains "$PLANNER_MD" "Do NOT output text asking for approval"
+}
+
+# ---------- S2-4: Reminder section appears after Compaction Guard ----------
+
+function test_planner_md_reminder_appears_after_compaction_guard() {
+  local guard_line reminder_line
+  guard_line=$(grep -n "COMPACTION GUARD" "$PLANNER_MD" | head -1 | cut -d: -f1)
+  reminder_line=$(grep -n "Tool Use Reminder" "$PLANNER_MD" | head -1 | cut -d: -f1)
+  assert_not_empty "$guard_line"
+  assert_not_empty "$reminder_line"
+  # reminder_line must be greater than guard_line
+  assert_greater_than "$guard_line" "$reminder_line"
+}
+
+# ---------- S2-5: Existing approval sequence preserved ----------
+
+function test_planner_md_existing_approval_sequence_preserved_after_discard_fix() {
+  assert_file_contains "$PLANNER_MD" "AskUserQuestion"
+  assert_file_contains "$PLANNER_MD" "Approve"
+  assert_file_contains "$PLANNER_MD" "Modify"
+  assert_file_contains "$PLANNER_MD" "Discard"
+}
+
+# ---------- S2-6: Existing SKILL.md constraints preserved ----------
+
+function test_skill_plan_constraints_preserved_after_discard_fix() {
+  assert_file_contains "$SKILL_PLAN" "Do NOT write any implementation code"
+}
+
+# =====================================================================
+# Slice 3 — hooks.json retry counter cleanup + .gitignore
+# =====================================================================
+
+# ---------- S3-1: SubagentStart command cleans up stale retry counter ----------
+
+function test_hooks_json_subagent_start_cleans_up_retry_counter() {
+  local result
+  result=$(jq -r '.hooks.SubagentStart[] | select(.matcher == "tdd-planner") | .hooks[0].command' "$HOOKS_JSON")
+  assert_contains "rm -f .tdd-plan-approval-retries" "$result"
+}
+
+# ---------- S3-2: SubagentStart still creates lock file (preservation) ----------
+
+function test_hooks_json_subagent_start_still_creates_lock() {
+  local result
+  result=$(jq -r '.hooks.SubagentStart[] | select(.matcher == "tdd-planner") | .hooks[0].command' "$HOOKS_JSON")
+  assert_contains "touch .tdd-plan-locked" "$result"
+}
+
+# ---------- S3-3: All existing hook configurations preserved ----------
+
+function test_hooks_json_existing_configs_preserved_after_retry_counter_fix() {
+  # tdd-implementer SubagentStop
+  local impl_result
+  impl_result=$(jq -r '.hooks.SubagentStop[] | select(.matcher == "tdd-implementer") | .matcher' "$HOOKS_JSON")
+  assert_equals "tdd-implementer" "$impl_result"
+
+  # tdd-releaser SubagentStop
+  local rel_result
+  rel_result=$(jq -r '.hooks.SubagentStop[] | select(.matcher == "tdd-releaser") | .matcher' "$HOOKS_JSON")
+  assert_equals "tdd-releaser" "$rel_result"
+
+  # context-updater SubagentStart
+  local ctx_result
+  ctx_result=$(jq -r '.hooks.SubagentStart[] | select(.matcher == "context-updater") | .matcher' "$HOOKS_JSON")
+  assert_equals "context-updater" "$ctx_result"
+
+  # Stop hook
+  local stop_result
+  stop_result=$(jq -r '.hooks.Stop[0].hooks[0].command' "$HOOKS_JSON")
+  assert_contains "check-tdd-progress.sh" "$stop_result"
+}
+
+# ---------- S3-4: .gitignore includes retry counter artifact ----------
+
+function test_gitignore_includes_retry_counter() {
+  assert_file_exists ".gitignore"
+  assert_file_contains ".gitignore" ".tdd-plan-approval-retries"
 }

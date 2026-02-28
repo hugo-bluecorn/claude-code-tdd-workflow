@@ -8,7 +8,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "touch .tdd-plan-locked && echo \"{\\\"additionalContext\\\": \\\"Current branch: $(git branch --show-current 2>/dev/null || echo 'unknown'). Last commit: $(git log --oneline -1 2>/dev/null || echo 'none'). Dirty files: $(git status --porcelain 2>/dev/null | wc -l | tr -d ' ').\\\"}\""
+            "command": "rm -f .tdd-plan-approval-retries 2>/dev/null; touch .tdd-plan-locked && echo \"{\\\"additionalContext\\\": \\\"Current branch: $(git branch --show-current 2>/dev/null || echo 'unknown'). Last commit: $(git log --oneline -1 2>/dev/null || echo 'none'). Dirty files: $(git status --porcelain 2>/dev/null | wc -l | tr -d ' ').\\\"}\""
           }
         ]
       },

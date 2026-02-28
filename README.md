@@ -100,7 +100,7 @@ Done
 | validate-tdd-order.sh | PreToolUse (command) | Blocks implementation writes before test exists |
 | auto-run-tests.sh | PostToolUse (command) | Runs tests after every file change |
 | planner-bash-guard.sh | PreToolUse (command) | Allowlists read-only commands for planner |
-| validate-plan-output.sh | Stop + SubagentStop (command) | Validates plan file has required sections |
+| validate-plan-output.sh | Stop + SubagentStop (command) | Enforces plan approval via AskUserQuestion with retry counter; validates required sections |
 | check-tdd-progress.sh | Stop (command) | Prevents session end with pending slices |
 | SubagentStart (planner) | command | Injects git context into planner |
 | SubagentStart (context-updater) | command | Injects git context with edit warning |

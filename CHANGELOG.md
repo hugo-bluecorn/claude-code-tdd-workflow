@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.8.2] - 2026-02-28
+
+### Fixed
+- validate-plan-output.sh: replaced unconditional `.tdd-plan-locked`
+  removal with approval enforcement gate — stop hook now detects when
+  the planner agent stops without calling AskUserQuestion and blocks
+  with actionable feedback (retry counter, max 2 retries)
+- tdd-planner agent: Discard path now removes `.tdd-plan-locked` so
+  the stop hook can distinguish "user chose Discard" from "agent
+  forgot to call AskUserQuestion after auto-compaction"
+
+### Added
+- Approval enforcement gate in `validate-plan-output.sh` with retry
+  counter (`.tdd-plan-approval-retries`) preventing infinite blocking
+- Post-compaction AskUserQuestion reminder at end of tdd-planner
+  agent prompt (concise, minimal token overhead)
+- SubagentStart hook cleans up stale retry counter from previous
+  sessions
+- `.gitignore` with `.tdd-plan-locked` and `.tdd-plan-approval-retries`
+- 20 new tests in `validate_plan_output_test.sh` (50 total)
+
 ## [1.8.1] - 2026-02-24
 
 ### Changed

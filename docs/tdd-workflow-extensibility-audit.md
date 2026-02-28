@@ -141,7 +141,7 @@ current implementation. Update it after each significant plugin change.
 | C6 | `PostToolUseFailure` | ⊘ | No failure recovery logic needed |
 | C7 | `Notification` | ⊘ | Desktop notification on slice completion would improve UX. **→ N3** |
 | C8 | `SubagentStart` | ✅ | Injects git branch, last commit, dirty file count into planner via `additionalContext`. Applied in v1.4.0 (S3) |
-| C9 | `SubagentStop` | ✅ | `hooks.json`: prompt-based hook on `tdd-implementer` validates R-G-R cycle. Command hook on `tdd-planner` validates plan output. Command hook on `tdd-releaser` validates branch pushed. Applied in v1.3.0 (S2), v1.6.0 (N6) |
+| C9 | `SubagentStop` | ✅ | `hooks.json`: prompt-based hook on `tdd-implementer` validates R-G-R cycle. Command hook on `tdd-planner` enforces approval gating with lock-conditional retry logic and validates plan output. Command hook on `tdd-releaser` validates branch pushed. Applied in v1.3.0 (S2), v1.6.0 (N6), v1.8.2 (approval lock) |
 | C10 | `Stop` | ✅ | Main thread: `check-tdd-progress.sh` prevents session end with pending slices. Verifier: prompt-based completeness check. Planner: `validate-plan-output.sh`. Releaser: `check-release-complete.sh`. Applied in v1.3.0 (M2), v1.6.0 (N6) |
 | C11 | `TeammateIdle` | ⊘ | No agent teams |
 | C12 | `TaskCompleted` | ⊘ | Not relevant |
