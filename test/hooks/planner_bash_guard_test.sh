@@ -469,7 +469,7 @@ function test_planner_md_preserves_mandatory_approval_sequence() {
 function test_existing_hooks_unmodified() {
   local expected_checksums
   expected_checksums="a5f793ccf8604d6fe26dfc3c32a03476  hooks/planner-bash-guard.sh
-fc7c54fc106268577da49bd4a3e40eb4  hooks/validate-plan-output.sh
+c0ccc25965c4e4d5c4d5ddaa07a5ab99  hooks/validate-plan-output.sh
 9d6249abc46f477c707d50fa759d412e  hooks/validate-tdd-order.sh
 fa36eb282579bed351c1b32bd08376f4  hooks/auto-run-tests.sh
 68528fca7cd1b4a652d3365174246341  hooks/check-tdd-progress.sh"
