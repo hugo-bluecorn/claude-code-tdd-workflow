@@ -513,14 +513,14 @@ function test_lock_present_exits_two_with_ask_user_question_feedback() {
   local json
   json=$(build_json "false")
 
-  run_hook_in_dir "$tmp_dir" "$json"
+  # Capture exit code and stderr in a single invocation to avoid double-incrementing counter
+  local stderr_output
+  stderr_output=$(cd "$tmp_dir" && echo "$json" | bash "$tmp_dir/validate-plan-output.sh" 2>&1 >/dev/null)
   local rc=$?
 
   assert_equals 2 "$rc"
 
   # Stderr should contain AskUserQuestion guidance
-  local stderr_output
-  stderr_output=$(run_hook_in_dir_stderr "$tmp_dir" "$json")
   assert_contains "AskUserQuestion" "$stderr_output"
 
   # Retry counter should be created with "1"
