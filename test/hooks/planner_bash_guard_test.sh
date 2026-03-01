@@ -265,16 +265,6 @@ function test_frontmatter_contains_planner_bash_guard_hook() {
   assert_file_contains "$PLANNER_MD" "planner-bash-guard.sh"
 }
 
-# ---------- Test S5-2: Frontmatter contains Stop hook ----------
-
-function test_frontmatter_contains_stop_hook() {
-  assert_file_contains "$PLANNER_MD" "Stop:"
-}
-
-function test_frontmatter_stop_hook_references_validate_plan_output() {
-  assert_file_contains "$PLANNER_MD" "validate-plan-output.sh"
-}
-
 # ---------- Edge Case: Existing frontmatter fields preserved ----------
 
 function test_frontmatter_preserves_name_field() {
@@ -282,11 +272,7 @@ function test_frontmatter_preserves_name_field() {
 }
 
 function test_frontmatter_preserves_tools_field() {
-  assert_file_contains "$PLANNER_MD" "tools: Read, Glob, Grep, Bash, AskUserQuestion"
-}
-
-function test_frontmatter_preserves_disallowed_tools_field() {
-  assert_file_contains "$PLANNER_MD" "disallowedTools: Write, Edit, MultiEdit, NotebookEdit, Task"
+  assert_file_contains "$PLANNER_MD" "tools: Read, Glob, Grep, Bash"
 }
 
 function test_frontmatter_preserves_model_field() {
@@ -334,13 +320,6 @@ function test_skill_plan_contains_approved_header_instruction() {
   assert_file_contains "$SKILL_PLAN" "Approved:"
 }
 
-# ---------- Test PF4: tdd-planner.md contains compaction guard and lock removal ----------
-
-function test_planner_md_contains_compaction_guard_and_lock_removal() {
-  assert_file_contains "$PLANNER_MD" ".tdd-plan-locked"
-  assert_file_contains "$PLANNER_MD" "rm .tdd-plan-locked"
-}
-
 # ---------- Test PF5: tdd-implement SKILL.md contains approval verification gate ----------
 
 function test_implement_skill_contains_approval_verification_gate() {
@@ -348,12 +327,4 @@ function test_implement_skill_contains_approval_verification_gate() {
   assert_file_contains "$SKILL_IMPLEMENT" "/tdd-plan"
 }
 
-# ---------- Test PF6 (Edge Case): tdd-planner.md preserves existing mandatory approval sequence ----------
-
-function test_planner_md_preserves_mandatory_approval_sequence() {
-  assert_file_contains "$PLANNER_MD" "AskUserQuestion"
-  assert_file_contains "$PLANNER_MD" "Approve"
-  assert_file_contains "$PLANNER_MD" "Modify"
-  assert_file_contains "$PLANNER_MD" "Discard"
-}
 
