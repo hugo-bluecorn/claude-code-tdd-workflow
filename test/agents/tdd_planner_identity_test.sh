@@ -161,7 +161,7 @@ function test_planner_body_contains_planning_process() {
   assert_contains "## Planning Process" "$body"
 }
 
-# ===== Slice 3: CLAUDE.md Documentation Updates =====
+# ===== Slice 6: CLAUDE.md Documentation Updates =====
 
 CLAUDE_FILE="CLAUDE.md"
 
@@ -171,42 +171,43 @@ get_planner_table_row() {
   grep "tdd-planner" "$CLAUDE_FILE"
 }
 
-# ---------- Test S3-1: Architecture table tdd-planner row no longer contains "Read-only" ----------
+# ---------- Test S3-1: Architecture table tdd-planner row shows "Read-only" ----------
 
-function test_claude_md_planner_row_does_not_contain_read_only() {
+function test_claude_md_planner_row_shows_read_only() {
   local planner_row
   planner_row=$(get_planner_table_row)
   assert_not_empty "$planner_row"
-  assert_not_contains "Read-only" "$planner_row"
+  assert_contains "Read-only" "$planner_row"
 }
 
-# ---------- Test S3-2: Architecture table tdd-planner row describes full planning lifecycle ----------
+# ---------- Test S3-2: Architecture table tdd-planner row describes research, NOT approval ----------
 
-function test_claude_md_planner_row_contains_approval_lifecycle() {
+function test_claude_md_planner_row_describes_research() {
   local planner_row
   planner_row=$(get_planner_table_row)
   assert_not_empty "$planner_row"
-  assert_contains "approval" "$planner_row"
+  assert_contains "research" "$planner_row"
+  assert_not_contains "approval" "$planner_row"
+  assert_not_contains "write .tdd-progress" "$planner_row"
 }
 
-# ---------- Test S3-3: CLAUDE.md contains invocation warning about Task tool ----------
+# ---------- Test S3-3: Invocation warning describes research subagent ----------
 
-function test_claude_md_contains_invocation_warning_about_task_tool() {
+function test_claude_md_invocation_warning_describes_research_subagent() {
   assert_file_contains "$CLAUDE_FILE" "Do NOT manually invoke"
-  assert_file_contains "$CLAUDE_FILE" "tdd-planner"
+  assert_file_contains "$CLAUDE_FILE" "research subagent"
 }
 
-# ---------- Test S3-4: Invocation warning mentions /tdd-plan as correct invocation path ----------
+# ---------- Test S3-4: Invocation warning mentions inline skill handles approval ----------
 
-function test_claude_md_invocation_warning_mentions_tdd_plan() {
-  # The warning block must contain /tdd-plan in the context of the warning.
-  # We check that the line containing "Do NOT manually invoke" is near a line
-  # containing "/tdd-plan". Since they are in the same blockquote, we extract
-  # the warning block and verify both are present.
+function test_claude_md_invocation_warning_mentions_inline_skill() {
+  # Extract just the warning blockquote (lines starting with >)
   local warning_block
-  warning_block=$(sed -n '/Do NOT manually invoke/,/absent\./p' "$CLAUDE_FILE")
+  warning_block=$(sed -n '/Do NOT manually invoke/,/^$/{ /^>/p; }' "$CLAUDE_FILE")
   assert_not_empty "$warning_block"
   assert_contains "/tdd-plan" "$warning_block"
+  assert_contains "approval" "$warning_block"
+  assert_contains "plan text" "$warning_block"
 }
 
 # ---------- Test S3-5: Other architecture table rows preserved ----------
