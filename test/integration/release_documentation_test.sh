@@ -259,6 +259,50 @@ function test_user_guide_finalize_docs_mentions_push() {
   assert_matches "push|PR auto-updates" "$finalize_section"
 }
 
+# ---------- Test 11: README and user-guide reflect inline orchestration (1.11.0) ----------
+
+function test_readme_workflow_diagram_describes_inline_orchestration() {
+  local diagram
+  diagram=$(sed -n '/## How It Works/,/^##/p' "$README_MD")
+  assert_contains "Inline" "$diagram"
+}
+
+function test_readme_agents_table_planner_is_read_only() {
+  local agents_section
+  agents_section=$(sed -n '/### Agents/,/^###/p' "$README_MD")
+  local planner_row
+  planner_row=$(echo "$agents_section" | grep "tdd-planner")
+  assert_contains "Read-only" "$planner_row"
+}
+
+function test_readme_skills_table_tdd_plan_is_inline() {
+  local skills_section
+  skills_section=$(sed -n '/### Skills/,/^###/p' "$README_MD")
+  local plan_row
+  plan_row=$(echo "$skills_section" | grep "/tdd-plan")
+  assert_matches "[Ii]nline" "$plan_row"
+}
+
+function test_readme_hooks_table_validate_plan_is_standalone() {
+  local hooks_section
+  hooks_section=$(sed -n '/### Hooks/,/^##/p' "$README_MD")
+  local validate_row
+  validate_row=$(echo "$hooks_section" | grep "validate-plan-output")
+  assert_contains "standalone" "$validate_row"
+}
+
+function test_user_guide_starting_section_describes_inline_skill() {
+  local start_section
+  start_section=$(sed -n '/### 2\. What happens next/,/^###/p' "$USER_GUIDE")
+  assert_contains "inline" "$start_section"
+}
+
+function test_user_guide_review_section_uses_modify_not_revise() {
+  local review_section
+  review_section=$(sed -n '/### 3\. Review the plan/,/^###/p' "$USER_GUIDE")
+  assert_contains "Modify" "$review_section"
+}
+
 # ---------- Edge Cases: Additive-only ----------
 
 function test_readme_still_has_tdd_planner() {

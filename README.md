@@ -36,11 +36,11 @@ This reads `.tdd-progress.md`, finds pending slices, and runs each through red-g
 User Request
     |
     v
-/tdd-plan (Orchestrating Skill)
-    |  context: fork
-    |  agent: tdd-planner (opus, approval-gated writes)
-    |  Researches codebase, produces slice-oriented plan
-    |  Writes: .tdd-progress.md + planning/ archive
+/tdd-plan (Inline Orchestrating Skill)
+    |  Spawns tdd-planner (opus, read-only) via Agent tool
+    |  Planner researches codebase, returns structured plan text
+    |  Skill handles AskUserQuestion approval
+    |  Writes: .tdd-progress.md + planning/ archive after approval
     v
 Human Review (approve / revise / reject)
     |
@@ -80,7 +80,7 @@ Done
 
 | Agent | Model | Purpose |
 |-------|-------|---------|
-| tdd-planner | opus | Full planning lifecycle: research, plan creation, approval, file writing (approval-gated) |
+| tdd-planner | opus | Read-only codebase research; returns structured plan text to `/tdd-plan` skill |
 | tdd-implementer | opus | Red-green-refactor per slice (full tools) |
 | tdd-verifier | haiku | Blackbox validation (read-only) |
 | tdd-releaser | sonnet | Release workflow (CHANGELOG, PR) |
@@ -91,7 +91,7 @@ Done
 
 | Skill | Type |
 |-------|------|
-| `/tdd-plan` | Orchestrating entry point (forks context) |
+| `/tdd-plan` | Inline orchestrating skill (spawns planner subagent, handles approval, writes files) |
 | `/tdd-implement` | Implementation loop (reads progress, runs slices) |
 | `/tdd-release` | Release entry point (forks context) |
 | `/tdd-finalize-docs` | Post-release documentation finalization (forks context) |
@@ -107,9 +107,8 @@ Done
 | validate-tdd-order.sh | PreToolUse (command) | Blocks implementation writes before test exists |
 | auto-run-tests.sh | PostToolUse (command) | Runs tests after every file change |
 | planner-bash-guard.sh | PreToolUse (command) | Allowlists read-only commands for planner |
-| validate-plan-output.sh | Stop + SubagentStop (command) | Enforces plan approval via AskUserQuestion with retry counter; validates required sections |
+| validate-plan-output.sh | standalone utility | Validates plan file structure (required sections, no refactoring leak); called by `/tdd-plan` skill after approval |
 | check-tdd-progress.sh | Stop (command) | Prevents session end with pending slices |
-| SubagentStart (planner) | command | Injects git context into planner |
 | SubagentStart (context-updater) | command | Injects git context with edit warning |
 | check-release-complete.sh | SubagentStop (command) | Validates branch is pushed to remote (releaser + doc-finalizer) |
 | SubagentStop (implementer) | prompt | Verifies R-G-R cycle completion |
@@ -130,7 +129,7 @@ Default: compact single-line Given/When/Then. Customizable via the template and 
 
 ### permissionMode on Planner
 
-Default: `permissionMode: plan`. If plan mode blocks Bash writes to `.tdd-progress.md`, remove `permissionMode: plan` and rely on `disallowedTools` instead.
+Default: `permissionMode: plan`. The planner is read-only and does not write files, so plan mode is a safe default. If Bash read commands are unexpectedly blocked, remove `permissionMode: plan` from `agents/tdd-planner.md`.
 
 ## File Structure
 

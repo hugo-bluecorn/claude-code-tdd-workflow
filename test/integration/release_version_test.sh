@@ -51,11 +51,11 @@ function test_plugin_json_exists() {
   assert_file_exists "$PLUGIN_JSON"
 }
 
-function test_plugin_json_version_is_1_10_0() {
-  # The version field in plugin.json must be 1.10.0
+function test_plugin_json_version_is_1_11_0() {
+  # The version field in plugin.json must be 1.11.0
   local version
   version=$(grep '"version"' "$PLUGIN_JSON" | sed 's/.*: *"\([^"]*\)".*/\1/')
-  assert_equals "1.10.0" "$version"
+  assert_equals "1.11.0" "$version"
 }
 
 # ---------- Test 3: CHANGELOG version matches plugin.json version ----------
@@ -133,6 +133,48 @@ function test_changelog_1_10_0_mentions_detect_project_context_move() {
   local section_1_10_0
   section_1_10_0=$(sed -n '/## \[1\.10\.0\]/,/## \[/p' "$CHANGELOG_MD")
   assert_contains "detect-project-context.sh" "$section_1_10_0"
+}
+
+# ---------- Test 7: CHANGELOG has 1.11.0 section with inline orchestration entries ----------
+
+function test_changelog_has_1_11_0_section() {
+  assert_file_contains "$CHANGELOG_MD" "## [1.11.0]"
+}
+
+function test_changelog_1_11_0_has_changed_section() {
+  local section_1_11_0
+  section_1_11_0=$(sed -n '/## \[1\.11\.0\]/,/## \[/p' "$CHANGELOG_MD")
+  assert_contains "### Changed" "$section_1_11_0"
+}
+
+function test_changelog_1_11_0_has_removed_section() {
+  local section_1_11_0
+  section_1_11_0=$(sed -n '/## \[1\.11\.0\]/,/## \[/p' "$CHANGELOG_MD")
+  assert_contains "### Removed" "$section_1_11_0"
+}
+
+function test_changelog_1_11_0_mentions_tdd_planner_restructure() {
+  local section_1_11_0
+  section_1_11_0=$(sed -n '/## \[1\.11\.0\]/,/## \[/p' "$CHANGELOG_MD")
+  assert_contains "tdd-planner" "$section_1_11_0"
+}
+
+function test_changelog_1_11_0_mentions_inline_orchestration() {
+  local section_1_11_0
+  section_1_11_0=$(sed -n '/## \[1\.11\.0\]/,/## \[/p' "$CHANGELOG_MD")
+  assert_contains "inline" "$section_1_11_0"
+}
+
+function test_changelog_1_11_0_mentions_hooks_json_change() {
+  local section_1_11_0
+  section_1_11_0=$(sed -n '/## \[1\.11\.0\]/,/## \[/p' "$CHANGELOG_MD")
+  assert_contains "hooks.json" "$section_1_11_0"
+}
+
+function test_changelog_1_11_0_mentions_lock_removal() {
+  local section_1_11_0
+  section_1_11_0=$(sed -n '/## \[1\.11\.0\]/,/## \[/p' "$CHANGELOG_MD")
+  assert_contains ".tdd-plan-locked" "$section_1_11_0"
 }
 
 # ---------- Edge Case Test 5: Previous CHANGELOG entries unchanged ----------
