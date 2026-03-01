@@ -10,7 +10,6 @@ create_tmp_env() {
   local tmp_dir
   tmp_dir=$(mktemp -d)
 
-  cp "$HOOK_ABS" "$tmp_dir/"
   mkdir -p "$tmp_dir/planning"
 
   echo "$tmp_dir"
