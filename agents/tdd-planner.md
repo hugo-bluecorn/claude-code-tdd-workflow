@@ -8,7 +8,7 @@ tools: Read, Glob, Grep, Bash
 model: opus
 color: blue
 permissionMode: plan
-# maxTurns: 30
+maxTurns: 30
 memory: project
 skills:
   - dart-flutter-conventions
