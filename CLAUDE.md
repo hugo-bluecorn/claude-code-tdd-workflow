@@ -169,6 +169,14 @@ Planning reference templates (used by tdd-planner agent):
 
 ---
 
+## Plugin Development Reference
+
+When working on this plugin's agents, skills, hooks, or configuration, consult:
+- `docs/plugin-developer-prompt.md` — developer role, architecture overview, design principles
+- `docs/reference/index.md` — index to topic-specific API reference files (read only what you need)
+
+---
+
 ## Project-Specific Guidelines
 
 <!-- Add your project-specific guidelines below this line -->
