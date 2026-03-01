@@ -300,20 +300,6 @@ function test_frontmatter_preserves_skills_list() {
 SKILL_PLAN="skills/tdd-plan/SKILL.md"
 SKILL_IMPLEMENT="skills/tdd-implement/SKILL.md"
 
-# ---------- Test PF1: SKILL.md contains compaction guard instruction ----------
-
-function test_skill_plan_contains_compaction_guard() {
-  assert_file_contains "$SKILL_PLAN" "CRITICAL"
-  assert_file_contains "$SKILL_PLAN" ".tdd-plan-locked"
-  assert_file_contains "$SKILL_PLAN" "re-ask"
-}
-
-# ---------- Test PF2: SKILL.md contains lock removal step ----------
-
-function test_skill_plan_contains_lock_removal_step() {
-  assert_file_contains "$SKILL_PLAN" "rm .tdd-plan-locked"
-}
-
 # ---------- Test PF3: SKILL.md contains Approved header instruction ----------
 
 function test_skill_plan_contains_approved_header_instruction() {

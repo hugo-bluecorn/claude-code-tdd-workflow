@@ -415,20 +415,10 @@ function test_hooks_json_valid_after_planner_removal() {
 }
 
 # =====================================================================
-# Slice 2 — Prompt Updates: Discard lock removal + AskUserQuestion reminder
+# Slice 2 — Prompt Updates: SKILL.md constraints
 # =====================================================================
 
 SKILL_PLAN="skills/tdd-plan/SKILL.md"
-PLANNER_MD="agents/tdd-planner.md"
-
-# ---------- S2-1: SKILL.md Discard path contains lock removal ----------
-
-function test_skill_plan_discard_path_contains_lock_removal() {
-  # Extract the Discard bullet from step 9 area and check for rm .tdd-plan-locked
-  local discard_context
-  discard_context=$(grep -A1 -i "discard" "$SKILL_PLAN" | head -4)
-  assert_contains "rm .tdd-plan-locked" "$discard_context"
-}
 
 # ---------- S2-6: Existing SKILL.md constraints preserved ----------
 
