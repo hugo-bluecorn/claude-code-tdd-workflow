@@ -57,17 +57,8 @@ function test_existing_subagent_stop_entries_preserved() {
   implementer_type=$(jq -r '.hooks.SubagentStop[] | select(.matcher == "tdd-implementer") | .hooks[0].type' "$HOOKS_JSON")
   assert_equals "prompt" "$implementer_type"
 
-  # Verify tdd-planner entry still exists with command type and timeout 10
-  local planner_type
-  planner_type=$(jq -r '.hooks.SubagentStop[] | select(.matcher == "tdd-planner") | .hooks[0].type' "$HOOKS_JSON")
-  assert_equals "command" "$planner_type"
-
-  local planner_timeout
-  planner_timeout=$(jq -r '.hooks.SubagentStop[] | select(.matcher == "tdd-planner") | .hooks[0].timeout' "$HOOKS_JSON")
-  assert_equals "10" "$planner_timeout"
-
-  # Verify total SubagentStop entries count is at least 3 (implementer + planner + releaser + others)
+  # Verify total SubagentStop entries count is 3 (implementer + releaser + doc-finalizer)
   local count
   count=$(jq '.hooks.SubagentStop | length' "$HOOKS_JSON")
-  assert_equals "4" "$count"
+  assert_equals "3" "$count"
 }

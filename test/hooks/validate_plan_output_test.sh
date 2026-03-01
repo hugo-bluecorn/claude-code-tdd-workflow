@@ -346,62 +346,72 @@ PLAN
 }
 
 # =====================================================================
-# Slice 5 — Integration: hooks.json SubagentStop entry for tdd-planner
+# Slice 3 — Planner hooks removed from hooks.json
 # =====================================================================
 
 HOOKS_JSON="hooks/hooks.json"
 
-# ---------- Test S5-3: hooks.json SubagentStop entry for tdd-planner ----------
+# ---------- Test S3-1: No SubagentStart entry for tdd-planner ----------
 
-function test_hooks_json_has_subagent_stop_tdd_planner_matcher() {
+function test_hooks_json_no_subagent_start_tdd_planner() {
+  local result
+  result=$(jq -r '.hooks.SubagentStart[] | select(.matcher == "tdd-planner") | .matcher' "$HOOKS_JSON")
+  assert_empty "$result"
+}
+
+# ---------- Test S3-2: No SubagentStop entry for tdd-planner ----------
+
+function test_hooks_json_no_subagent_stop_tdd_planner() {
   local result
   result=$(jq -r '.hooks.SubagentStop[] | select(.matcher == "tdd-planner") | .matcher' "$HOOKS_JSON")
-  assert_equals "tdd-planner" "$result"
+  assert_empty "$result"
 }
 
-function test_hooks_json_tdd_planner_entry_uses_validate_plan_output() {
-  local result
-  result=$(jq -r '.hooks.SubagentStop[] | select(.matcher == "tdd-planner") | .hooks[0].command' "$HOOKS_JSON")
-  assert_contains "validate-plan-output.sh" "$result"
+# ---------- Test S3-3: All non-planner hooks preserved ----------
+
+function test_hooks_json_non_planner_hooks_preserved() {
+  local impl
+  impl=$(jq -r '.hooks.SubagentStop[] | select(.matcher == "tdd-implementer") | .matcher' "$HOOKS_JSON")
+  assert_equals "tdd-implementer" "$impl"
+
+  local rel
+  rel=$(jq -r '.hooks.SubagentStop[] | select(.matcher == "tdd-releaser") | .matcher' "$HOOKS_JSON")
+  assert_equals "tdd-releaser" "$rel"
+
+  local doc
+  doc=$(jq -r '.hooks.SubagentStop[] | select(.matcher == "tdd-doc-finalizer") | .matcher' "$HOOKS_JSON")
+  assert_equals "tdd-doc-finalizer" "$doc"
+
+  local ctx
+  ctx=$(jq -r '.hooks.SubagentStart[] | select(.matcher == "context-updater") | .matcher' "$HOOKS_JSON")
+  assert_equals "context-updater" "$ctx"
+
+  local stop
+  stop=$(jq -r '.hooks.Stop[0].hooks[0].command' "$HOOKS_JSON")
+  assert_contains "check-tdd-progress.sh" "$stop"
 }
 
-function test_hooks_json_tdd_planner_entry_has_timeout_10() {
-  local result
-  result=$(jq -r '.hooks.SubagentStop[] | select(.matcher == "tdd-planner") | .hooks[0].timeout' "$HOOKS_JSON")
-  assert_equals "10" "$result"
+# ---------- Test S3-4: SubagentStop count is 3 ----------
+
+function test_hooks_json_subagent_stop_count_is_three() {
+  local count
+  count=$(jq '.hooks.SubagentStop | length' "$HOOKS_JSON")
+  assert_equals "3" "$count"
 }
 
-function test_hooks_json_tdd_planner_entry_type_is_command() {
-  local result
-  result=$(jq -r '.hooks.SubagentStop[] | select(.matcher == "tdd-planner") | .hooks[0].type' "$HOOKS_JSON")
-  assert_equals "command" "$result"
+# ---------- Test S3-5: SubagentStart count is 1 ----------
+
+function test_hooks_json_subagent_start_count_is_one() {
+  local count
+  count=$(jq '.hooks.SubagentStart | length' "$HOOKS_JSON")
+  assert_equals "1" "$count"
 }
 
-# ---------- Test S5-4: hooks.json is valid JSON and existing entries preserved ----------
+# ---------- Test S3-6: hooks.json is valid JSON ----------
 
-function test_hooks_json_is_valid_json() {
+function test_hooks_json_valid_after_planner_removal() {
   jq empty "$HOOKS_JSON"
   assert_exit_code 0
-}
-
-function test_hooks_json_existing_tdd_implementer_subagent_stop_preserved() {
-  local result
-  result=$(jq -r '.hooks.SubagentStop[] | select(.matcher == "tdd-implementer") | .matcher' "$HOOKS_JSON")
-  assert_equals "tdd-implementer" "$result"
-}
-
-function test_hooks_json_existing_stop_hook_preserved() {
-  local result
-  result=$(jq -r '.hooks.Stop[0].hooks[0].command' "$HOOKS_JSON")
-  assert_contains "check-tdd-progress.sh" "$result"
-}
-
-# ---------- S3-Test1: hooks.json SubagentStart for tdd-planner includes lock creation ----------
-
-function test_hooks_json_subagent_start_tdd_planner_creates_lock() {
-  local result
-  result=$(jq -r '.hooks.SubagentStart[] | select(.matcher == "tdd-planner") | .hooks[0].command' "$HOOKS_JSON")
-  assert_contains "touch .tdd-plan-locked" "$result"
 }
 
 # =====================================================================
@@ -462,53 +472,3 @@ function test_skill_plan_constraints_preserved_after_discard_fix() {
   assert_file_contains "$SKILL_PLAN" "Do NOT write any implementation code"
 }
 
-# =====================================================================
-# Slice 3 — hooks.json retry counter cleanup + .gitignore
-# =====================================================================
-
-# ---------- S3-1: SubagentStart command cleans up stale retry counter ----------
-
-function test_hooks_json_subagent_start_cleans_up_retry_counter() {
-  local result
-  result=$(jq -r '.hooks.SubagentStart[] | select(.matcher == "tdd-planner") | .hooks[0].command' "$HOOKS_JSON")
-  assert_contains "rm -f .tdd-plan-approval-retries" "$result"
-}
-
-# ---------- S3-2: SubagentStart still creates lock file (preservation) ----------
-
-function test_hooks_json_subagent_start_still_creates_lock() {
-  local result
-  result=$(jq -r '.hooks.SubagentStart[] | select(.matcher == "tdd-planner") | .hooks[0].command' "$HOOKS_JSON")
-  assert_contains "touch .tdd-plan-locked" "$result"
-}
-
-# ---------- S3-3: All existing hook configurations preserved ----------
-
-function test_hooks_json_existing_configs_preserved_after_retry_counter_fix() {
-  # tdd-implementer SubagentStop
-  local impl_result
-  impl_result=$(jq -r '.hooks.SubagentStop[] | select(.matcher == "tdd-implementer") | .matcher' "$HOOKS_JSON")
-  assert_equals "tdd-implementer" "$impl_result"
-
-  # tdd-releaser SubagentStop
-  local rel_result
-  rel_result=$(jq -r '.hooks.SubagentStop[] | select(.matcher == "tdd-releaser") | .matcher' "$HOOKS_JSON")
-  assert_equals "tdd-releaser" "$rel_result"
-
-  # context-updater SubagentStart
-  local ctx_result
-  ctx_result=$(jq -r '.hooks.SubagentStart[] | select(.matcher == "context-updater") | .matcher' "$HOOKS_JSON")
-  assert_equals "context-updater" "$ctx_result"
-
-  # Stop hook
-  local stop_result
-  stop_result=$(jq -r '.hooks.Stop[0].hooks[0].command' "$HOOKS_JSON")
-  assert_contains "check-tdd-progress.sh" "$stop_result"
-}
-
-# ---------- S3-4: .gitignore includes retry counter artifact ----------
-
-function test_gitignore_includes_retry_counter() {
-  assert_file_exists ".gitignore"
-  assert_file_contains ".gitignore" ".tdd-plan-approval-retries"
-}

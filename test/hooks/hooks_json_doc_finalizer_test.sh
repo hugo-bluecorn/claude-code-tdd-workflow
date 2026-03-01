@@ -57,15 +57,6 @@ function test_existing_subagent_stop_entries_preserved() {
   implementer_type=$(jq -r '.hooks.SubagentStop[] | select(.matcher == "tdd-implementer") | .hooks[0].type' "$HOOKS_JSON")
   assert_equals "prompt" "$implementer_type"
 
-  # Verify tdd-planner entry still exists with command type and timeout 10
-  local planner_type
-  planner_type=$(jq -r '.hooks.SubagentStop[] | select(.matcher == "tdd-planner") | .hooks[0].type' "$HOOKS_JSON")
-  assert_equals "command" "$planner_type"
-
-  local planner_timeout
-  planner_timeout=$(jq -r '.hooks.SubagentStop[] | select(.matcher == "tdd-planner") | .hooks[0].timeout' "$HOOKS_JSON")
-  assert_equals "10" "$planner_timeout"
-
   # Verify tdd-releaser entry still exists with command type and timeout 15
   local releaser_type
   releaser_type=$(jq -r '.hooks.SubagentStop[] | select(.matcher == "tdd-releaser") | .hooks[0].type' "$HOOKS_JSON")
@@ -75,29 +66,24 @@ function test_existing_subagent_stop_entries_preserved() {
   releaser_timeout=$(jq -r '.hooks.SubagentStop[] | select(.matcher == "tdd-releaser") | .hooks[0].timeout' "$HOOKS_JSON")
   assert_equals "15" "$releaser_timeout"
 
-  # Verify total SubagentStop entries count is 4 (implementer + planner + releaser + doc-finalizer)
+  # Verify total SubagentStop entries count is 3 (implementer + releaser + doc-finalizer)
   local count
   count=$(jq '.hooks.SubagentStop | length' "$HOOKS_JSON")
-  assert_equals "4" "$count"
+  assert_equals "3" "$count"
 }
 
 # ---------- Test 7: Existing SubagentStart entries preserved ----------
 
 function test_existing_subagent_start_entries_preserved() {
-  # Verify tdd-planner entry exists
-  local planner
-  planner=$(jq -r '.hooks.SubagentStart[] | select(.matcher == "tdd-planner") | .matcher' "$HOOKS_JSON")
-  assert_equals "tdd-planner" "$planner"
-
   # Verify context-updater entry exists
   local updater
   updater=$(jq -r '.hooks.SubagentStart[] | select(.matcher == "context-updater") | .matcher' "$HOOKS_JSON")
   assert_equals "context-updater" "$updater"
 
-  # Verify total SubagentStart entries count is 2
+  # Verify total SubagentStart entries count is 1
   local count
   count=$(jq '.hooks.SubagentStart | length' "$HOOKS_JSON")
-  assert_equals "2" "$count"
+  assert_equals "1" "$count"
 }
 
 # ---------- Test 8: Stop hook entries preserved ----------
