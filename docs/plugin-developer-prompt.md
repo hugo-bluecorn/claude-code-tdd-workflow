@@ -49,7 +49,7 @@ When you need specific API details, schemas, or field-level documentation:
 The tdd-workflow plugin (`v1.10.0`) provides:
 
 **6 agents** (in `agents/`):
-- `tdd-planner` — Opus, plan mode, approval-gated writes, Bash allowlist
+- `tdd-planner` — Opus, plan mode, read-only research, Bash allowlist
 - `tdd-implementer` — Opus, read-write, test-first enforcement via hooks
 - `tdd-verifier` — Haiku, plan mode (read-only), blackbox validation
 - `tdd-releaser` — Sonnet, Bash-only writes, approval gates
@@ -57,7 +57,7 @@ The tdd-workflow plugin (`v1.10.0`) provides:
 - `context-updater` — Opus, full web access, convention file updates
 
 **5 workflow skills** (in `skills/`):
-- `tdd-plan` — context: fork, agent: tdd-planner, disable-model-invocation
+- `tdd-plan` — context: inline, spawns tdd-planner via Agent tool, disable-model-invocation
 - `tdd-implement` — context: main, orchestrates implementer + verifier loop
 - `tdd-release` — context: fork, agent: tdd-releaser
 - `tdd-finalize-docs` — context: fork, agent: tdd-doc-finalizer
@@ -71,7 +71,7 @@ The tdd-workflow plugin (`v1.10.0`) provides:
 **8 hook scripts** (in `hooks/`):
 - `validate-tdd-order.sh` — PreToolUse: blocks impl writes before test exists
 - `auto-run-tests.sh` — PostToolUse: auto-runs tests after file changes
-- `validate-plan-output.sh` — SubagentStop/Stop: enforces plan approval
+- `validate-plan-output.sh` — Standalone utility: validates plan structure (sections, refactoring leaks)
 - `check-tdd-progress.sh` — Stop: prevents exit with pending slices
 - `planner-bash-guard.sh` — PreToolUse: read-only command allowlist for planner
 - `check-release-complete.sh` — SubagentStop: verifies branch is pushed
@@ -90,8 +90,8 @@ The tdd-workflow plugin (`v1.10.0`) provides:
    Exit code 2 blocks the action; the agent must comply.
 
 3. **Approval gates**: User approval required before planning output is
-   written. AskUserQuestion for explicit consent, lock files for state
-   tracking.
+   written. The `/tdd-plan` skill handles approval in the main thread via
+   AskUserQuestion — no lock files needed.
 
 4. **Test-first is non-negotiable**: `validate-tdd-order.sh` blocks
    implementation file writes until test files exist in the session.
@@ -108,7 +108,7 @@ The tdd-workflow plugin (`v1.10.0`) provides:
    conventions don't require agent prompt changes.
 
 8. **Minimal permissions**: Each agent gets only the tools it needs.
-   Planner: read-only + AskUserQuestion. Verifier: read-only. Releaser:
+   Planner: read-only (Bash allowlisted). Verifier: read-only. Releaser:
    Bash only (for git/gh). Doc-finalizer: Edit only (targeted changes).
 
 ## When Making Changes

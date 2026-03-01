@@ -55,25 +55,29 @@ function test_implementer_still_has_cpp_testing_conventions() {
   assert_contains "cpp-testing-conventions" "$frontmatter"
 }
 
-# ---------- Test 3: tdd-plan SKILL.md includes bash project detection ----------
+# ---------- Test 3: tdd-plan SKILL.md exists and delegates to planner ----------
 
 function test_tdd_plan_skill_file_exists() {
   assert_file_exists "$TDD_PLAN_SKILL"
 }
 
-function test_step0_has_bash_project_detection() {
-  # Step 0 should detect bash projects (via _test.sh files or similar indicator)
-  assert_file_contains "$TDD_PLAN_SKILL" "_test.sh"
+# After the inline orchestration rewrite, project detection and framework
+# listing live in the planner agent body, not the skill. Verify the planner
+# agent body has them instead.
+
+function test_planner_body_has_bash_project_detection() {
+  # Planner agent body should detect bash projects (via _test.sh files)
+  assert_file_contains "$PLANNER_FILE" "_test.sh"
 }
 
-function test_step0_loads_bash_testing_conventions_reference() {
-  # Step 0 should instruct loading bash-testing-conventions reference files
-  assert_file_contains "$TDD_PLAN_SKILL" "skills/bash-testing-conventions/reference/"
+function test_planner_body_loads_bash_testing_conventions_reference() {
+  # Planner agent body should instruct loading bash-testing-conventions reference files
+  assert_file_contains "$PLANNER_FILE" "skills/bash-testing-conventions/reference/"
 }
 
-function test_step2_lists_bashunit_framework() {
-  # Step 2 should list bashunit alongside flutter_test and GoogleTest
-  assert_file_contains "$TDD_PLAN_SKILL" "bashunit"
+function test_planner_body_references_bash_testing() {
+  # Planner agent body should reference bash testing (via .bashunit.yml or _test.sh)
+  assert_file_contains "$PLANNER_FILE" ".bashunit.yml"
 }
 
 # ---------- Edge Cases: Additive-only ----------
@@ -95,22 +99,17 @@ function test_implementer_no_existing_skills_removed() {
   assert_contains "bash-testing-conventions" "$frontmatter"
 }
 
-function test_skill_md_still_has_dart_detection() {
-  # Existing Dart/Flutter detection (pubspec.yaml) must still be present
-  assert_file_contains "$TDD_PLAN_SKILL" "pubspec.yaml"
+function test_planner_body_has_dart_detection() {
+  # Planner agent body should have Dart/Flutter detection (pubspec.yaml)
+  assert_file_contains "$PLANNER_FILE" "pubspec.yaml"
 }
 
-function test_skill_md_still_has_cpp_detection() {
-  # Existing C++ detection (CMakeLists.txt) must still be present
-  assert_file_contains "$TDD_PLAN_SKILL" "CMakeLists.txt"
+function test_planner_body_has_cpp_detection() {
+  # Planner agent body should have C++ detection (CMakeLists.txt)
+  assert_file_contains "$PLANNER_FILE" "CMakeLists.txt"
 }
 
-function test_skill_md_still_has_flutter_test_framework() {
-  # Step 2 should still list flutter_test
-  assert_file_contains "$TDD_PLAN_SKILL" "flutter_test"
-}
-
-function test_skill_md_still_has_googletest_framework() {
-  # Step 2 should still list GoogleTest
-  assert_file_contains "$TDD_PLAN_SKILL" "GoogleTest"
+function test_planner_body_identifies_test_frameworks() {
+  # Planner agent body should instruct identifying test frameworks
+  assert_file_contains "$PLANNER_FILE" "test frameworks"
 }

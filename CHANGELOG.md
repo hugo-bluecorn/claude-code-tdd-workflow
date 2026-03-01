@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+
+## [1.11.0] - 2026-03-01
+
+### Changed
+- **tdd-planner agent**: restructured from autonomous planning agent to
+  read-only research agent. No longer handles approval or file writing;
+  returns structured plan text to the calling skill
+- **tdd-plan skill**: converted from `context: fork` (agent subagent) to
+  inline orchestration. Main thread now spawns planner via Agent tool,
+  handles AskUserQuestion approval, and writes files after approval
+- **planner-bash-guard.sh**: simplified to pure read-only command
+  allowlist. Removed rm exception, lock-file gate, and planning/
+  directory write exceptions
+- **validate-plan-output.sh**: converted from Stop hook to standalone
+  structure validator. Accepts file path argument, removed stdin JSON
+  parsing, lock/retry logic, and .tdd-progress.md consistency check
+- **hooks.json**: removed SubagentStart and SubagentStop entries for
+  tdd-planner (SubagentStop 4→3, SubagentStart 2→1)
+- CLAUDE.md and plugin-developer-prompt.md updated to reflect
+  research-only planner and inline skill orchestration
+
+### Removed
+- `.tdd-plan-locked` lock file mechanism (~30 lines)
+- `.tdd-plan-approval-retries` retry counter (~20 lines)
+- Compaction guard, approval sequence, and tool use reminder from
+  planner agent body
+- AskUserQuestion from planner tools allowlist
+- Stop hook and disallowedTools from planner frontmatter
+- planning/ redirect and rm exceptions from bash guard
+
 ## [1.10.0] - 2026-03-01
 
 ### Added

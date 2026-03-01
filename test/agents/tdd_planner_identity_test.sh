@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# Test suite for tdd-planner.md frontmatter description accuracy
-# Verifies the description matches the agent's actual capabilities:
-# autonomous planning, approval flow, and file-writing.
+# Test suite for tdd-planner.md — pure research agent identity
+# Verifies the description, frontmatter, and body content match
+# the research-only agent role (no approval flow, no file writing).
 
 AGENT_FILE="agents/tdd-planner.md"
 
@@ -13,157 +13,155 @@ get_frontmatter() {
   sed -n '/^---$/,/^---$/p' "$AGENT_FILE" | sed '1d;$d'
 }
 
-# ---------- Test 1: Description contains "Autonomous" identifier ----------
-
-function test_planner_description_contains_autonomous_identifier() {
-  assert_file_exists "$AGENT_FILE"
-  assert_file_contains "$AGENT_FILE" "Autonomous TDD planning agent"
-}
-
-# ---------- Test 2: Description no longer contains "Read-only" ----------
-
-function test_planner_description_does_not_contain_read_only() {
-  local frontmatter
-  frontmatter=$(get_frontmatter)
-  assert_not_contains "Read-only" "$frontmatter"
-}
-
-# ---------- Test 3: Description no longer contains "research agent" ----------
-
-function test_planner_description_does_not_contain_research_agent() {
-  local frontmatter
-  frontmatter=$(get_frontmatter)
-  assert_not_contains "research agent" "$frontmatter"
-}
-
-# ---------- Test 4: Description mentions invocation via /tdd-plan ----------
-
-function test_planner_description_mentions_tdd_plan_invocation() {
-  local frontmatter
-  frontmatter=$(get_frontmatter)
-  assert_contains "tdd-plan" "$frontmatter"
-}
-
-# ---------- Test 5: Existing frontmatter fields preserved ----------
-
-function test_planner_frontmatter_preserves_name() {
-  assert_file_contains "$AGENT_FILE" "name: tdd-planner"
-}
-
-function test_planner_frontmatter_preserves_tools_with_ask_user() {
-  local frontmatter
-  frontmatter=$(get_frontmatter)
-  assert_contains "AskUserQuestion" "$frontmatter"
-}
-
-function test_planner_frontmatter_preserves_model_opus() {
-  assert_file_contains "$AGENT_FILE" "model: opus"
-}
-
-function test_planner_frontmatter_preserves_pretooluse_bash_guard_hook() {
-  assert_file_contains "$AGENT_FILE" "planner-bash-guard.sh"
-}
-
-function test_planner_frontmatter_preserves_stop_validate_plan_hook() {
-  assert_file_contains "$AGENT_FILE" "validate-plan-output.sh"
-}
-
-# ---------- Test 6: Description mentions approval and .tdd-progress.md ----------
-
-function test_planner_description_mentions_approval() {
-  local frontmatter
-  frontmatter=$(get_frontmatter)
-  assert_contains "approval" "$frontmatter"
-}
-
-function test_planner_description_mentions_tdd_progress_file() {
-  local frontmatter
-  frontmatter=$(get_frontmatter)
-  assert_contains ".tdd-progress.md" "$frontmatter"
-}
-
-# ===== Slice 2: Identity & Invocation Guard =====
-
 # Helper: extract body content (everything after the closing --- of frontmatter),
 # stripping leading blank lines.
 get_body() {
   sed -n '/^---$/,/^---$/d; p' "$AGENT_FILE" | sed '/./,$!d'
 }
 
-# ---------- Test S2-1: Body contains Identity section heading ----------
+# ===== Slice 4: Pure Research Agent Identity =====
 
-function test_planner_body_contains_identity_section_heading() {
-  local body
-  body=$(get_body)
-  assert_contains "## Identity" "$body"
+# ---------- Test 1: Description identifies as research agent ----------
+
+function test_planner_description_contains_research() {
+  local frontmatter
+  frontmatter=$(get_frontmatter)
+  assert_contains "research" "$frontmatter"
 }
 
-# ---------- Test S2-2: Identity section declares agent is NOT research-only ----------
-
-function test_planner_identity_declares_not_research_only() {
-  local body
-  body=$(get_body)
-  assert_contains "NOT a research-only helper" "$body"
+function test_planner_description_does_not_contain_autonomous() {
+  local frontmatter
+  frontmatter=$(get_frontmatter)
+  assert_not_contains "Autonomous" "$frontmatter"
 }
 
-# ---------- Test S2-3: Identity section contains invocation detection instruction ----------
-
-function test_planner_identity_contains_process_detection_instruction() {
-  local body
-  body=$(get_body)
-  assert_contains '## Process' "$body"
+function test_planner_description_does_not_contain_approval() {
+  local frontmatter
+  frontmatter=$(get_frontmatter)
+  assert_not_contains "approval" "$frontmatter"
 }
 
-# ---------- Test S2-4: Identity section contains fallback behavior ----------
-
-function test_planner_identity_contains_fallback_behavior() {
-  local body
-  body=$(get_body)
-  assert_contains "return only raw research findings as a fallback" "$body"
+function test_planner_description_does_not_contain_writes() {
+  local frontmatter
+  frontmatter=$(get_frontmatter)
+  assert_not_contains "writes" "$frontmatter"
 }
 
-# ---------- Test S2-5: Existing body sections preserved ----------
+# ---------- Test 2: Tools excludes AskUserQuestion ----------
 
-function test_planner_body_preserves_planning_process() {
+function test_planner_tools_excludes_ask_user_question() {
+  local frontmatter
+  frontmatter=$(get_frontmatter)
+  assert_not_contains "AskUserQuestion" "$frontmatter"
+}
+
+function test_planner_tools_includes_read_glob_grep_bash() {
+  assert_file_contains "$AGENT_FILE" "tools: Read, Glob, Grep, Bash"
+}
+
+# ---------- Test 3: No Stop hook ----------
+
+function test_planner_no_stop_hook() {
+  local frontmatter
+  frontmatter=$(get_frontmatter)
+  assert_not_contains "Stop:" "$frontmatter"
+}
+
+function test_planner_no_validate_plan_output_in_frontmatter() {
+  local frontmatter
+  frontmatter=$(get_frontmatter)
+  assert_not_contains "validate-plan-output" "$frontmatter"
+}
+
+# ---------- Test 4: No disallowedTools ----------
+
+function test_planner_no_disallowed_tools() {
+  local frontmatter
+  frontmatter=$(get_frontmatter)
+  assert_not_contains "disallowedTools" "$frontmatter"
+}
+
+# ---------- Test 5: Body has no approval/lock content ----------
+
+function test_planner_body_no_mandatory_approval_sequence() {
+  local body
+  body=$(get_body)
+  assert_not_contains "Mandatory approval sequence" "$body"
+}
+
+function test_planner_body_no_ask_user_question() {
+  local body
+  body=$(get_body)
+  assert_not_contains "AskUserQuestion" "$body"
+}
+
+function test_planner_body_no_tdd_plan_locked() {
+  local body
+  body=$(get_body)
+  assert_not_contains ".tdd-plan-locked" "$body"
+}
+
+function test_planner_body_no_compaction_guard() {
+  local body
+  body=$(get_body)
+  assert_not_contains "COMPACTION GUARD" "$body"
+}
+
+function test_planner_body_no_tool_use_reminder() {
+  local body
+  body=$(get_body)
+  assert_not_contains "Tool Use Reminder" "$body"
+}
+
+# ---------- Test 6: Body contains output format specification ----------
+
+function test_planner_body_contains_given_when_then_template() {
+  local body
+  body=$(get_body)
+  assert_contains "Given:" "$body"
+  assert_contains "When:" "$body"
+  assert_contains "Then:" "$body"
+}
+
+function test_planner_body_contains_self_check() {
+  local body
+  body=$(get_body)
+  assert_contains "Self-check" "$body"
+}
+
+# ---------- Test 7: PreToolUse bash guard preserved ----------
+
+function test_planner_pretooluse_hook_preserved() {
+  assert_file_contains "$AGENT_FILE" "PreToolUse:"
+  assert_file_contains "$AGENT_FILE" "planner-bash-guard.sh"
+}
+
+# ---------- Test 8: Skills, memory, model, permissionMode preserved ----------
+
+function test_planner_preserved_fields() {
+  assert_file_contains "$AGENT_FILE" "dart-flutter-conventions"
+  assert_file_contains "$AGENT_FILE" "cpp-testing-conventions"
+  assert_file_contains "$AGENT_FILE" "bash-testing-conventions"
+  assert_file_contains "$AGENT_FILE" "memory: project"
+  assert_file_contains "$AGENT_FILE" "model: opus"
+  assert_file_contains "$AGENT_FILE" "permissionMode: plan"
+}
+
+# ---------- Test 9: Body contains research methodology ----------
+
+function test_planner_body_contains_detect_project_context() {
+  local body
+  body=$(get_body)
+  assert_contains "detect-project-context.sh" "$body"
+}
+
+function test_planner_body_contains_planning_process() {
   local body
   body=$(get_body)
   assert_contains "## Planning Process" "$body"
 }
 
-function test_planner_body_preserves_key_principles() {
-  local body
-  body=$(get_body)
-  assert_contains "## Key Principles" "$body"
-}
-
-function test_planner_body_preserves_output_section() {
-  local body
-  body=$(get_body)
-  assert_contains "## Output" "$body"
-}
-
-function test_planner_body_preserves_mandatory_approval_sequence() {
-  local body
-  body=$(get_body)
-  assert_contains "### Mandatory approval sequence" "$body"
-}
-
-# ---------- Test S2-6: Identity section appears before Planning Process ----------
-
-function test_planner_identity_appears_before_planning_process() {
-  local identity_line planning_line
-  identity_line=$(grep -n "## Identity" "$AGENT_FILE" | head -1 | cut -d: -f1)
-  planning_line=$(grep -n "## Planning Process" "$AGENT_FILE" | head -1 | cut -d: -f1)
-
-  assert_not_empty "$identity_line"
-  assert_not_empty "$planning_line"
-
-  if [[ "$identity_line" -ge "$planning_line" ]]; then
-    fail "## Identity (line $identity_line) should appear before ## Planning Process (line $planning_line)"
-  fi
-}
-
-# ===== Slice 3: CLAUDE.md Documentation Updates =====
+# ===== Slice 6: CLAUDE.md Documentation Updates =====
 
 CLAUDE_FILE="CLAUDE.md"
 
@@ -173,42 +171,43 @@ get_planner_table_row() {
   grep "tdd-planner" "$CLAUDE_FILE"
 }
 
-# ---------- Test S3-1: Architecture table tdd-planner row no longer contains "Read-only" ----------
+# ---------- Test S3-1: Architecture table tdd-planner row shows "Read-only" ----------
 
-function test_claude_md_planner_row_does_not_contain_read_only() {
+function test_claude_md_planner_row_shows_read_only() {
   local planner_row
   planner_row=$(get_planner_table_row)
   assert_not_empty "$planner_row"
-  assert_not_contains "Read-only" "$planner_row"
+  assert_contains "Read-only" "$planner_row"
 }
 
-# ---------- Test S3-2: Architecture table tdd-planner row describes full planning lifecycle ----------
+# ---------- Test S3-2: Architecture table tdd-planner row describes research, NOT approval ----------
 
-function test_claude_md_planner_row_contains_approval_lifecycle() {
+function test_claude_md_planner_row_describes_research() {
   local planner_row
   planner_row=$(get_planner_table_row)
   assert_not_empty "$planner_row"
-  assert_contains "approval" "$planner_row"
+  assert_contains "research" "$planner_row"
+  assert_not_contains "approval" "$planner_row"
+  assert_not_contains "write .tdd-progress" "$planner_row"
 }
 
-# ---------- Test S3-3: CLAUDE.md contains invocation warning about Task tool ----------
+# ---------- Test S3-3: Invocation warning describes research subagent ----------
 
-function test_claude_md_contains_invocation_warning_about_task_tool() {
+function test_claude_md_invocation_warning_describes_research_subagent() {
   assert_file_contains "$CLAUDE_FILE" "Do NOT manually invoke"
-  assert_file_contains "$CLAUDE_FILE" "tdd-planner"
+  assert_file_contains "$CLAUDE_FILE" "research subagent"
 }
 
-# ---------- Test S3-4: Invocation warning mentions /tdd-plan as correct invocation path ----------
+# ---------- Test S3-4: Invocation warning mentions inline skill handles approval ----------
 
-function test_claude_md_invocation_warning_mentions_tdd_plan() {
-  # The warning block must contain /tdd-plan in the context of the warning.
-  # We check that the line containing "Do NOT manually invoke" is near a line
-  # containing "/tdd-plan". Since they are in the same blockquote, we extract
-  # the warning block and verify both are present.
+function test_claude_md_invocation_warning_mentions_inline_skill() {
+  # Extract just the warning blockquote (lines starting with >)
   local warning_block
-  warning_block=$(sed -n '/Do NOT manually invoke/,/absent\./p' "$CLAUDE_FILE")
+  warning_block=$(sed -n '/Do NOT manually invoke/,/^$/{ /^>/p; }' "$CLAUDE_FILE")
   assert_not_empty "$warning_block"
   assert_contains "/tdd-plan" "$warning_block"
+  assert_contains "approval" "$warning_block"
+  assert_contains "plan text" "$warning_block"
 }
 
 # ---------- Test S3-5: Other architecture table rows preserved ----------

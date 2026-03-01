@@ -76,7 +76,7 @@ The plugin system uses the `version` field in `.claude-plugin/plugin.json` to de
 
 ```json
 {
-  "version": "1.10.0"
+  "version": "1.11.0"
 }
 ```
 
@@ -96,23 +96,22 @@ You can also use natural language that includes phrases like "implement with TDD
 
 ### 2. What happens next
 
-The plugin forks a **fresh context** (separate from your main conversation) and launches the **tdd-planner** agent. This agent:
+The `/tdd-plan` skill runs **inline** in your main conversation and:
 
-1. Auto-detects your test runner and frameworks
-2. Reads your project structure, existing tests, and architecture
-3. May ask you clarifying questions about scope or design decisions
-4. Decomposes the feature into ordered **slices** — each one a self-contained test-implement-refactor cycle
-5. Writes the plan to two locations:
+1. Spawns the **tdd-planner** agent (read-only) to research your codebase
+2. The planner auto-detects your test runner and frameworks, reads your project structure, existing tests, and architecture, and returns a structured plan
+3. The skill presents the plan and asks you to **approve**, **revise**, or **discard** it
+4. After approval, the skill writes the plan to two locations:
    - `.tdd-progress.md` at your project root (the live tracking file)
    - `planning/YYYYMMDD_HHMM_feature_name.md` (read-only archive)
 
 ### 3. Review the plan
 
-The planner presents the full plan and asks you to **approve**, **revise**, or **reject** it.
+The skill presents the full plan and asks you to **Approve**, **Modify**, or **Discard** it.
 
 - **Approve**: proceed to implementation
-- **Revise**: tell the planner what to change (scope, ordering, missing cases)
-- **Reject**: discard the plan entirely
+- **Modify**: tell the skill what to change; the planner is re-invoked with your feedback
+- **Discard**: abandon the plan entirely
 
 Take time here. A good plan prevents wasted implementation cycles. Each slice should have:
 
@@ -221,10 +220,9 @@ The plugin uses hooks to enforce TDD discipline automatically.
 | `validate-tdd-order.sh` | PreToolUse (Write/Edit) | implementer | Blocks implementation file writes if no test files have been modified yet |
 | `auto-run-tests.sh` | PostToolUse (Write/Edit) | implementer | Runs tests after every file change, returns output as system message |
 | `planner-bash-guard.sh` | PreToolUse (Bash) | planner | Allowlists read-only commands; blocks writes and destructive operations |
-| `validate-plan-output.sh` | Stop + SubagentStop | planner | Enforces plan approval via AskUserQuestion with retry counter; validates required sections and no refactoring leak |
+| `validate-plan-output.sh` | standalone utility | `/tdd-plan` skill | Validates plan file structure (required sections, no refactoring leak); called after approval, not a hook |
 | `check-tdd-progress.sh` | Stop | main thread | Prevents session end with pending slices |
 | `check-release-complete.sh` | Stop + SubagentStop | releaser | Validates branch is pushed to remote before release completes |
-| SubagentStart | SubagentStart | planner | Injects git branch, last commit, dirty file count as additional context |
 
 ### Prompt Hooks (LLM-evaluated)
 
@@ -352,15 +350,12 @@ The tradeoff is faster planning but less thorough analysis.
 To let the planner look up API docs on pub.dev or reference documentation, edit `agents/tdd-planner.md` and add `WebFetch, WebSearch` to the tools list:
 
 ```yaml
-tools: Read, Glob, Grep, Bash, AskUserQuestion, WebFetch, WebSearch
+tools: Read, Glob, Grep, Bash, WebFetch, WebSearch
 ```
 
 ### Adjusting permissionMode
 
-The planner runs in `permissionMode: plan` by default, which may block some Bash writes. If the planner cannot write `.tdd-progress.md`, you have two options:
-
-1. Remove `permissionMode: plan` from `agents/tdd-planner.md` (the `disallowedTools` list still prevents code writes)
-2. Approve the write when prompted
+The planner runs in `permissionMode: plan` by default. The planner is read-only and does not write files, so this is a safe default. If Bash read commands are unexpectedly blocked in your environment, remove `permissionMode: plan` from `agents/tdd-planner.md`.
 
 ### Changing state management or architecture
 
@@ -395,16 +390,13 @@ edit these three files:
    planner reads for output structure. Change the test examples in the
    "Test Specifications" section to your preferred format.
 
-2. **`skills/tdd-plan/SKILL.md`** — The planner's instructions. Update three
-   places:
-   - **Step 6** (inline example structure) — change the `### Test N` block
-   - **Step 7** (self-check) — update the Given/When/Then checklist item to
+2. **`agents/tdd-planner.md`** — The planner agent's body contains the full
+   format specification. Update three places:
+   - The inline example structure — change the `### Test N` block
+   - The self-check section — update the Given/When/Then checklist item to
      describe your format
-   - The enforcement line after the code block in step 6 — adjust the
-     description of what's acceptable
-
-3. **`agents/tdd-planner.md`** — The agent's Output section references the
-   format briefly. Update the description to match.
+   - The enforcement line after the code block — adjust the description of
+     what's acceptable
 
 The implementer and verifier do not parse Given/When/Then — they read the
 test file paths and slice status from `.tdd-progress.md`. So changing the

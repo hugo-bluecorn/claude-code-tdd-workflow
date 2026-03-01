@@ -4,15 +4,6 @@
   "hooks": {
     "SubagentStart": [
       {
-        "matcher": "tdd-planner",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "rm -f .tdd-plan-approval-retries 2>/dev/null; touch .tdd-plan-locked && echo \"{\\\"additionalContext\\\": \\\"Current branch: $(git branch --show-current 2>/dev/null || echo 'unknown'). Last commit: $(git log --oneline -1 2>/dev/null || echo 'none'). Dirty files: $(git status --porcelain 2>/dev/null | wc -l | tr -d ' ').\\\"}\""
-          }
-        ]
-      },
-      {
         "matcher": "context-updater",
         "hooks": [
           {
@@ -31,16 +22,6 @@
             "type": "prompt",
             "prompt": "The tdd-implementer has finished a slice. Evaluate: $ARGUMENTS\n\nCheck if:\n1. A failing test was written and confirmed RED\n2. Implementation was written and confirmed GREEN\n3. Refactoring was done (or explicitly skipped) and confirmed still GREEN\n4. All three phases were completed with test output\n\nIf incomplete, respond {\"ok\": false, \"reason\": \"Incomplete R-G-R cycle: [missing step]\"}.\nIf complete, respond {\"ok\": true}.",
             "timeout": 30
-          }
-        ]
-      },
-      {
-        "matcher": "tdd-planner",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/validate-plan-output.sh",
-            "timeout": 10
           }
         ]
       },
