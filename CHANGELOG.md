@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.10.0] - 2026-03-01
+
+### Added
+- Plugin API reference documentation in `docs/reference/` (12 files covering
+  agents, hooks, skills, settings, MCP, plugins, and more)
+- `docs/plugin-developer-prompt.md` — developer role and architecture overview
+- CLAUDE.md pointer to plugin development reference docs
+- `color` frontmatter field to all 6 agents for UI differentiation:
+  tdd-planner (blue), tdd-implementer (green), tdd-verifier (yellow),
+  tdd-releaser (cyan), tdd-doc-finalizer (magenta), context-updater (red)
+- `color` field documented in `docs/reference/agents.md` as undocumented
+  but functional (values: blue, cyan, green, yellow, magenta, red, pink)
+- `scripts/` directory for utility scripts (non-hook)
+
+### Fixed
+- README agents table: corrected context-updater model from `sonnet` to
+  `opus` to match actual agent definition
+- `test/skills/shellcheck_guide_test.sh`: template placeholder test now
+  filters out bash function definitions (`() {`) before checking for
+  stray braces, fixing false positive on shellcheck guide examples
+
+### Changed
+- Moved `hooks/detect-project-context.sh` to `scripts/detect-project-context.sh`
+  — it is a utility script invoked by the tdd-plan skill, not an event-driven
+  hook. Updated references in SKILL.md, README, and extensibility audit.
+
 ## [1.9.0] - 2026-02-28
 
 ### Added

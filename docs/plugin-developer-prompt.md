@@ -46,7 +46,7 @@ When you need specific API details, schemas, or field-level documentation:
 
 ## This Plugin's Architecture
 
-The tdd-workflow plugin (`v1.9.0`) provides:
+The tdd-workflow plugin (`v1.10.0`) provides:
 
 **6 agents** (in `agents/`):
 - `tdd-planner` — Opus, plan mode, approval-gated writes, Bash allowlist
