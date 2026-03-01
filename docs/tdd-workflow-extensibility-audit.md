@@ -271,8 +271,9 @@ tdd-workflow/                               Status
 │   ├── check-tdd-progress.sh              ✅
 │   ├── planner-bash-guard.sh               ✅ (added in v1.3.0, M1)
 │   ├── validate-plan-output.sh             ✅ (added in v1.3.0, M2/S2)
-│   ├── check-release-complete.sh           ✅ (added in v1.6.0, N6)
-│   └── detect-project-context.sh           ✅ (added in v1.4.0, S4)
+│   └── check-release-complete.sh           ✅ (added in v1.6.0, N6)
+├── scripts/
+│   └── detect-project-context.sh           ✅ (added in v1.4.0, S4; moved from hooks/ in v1.10.0)
 ├── docs/
 │   ├── version-control.md                  ✅
 │   ├── version-control-integration.md      ✅

@@ -187,7 +187,8 @@ tdd-workflow/
 │   ├── check-tdd-progress.sh
 │   ├── planner-bash-guard.sh
 │   ├── validate-plan-output.sh
-│   ├── check-release-complete.sh
+│   └── check-release-complete.sh
+├── scripts/
 │   └── detect-project-context.sh
 ├── docs/
 │   ├── version-control.md

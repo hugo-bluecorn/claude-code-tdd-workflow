@@ -110,5 +110,9 @@ function test_doc_does_not_reference_cpp_tools() {
 }
 
 function test_doc_does_not_contain_unfilled_template_placeholders() {
-  assert_file_not_contains "$DOC" "{"
+  # Check for template placeholders like {your_value} while allowing
+  # bash function syntax like my_helper() {
+  local count
+  count=$(grep -v '() {' "$DOC" | grep -c '{' || true)
+  assert_equals "0" "$count"
 }

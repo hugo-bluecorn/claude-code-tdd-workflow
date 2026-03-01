@@ -28,7 +28,7 @@ Plan TDD implementation for: $ARGUMENTS
    and naming conventions defined in these files. Do not proceed to step 1 until all
    reference files for the detected project type are loaded.
 
-1. **Detect project context** by running: `${CLAUDE_PLUGIN_ROOT}/hooks/detect-project-context.sh`
+1. **Detect project context** by running: `${CLAUDE_PLUGIN_ROOT}/scripts/detect-project-context.sh`
    This outputs key=value lines for test_runner, test_count, branch, dirty_files, and fvm.
    Use this information to guide your research — skip detection steps you already have answers for.
 
