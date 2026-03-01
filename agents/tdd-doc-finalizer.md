@@ -8,6 +8,7 @@ description: >
 tools: Read, Bash, Glob, Grep, Edit
 disallowedTools: Write, MultiEdit, NotebookEdit
 model: sonnet
+color: magenta
 maxTurns: 30
 hooks:
   Stop:

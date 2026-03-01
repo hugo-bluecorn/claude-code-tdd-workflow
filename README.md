@@ -85,7 +85,7 @@ Done
 | tdd-verifier | haiku | Blackbox validation (read-only) |
 | tdd-releaser | sonnet | Release workflow (CHANGELOG, PR) |
 | tdd-doc-finalizer | sonnet | Post-release documentation updates, version bumps, release test maintenance |
-| context-updater | sonnet | Updates convention reference files to latest versions |
+| context-updater | opus | Updates convention reference files to latest versions |
 
 ### Skills
 

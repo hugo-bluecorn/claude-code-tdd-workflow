@@ -6,6 +6,7 @@ description: >
   MUST be invoked with a specific slice specification.
 tools: Read, Write, Edit, MultiEdit, Bash, Glob, Grep
 model: opus
+color: green
 maxTurns: 50
 memory: project
 skills:

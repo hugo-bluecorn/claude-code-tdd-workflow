@@ -7,6 +7,7 @@ description: >
 tools: Read, Bash, Glob, Grep, AskUserQuestion
 disallowedTools: Write, Edit, MultiEdit, NotebookEdit
 model: sonnet
+color: cyan
 maxTurns: 30
 hooks:
   Stop:

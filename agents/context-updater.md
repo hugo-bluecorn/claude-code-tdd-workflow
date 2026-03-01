@@ -9,6 +9,7 @@ description: >
 tools: Read, Write, Edit, Glob, Grep, Bash, WebSearch, WebFetch, AskUserQuestion
 disallowedTools: MultiEdit, NotebookEdit, Task
 model: opus
+color: red
 maxTurns: 50
 memory: project
 skills:

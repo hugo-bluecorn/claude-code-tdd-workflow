@@ -9,6 +9,7 @@ description: >
 tools: Read, Glob, Grep, Bash, AskUserQuestion
 disallowedTools: Write, Edit, MultiEdit, NotebookEdit, Task
 model: opus
+color: blue
 permissionMode: plan
 # maxTurns: 30
 memory: project

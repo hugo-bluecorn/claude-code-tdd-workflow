@@ -8,6 +8,7 @@ description: >
 tools: Read, Bash, Glob, Grep
 disallowedTools: Write, Edit, MultiEdit
 model: haiku
+color: yellow
 permissionMode: plan
 maxTurns: 20
 hooks:

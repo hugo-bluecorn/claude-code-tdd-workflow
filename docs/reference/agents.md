@@ -35,6 +35,7 @@ description: Reviews code for quality and security issues
 tools: Read, Glob, Grep, Bash
 disallowedTools: Write, Edit
 model: sonnet
+color: blue
 permissionMode: default
 maxTurns: 50
 skills:
@@ -68,6 +69,7 @@ environment details), NOT the full Claude Code system prompt.
 | `tools` | No | Inherit all | Tool allowlist (comma-separated or array) |
 | `disallowedTools` | No | -- | Tool denylist. Ignored if `tools` is set |
 | `model` | No | `inherit` | `sonnet`, `opus`, `haiku`, or `inherit` |
+| `color` | No | -- | UI background color. Undocumented but functional. Values: `blue`, `cyan`, `green`, `yellow`, `magenta`, `red`, `pink` |
 | `permissionMode` | No | `default` | See permission modes below |
 | `maxTurns` | No | -- | Max agentic turns before stopping |
 | `skills` | No | -- | Skills preloaded at startup (full content injected) |
