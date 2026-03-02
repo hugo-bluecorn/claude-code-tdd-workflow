@@ -165,7 +165,7 @@ Invoked by `skills/tdd-release/SKILL.md` with `agent: tdd-releaser`.
 
 ## References
 
-- `docs/version-control.md` — source guidelines this integration automates
+- `skills/tdd-release/reference/version-control.md` — source guidelines this integration automates
 - `agents/tdd-implementer.md` — agent with per-phase auto-commit behavior
 - `skills/tdd-implement/SKILL.md` — skill with branch creation in Step 0
 - `skills/tdd-release/SKILL.md` — release workflow skill

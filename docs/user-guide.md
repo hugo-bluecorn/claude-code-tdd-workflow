@@ -255,7 +255,7 @@ refactor(<scope>): clean up <slice name>       # REFACTOR phase (if applicable)
 
 The `/tdd-implement` skill also auto-creates a `feature/<name>` branch before the first slice if you're on `main` or `master`.
 
-See `docs/version-control.md` for the full commit message format and branching strategy.
+See `skills/tdd-release/reference/version-control.md` for the full commit message format and branching strategy.
 
 ---
 
@@ -471,7 +471,7 @@ This workflow only modifies reference content files and SKILL.md quick reference
 ## Reference
 
 - `README.md` — Architecture overview and component listing
-- `docs/version-control.md` — Git workflow and commit conventions
+- `skills/tdd-release/reference/version-control.md` — Git workflow and commit conventions
 - `skills/dart-flutter-conventions/` — Dart/Flutter testing patterns, project conventions, Riverpod guide, and test recipes
 - `skills/cpp-testing-conventions/` — C++ GoogleTest patterns, CMake integration, and Clang tooling
 - `skills/bash-testing-conventions/` — Bash testing with bashunit and shellcheck

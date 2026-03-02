@@ -153,7 +153,9 @@ tdd-workflow/
 │   ├── tdd-implement/
 │   │   └── SKILL.md
 │   ├── tdd-release/
-│   │   └── SKILL.md
+│   │   ├── SKILL.md
+│   │   └── reference/
+│   │       └── version-control.md
 │   ├── tdd-finalize-docs/
 │   │   └── SKILL.md
 │   ├── tdd-update-context/
@@ -190,7 +192,6 @@ tdd-workflow/
 ├── scripts/
 │   └── detect-project-context.sh
 ├── docs/
-│   ├── version-control.md
 │   ├── version-control-integration.md
 │   ├── user-guide.md
 │   ├── tdd-workflow-extensibility-audit.md
@@ -241,7 +242,7 @@ Add the following to your `.claude/settings.local.json` to allow Claude Code to 
 ## Documentation
 
 - **[User Guide](docs/user-guide.md)** — Step-by-step walkthrough of the full TDD workflow
-- **[Version Control](docs/version-control.md)** — Git workflow and commit conventions
+- **[Version Control](skills/tdd-release/reference/version-control.md)** — Git workflow and commit conventions
 
 ## License
 
