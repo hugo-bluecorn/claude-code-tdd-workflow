@@ -91,20 +91,7 @@ function test_doc_references_verification_or_static_analysis_role() {
   content=$(cat "$DOC")
   # Should reference static analysis as equivalent to dart analyze or shellcheck
   # in the TDD workflow verification phase
-  local has_dart_analyze=false
-  local has_shellcheck=false
-  local has_verification=false
-
-  echo "$content" | grep -q "dart analyze" && has_dart_analyze=true
-  echo "$content" | grep -q "shellcheck" && has_shellcheck=true
-  echo "$content" | grep -q -i "verif" && has_verification=true
-
-  # At least one of these should be present to show TDD integration
-  local found=false
-  if [[ "$has_dart_analyze" == true ]] || [[ "$has_shellcheck" == true ]] || [[ "$has_verification" == true ]]; then
-    found=true
-  fi
-  assert_equals "true" "$found"
+  assert_matches "(dart analyze|shellcheck|[Vv]erif)" "$content"
 }
 
 # ---------- Test 7: Document does not contain unfilled template placeholders ----------
