@@ -21,7 +21,7 @@ run_bump_in_dir() {
 run_bump_in_dir_stderr() {
   local dir="$1"
   shift
-  (cd "$dir" && bash "$SCRIPT" "$@" 2>&1 >/dev/null)
+  (cd "$dir" && bash "$SCRIPT" "$@" >/dev/null 2>&1)
 }
 
 # ---------- Test 1: Script exits 0 and updates pubspec.yaml version field ----------
