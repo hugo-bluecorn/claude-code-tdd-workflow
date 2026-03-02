@@ -273,9 +273,10 @@ This forks a fresh context and launches the **tdd-releaser** agent, which:
 2. Runs the full test suite one final time
 3. Runs static analysis and code formatting
 4. Updates `CHANGELOG.md` with entries generated from slice descriptions
-5. Pushes the branch to the remote
-6. Creates a PR via `gh pr create` with an auto-generated summary
-7. Optionally cleans up `.tdd-progress.md`
+5. Propagates the new version into all version-bearing files via `scripts/bump-version.sh`
+6. Pushes the branch to the remote
+7. Creates a PR via `gh pr create` with an auto-generated summary
+8. Optionally cleans up `.tdd-progress.md`
 
 ### Approval gates
 
@@ -302,15 +303,13 @@ After `/tdd-release` creates the PR, run:
 
 This forks a fresh context and launches the **tdd-doc-finalizer** agent, which:
 
-1. Reads `CHANGELOG.md` to determine the target version
-2. Bumps the version in `.claude-plugin/plugin.json` and `docs/user-guide.md`
-3. Assesses documentation impact from the CHANGELOG entries
-4. Updates affected documentation files (README, CLAUDE.md, user-guide) with targeted edits
-5. Updates release integration tests with new version assertions and component checks
-6. Runs the test suite to verify consistency
-7. Commits and pushes to the same branch — the existing PR auto-updates
+1. Runs `detect-doc-context.sh` to discover which documentation files exist in the project
+2. Reads `CHANGELOG.md` to understand what changed in the release
+3. Updates affected documentation files (README, CLAUDE.md, docs/) with targeted edits
+4. Runs the test suite to verify consistency
+5. Commits and pushes to the same branch — the existing PR auto-updates
 
-The doc-finalizer is fully automated with no approval gates. It only modifies documentation, version numbers, and release tests — it never touches CHANGELOG, source code, agent definitions, or skill definitions.
+The doc-finalizer is fully automated with no approval gates. It only modifies documentation — it never touches CHANGELOG, source code, agent definitions, skill definitions, or version files (version bumping is the releaser's responsibility).
 
 The same `check-release-complete.sh` hook validates that the push succeeded before the agent finishes.
 

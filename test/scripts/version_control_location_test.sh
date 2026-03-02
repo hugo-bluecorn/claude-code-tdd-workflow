@@ -81,10 +81,12 @@ function test_vci_references_new_version_control_path() {
 
 function test_no_stale_docs_version_control_reference_outside_planning() {
   local stale_count
-  # Search all .md files except those under planning/ and .tdd-progress.md
+  # Search all .md files except: planning/ (historical archives), .tdd-progress.md
+  # (task specification), and CHANGELOG.md (legitimately documents the move)
   stale_count=$(grep -rl "docs/version-control.md" --include="*.md" . \
     | grep -v "^./planning/" \
     | grep -v "^./.tdd-progress.md" \
+    | grep -v "^./CHANGELOG.md" \
     | wc -l || true)
   assert_equals "0" "$stale_count"
 }
