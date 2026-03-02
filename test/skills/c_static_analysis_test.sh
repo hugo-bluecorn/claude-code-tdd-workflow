@@ -5,21 +5,31 @@
 DOC="skills/c-conventions/reference/c-static-analysis.md"
 
 # ---------- Test 1: Document covers compiler warning flags ----------
+# Note: assert_file_contains uses grep -F which treats leading hyphens
+# as options. Use assert_contains with file content for hyphen-prefixed strings.
 
 function test_doc_contains_wall() {
-  assert_file_contains "$DOC" "-Wall"
+  local content
+  content=$(cat "$DOC")
+  assert_contains "-Wall" "$content"
 }
 
 function test_doc_contains_wextra() {
-  assert_file_contains "$DOC" "-Wextra"
+  local content
+  content=$(cat "$DOC")
+  assert_contains "-Wextra" "$content"
 }
 
 function test_doc_contains_werror() {
-  assert_file_contains "$DOC" "-Werror"
+  local content
+  content=$(cat "$DOC")
+  assert_contains "-Werror" "$content"
 }
 
 function test_doc_contains_pedantic() {
-  assert_file_contains "$DOC" "-pedantic"
+  local content
+  content=$(cat "$DOC")
+  assert_contains "-pedantic" "$content"
 }
 
 # ---------- Test 2: Document covers cppcheck ----------
@@ -63,7 +73,9 @@ function test_doc_contains_cmake_export_compile_commands() {
 # ---------- Test 5: Document covers gcc -fanalyzer ----------
 
 function test_doc_contains_fanalyzer() {
-  assert_file_contains "$DOC" "-fanalyzer"
+  local content
+  content=$(cat "$DOC")
+  assert_contains "-fanalyzer" "$content"
 }
 
 function test_doc_references_gcc_12() {
