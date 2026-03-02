@@ -115,6 +115,16 @@ Full details are available in the plugin's `cpp-testing-conventions` skill
 - **CMake Integration**: Tests registered via `add_test()` and run with `ctest`
 - **Test Organization**: Mirror source structure in test directories
 
+### C Testing
+
+Full details are available in the plugin's C conventions skill
+(auto-loaded when editing `.c` files). Key points:
+
+- **Framework**: Unity for unit tests, CMock for test doubles
+- **Coding Standards**: BARR-C:2018 (style) and SEI CERT C (security/correctness)
+- **Static Analysis**: cppcheck + clang-tidy (cert-*, bugprone-* checks)
+- **Test Organization**: Mirror source structure in test directories
+
 ### Bash Testing
 
 Full details are available in the plugin's bash testing conventions skill
@@ -148,6 +158,7 @@ Before proposing commits, ensure:
 - [ ] `flutter analyze` or `dart analyze` passes with no issues
 - [ ] `flutter test` or `ctest` or `bashunit` passes — all tests green
 - [ ] `CHANGELOG.md` updated with changes
+- [ ] `cppcheck` or `clang-tidy` for C projects (cert-*, bugprone-* checks)
 - [ ] `dart format` or `clang-format` or `shellcheck` applied
 - [ ] No secrets or credentials in staged files
 
@@ -161,6 +172,7 @@ The plugin auto-loads convention skills based on file type:
 |-------|------------|----------------|
 | `dart-flutter-conventions` | `.dart` files | test-patterns, test-recipes, mocking-guide, widget-testing, project-conventions, riverpod-guide |
 | `cpp-testing-conventions` | `.cpp`, `.h` files | googletest-patterns, cmake-integration, googlemock-guide, clang-tooling |
+| `c-conventions` | `.c` files | c-testing-patterns, c-coding-standards, c-static-analysis |
 | `bash-testing-conventions` | `.sh` files | bashunit-patterns, shellcheck-guide |
 
 Planning reference templates (used by tdd-planner agent):
