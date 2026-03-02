@@ -12,7 +12,7 @@ else
 fi
 
 # Test file count
-COUNT=$(find . \( -name "*_test.dart" -o -name "*_test.cpp" -o -name "*_test.sh" \) 2>/dev/null | wc -l | tr -d ' ')
+COUNT=$(find . \( -name "*_test.dart" -o -name "*_test.cpp" -o -name "*_test.sh" -o -name "*_test.c" \) 2>/dev/null | wc -l | tr -d ' ')
 echo "test_count=$COUNT"
 
 # Current branch
