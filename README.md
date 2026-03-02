@@ -64,12 +64,12 @@ PASS -> next slice | FAIL -> retry
 /tdd-release (Orchestrating Skill)
     |  context: fork
     |  agent: tdd-releaser (sonnet)
-    |  Updates CHANGELOG, pushes branch, creates PR
+    |  Updates CHANGELOG, propagates version, pushes branch, creates PR
     v
 /tdd-finalize-docs (Orchestrating Skill)
     |  context: fork
     |  agent: tdd-doc-finalizer (sonnet)
-    |  Bumps versions, updates docs, updates release tests, pushes
+    |  Updates discovered project docs, pushes
     v
 Done
 ```
