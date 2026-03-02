@@ -35,13 +35,17 @@ Finalize the current TDD feature for release: $ARGUMENTS
      - Bash/C++: skip or use appropriate tool if configured
 
 3. **CHANGELOG update:**
+   - Read `skills/tdd-release/reference/version-control.md` for semantic versioning rules
+   - Use those rules to determine the appropriate version (MAJOR, MINOR, or PATCH)
    - Read slice names and descriptions from `.tdd-progress.md`
    - Generate CHANGELOG entries categorized as Added, Changed, or Fixed
    - Present the proposed entries to the user via AskUserQuestion for approval
    - Write approved entries to CHANGELOG.md via Bash (using sed or echo) -- do NOT use the Edit tool
 
-4. **Commit and push:**
+4. **Commit CHANGELOG and propagate version:**
    - Stage and commit: `git add CHANGELOG.md && git commit -m "docs: update CHANGELOG for <feature>"`
+   - Run `bump-version.sh <version>` to propagate the chosen version into all version-bearing files
+   - Stage and commit version file changes: `git add -A && git commit -m "chore: bump version to <version>"`
    - Push the branch: `git push -u origin <branch>`
 
 5. **PR creation:**

@@ -64,12 +64,12 @@ PASS -> next slice | FAIL -> retry
 /tdd-release (Orchestrating Skill)
     |  context: fork
     |  agent: tdd-releaser (sonnet)
-    |  Updates CHANGELOG, pushes branch, creates PR
+    |  Updates CHANGELOG, propagates version, pushes branch, creates PR
     v
 /tdd-finalize-docs (Orchestrating Skill)
     |  context: fork
     |  agent: tdd-doc-finalizer (sonnet)
-    |  Bumps versions, updates docs, updates release tests, pushes
+    |  Updates discovered project docs, pushes
     v
 Done
 ```
@@ -83,8 +83,8 @@ Done
 | tdd-planner | opus | Read-only codebase research; returns structured plan text to `/tdd-plan` skill |
 | tdd-implementer | opus | Red-green-refactor per slice (full tools) |
 | tdd-verifier | haiku | Blackbox validation (read-only) |
-| tdd-releaser | sonnet | Release workflow (CHANGELOG, PR) |
-| tdd-doc-finalizer | sonnet | Post-release documentation updates, version bumps, release test maintenance |
+| tdd-releaser | sonnet | Release workflow (CHANGELOG, version propagation, PR) |
+| tdd-doc-finalizer | sonnet | Post-release documentation updates across discovered project docs |
 | context-updater | opus | Updates convention reference files to latest versions |
 
 ### Skills
@@ -153,7 +153,9 @@ tdd-workflow/
 │   ├── tdd-implement/
 │   │   └── SKILL.md
 │   ├── tdd-release/
-│   │   └── SKILL.md
+│   │   ├── SKILL.md
+│   │   └── reference/
+│   │       └── version-control.md
 │   ├── tdd-finalize-docs/
 │   │   └── SKILL.md
 │   ├── tdd-update-context/
@@ -188,9 +190,10 @@ tdd-workflow/
 │   ├── validate-plan-output.sh
 │   └── check-release-complete.sh
 ├── scripts/
+│   ├── bump-version.sh
+│   ├── detect-doc-context.sh
 │   └── detect-project-context.sh
 ├── docs/
-│   ├── version-control.md
 │   ├── version-control-integration.md
 │   ├── user-guide.md
 │   ├── tdd-workflow-extensibility-audit.md
@@ -241,7 +244,7 @@ Add the following to your `.claude/settings.local.json` to allow Claude Code to 
 ## Documentation
 
 - **[User Guide](docs/user-guide.md)** — Step-by-step walkthrough of the full TDD workflow
-- **[Version Control](docs/version-control.md)** — Git workflow and commit conventions
+- **[Version Control](skills/tdd-release/reference/version-control.md)** — Git workflow and commit conventions
 
 ## License
 

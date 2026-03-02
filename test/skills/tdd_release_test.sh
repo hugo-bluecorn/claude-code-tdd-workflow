@@ -99,3 +99,21 @@ function test_description_contains_trigger_phrases() {
   assert_matches "finalize" "$description"
   assert_matches "publish" "$description"
 }
+
+# ---------- Test 7: Release skill body reflects bump-version step ----------
+
+function test_skill_body_contains_bump_version_step() {
+  assert_file_exists "$SKILL_FILE"
+  local body
+  body=$(get_body)
+  assert_contains "bump-version.sh" "$body"
+}
+
+# ---------- Test 8: Release skill body references version-control.md for semver guidance ----------
+
+function test_skill_body_references_version_control_for_semver() {
+  assert_file_exists "$SKILL_FILE"
+  local body
+  body=$(get_body)
+  assert_contains "version-control.md" "$body"
+}

@@ -111,3 +111,80 @@ function test_task_tool_not_in_tools_list() {
     fail "Task tool should NOT be in the agent tools list, but found: $tools"
   fi
 }
+
+# ---------- Test 10: Releaser body contains directive to read version-control reference ----------
+
+function test_body_contains_version_control_reference_directive() {
+  assert_file_exists "$AGENT_FILE"
+  local body
+  body=$(get_body)
+  assert_contains "skills/tdd-release/reference/version-control.md" "$body"
+}
+
+# ---------- Test 11: Releaser body contains step to call bump-version.sh ----------
+
+function test_body_contains_bump_version_step() {
+  assert_file_exists "$AGENT_FILE"
+  local body
+  body=$(get_body)
+  assert_contains "bump-version.sh" "$body"
+}
+
+# ---------- Test 12: Releaser body references semver via version-control reference ----------
+
+function test_body_references_semver_via_version_control_reference() {
+  assert_file_exists "$AGENT_FILE"
+  local body
+  body=$(get_body)
+  # Must reference semver/semantic versioning AND the version-control reference doc
+  assert_matches "semver|semantic versioning|Semantic Versioning" "$body"
+  assert_contains "version-control.md" "$body"
+}
+
+# ---------- Test 13: Releaser step numbering is sequential ----------
+
+function test_step_numbering_is_sequential() {
+  assert_file_exists "$AGENT_FILE"
+  local body
+  body=$(get_body)
+  # Extract step numbers from ### Step N: headings
+  local step_numbers
+  step_numbers=$(echo "$body" | grep -oP '### Step \K[0-9]+' | tr '\n' ' ' | sed 's/ $//')
+  # Build expected sequential string from 1 to the count of steps
+  local count
+  count=$(echo "$body" | grep -cP '### Step [0-9]+')
+  local expected=""
+  for ((i=1; i<=count; i++)); do
+    if [ -n "$expected" ]; then
+      expected="$expected $i"
+    else
+      expected="$i"
+    fi
+  done
+  assert_equals "$expected" "$step_numbers"
+}
+
+# ---------- Test 14: Releaser tools field unchanged (still no Edit) ----------
+
+function test_tools_field_unchanged_no_edit() {
+  assert_file_exists "$AGENT_FILE"
+  local tools
+  tools=$(get_frontmatter | grep '^tools:' | sed 's/^tools: *//')
+  assert_equals "Read, Bash, Glob, Grep, AskUserQuestion" "$tools"
+  # Confirm Edit is NOT present
+  if echo "$tools" | grep -q '\bEdit\b'; then
+    fail "Edit tool should NOT be in the agent tools list, but found: $tools"
+  fi
+}
+
+# ---------- Test 15: Releaser body still says CHANGELOG modifications via Bash only ----------
+
+function test_body_still_says_changelog_modifications_via_bash_only() {
+  assert_file_exists "$AGENT_FILE"
+  local body
+  body=$(get_body)
+  # Must mention Bash (sed/echo) for file modifications
+  assert_matches "Bash.*sed|sed.*echo|Bash commands" "$body"
+  # Must still restrict to CHANGELOG.md modifications only
+  assert_matches "CHANGELOG" "$body"
+}

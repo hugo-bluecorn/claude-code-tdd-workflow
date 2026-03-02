@@ -337,3 +337,121 @@ function test_vci_layer2_still_implemented() {
   layer2_heading=$(grep -i "Layer 2" "$VCI_MD" | head -1)
   assert_contains "IMPLEMENTED" "$layer2_heading"
 }
+
+# ---------- Test 12: CLAUDE.md and README.md consistency (Slice 6) ----------
+
+function test_claude_md_architecture_table_doc_finalizer_is_generic() {
+  # The doc-finalizer row in the Plugin Architecture table must NOT contain
+  # "version bumps" or "plugin.json" — it should be project-agnostic
+  local arch_section
+  arch_section=$(sed -n '/### Plugin Architecture/,/^###/p' "$CLAUDE_MD")
+  local doc_finalizer_row
+  doc_finalizer_row=$(echo "$arch_section" | grep "tdd-doc-finalizer")
+  assert_not_contains "version bumps" "$doc_finalizer_row"
+  assert_not_contains "plugin.json" "$doc_finalizer_row"
+}
+
+function test_claude_md_available_commands_doc_finalizer_is_generic() {
+  # The /tdd-finalize-docs command description must NOT contain
+  # "version bumps" or "plugin.json"
+  local commands_section
+  commands_section=$(sed -n '/### Available Commands/,/^###/p' "$CLAUDE_MD")
+  local finalize_line
+  finalize_line=$(echo "$commands_section" | grep "tdd-finalize-docs")
+  assert_not_contains "version bumps" "$finalize_line"
+  assert_not_contains "plugin.json" "$finalize_line"
+}
+
+function test_readme_agents_table_doc_finalizer_is_generic() {
+  # The doc-finalizer row in the Agents table must NOT contain
+  # "version bumps" or "plugin.json"
+  local agents_section
+  agents_section=$(sed -n '/### Agents/,/^###/p' "$README_MD")
+  local doc_finalizer_row
+  doc_finalizer_row=$(echo "$agents_section" | grep "tdd-doc-finalizer")
+  assert_not_contains "version bumps" "$doc_finalizer_row"
+  assert_not_contains "plugin.json" "$doc_finalizer_row"
+}
+
+function test_readme_file_structure_has_new_scripts_and_reference() {
+  # File Structure must show bump-version.sh and detect-doc-context.sh under scripts/
+  # and version-control.md under skills/tdd-release/reference/
+  # and must NOT list version-control.md under docs/
+  local file_structure
+  file_structure=$(sed -n '/## File Structure/,/^##/p' "$README_MD")
+  assert_contains "bump-version.sh" "$file_structure"
+  assert_contains "detect-doc-context.sh" "$file_structure"
+
+  # version-control.md should be under tdd-release/reference/
+  local release_ref_section
+  release_ref_section=$(sed -n '/tdd-release/,/tdd-finalize-docs/p' <<< "$file_structure")
+  assert_contains "version-control.md" "$release_ref_section"
+
+  # version-control.md must NOT be under docs/
+  local docs_section
+  docs_section=$(sed -n '/docs\//,/^[^ │├└]/p' <<< "$file_structure")
+  assert_not_contains "version-control.md" "$docs_section"
+}
+
+function test_readme_documentation_links_version_control_location() {
+  # The Documentation section's Version Control link must point to
+  # skills/tdd-release/reference/version-control.md
+  local doc_section
+  doc_section=$(sed -n '/## Documentation/,/^##/p' "$README_MD")
+  assert_contains "skills/tdd-release/reference/version-control.md" "$doc_section"
+}
+
+function test_readme_agents_table_releaser_mentions_version() {
+  # The tdd-releaser row must mention "version" or "bump-version"
+  # reflecting its new responsibility for version propagation
+  local agents_section
+  agents_section=$(sed -n '/### Agents/,/^###/p' "$README_MD")
+  local releaser_row
+  releaser_row=$(echo "$agents_section" | grep "tdd-releaser")
+  assert_matches "version|bump-version" "$releaser_row"
+}
+
+function test_claude_md_lists_all_agents_and_commands() {
+  # CLAUDE.md must still list all six agents in the architecture table
+  local arch_section
+  arch_section=$(sed -n '/### Plugin Architecture/,/^###/p' "$CLAUDE_MD")
+  assert_contains "tdd-planner" "$arch_section"
+  assert_contains "tdd-implementer" "$arch_section"
+  assert_contains "tdd-verifier" "$arch_section"
+  assert_contains "tdd-releaser" "$arch_section"
+  assert_contains "tdd-doc-finalizer" "$arch_section"
+  assert_contains "context-updater" "$arch_section"
+
+  # CLAUDE.md must still list all five commands
+  local commands_section
+  commands_section=$(sed -n '/### Available Commands/,/^###/p' "$CLAUDE_MD")
+  assert_contains "/tdd-plan" "$commands_section"
+  assert_contains "/tdd-implement" "$commands_section"
+  assert_contains "/tdd-release" "$commands_section"
+  assert_contains "/tdd-finalize-docs" "$commands_section"
+  assert_contains "/tdd-update-context" "$commands_section"
+}
+
+function test_readme_lists_all_agents_and_skills() {
+  # README must still list all six agents
+  local agents_section
+  agents_section=$(sed -n '/### Agents/,/^###/p' "$README_MD")
+  assert_contains "tdd-planner" "$agents_section"
+  assert_contains "tdd-implementer" "$agents_section"
+  assert_contains "tdd-verifier" "$agents_section"
+  assert_contains "tdd-releaser" "$agents_section"
+  assert_contains "tdd-doc-finalizer" "$agents_section"
+  assert_contains "context-updater" "$agents_section"
+
+  # README must still list all eight skills (5 command + 3 convention)
+  local skills_section
+  skills_section=$(sed -n '/### Skills/,/^###/p' "$README_MD")
+  assert_contains "/tdd-plan" "$skills_section"
+  assert_contains "/tdd-implement" "$skills_section"
+  assert_contains "/tdd-release" "$skills_section"
+  assert_contains "/tdd-finalize-docs" "$skills_section"
+  assert_contains "/tdd-update-context" "$skills_section"
+  assert_contains "dart-flutter-conventions" "$skills_section"
+  assert_contains "cpp-testing-conventions" "$skills_section"
+  assert_contains "bash-testing-conventions" "$skills_section"
+}

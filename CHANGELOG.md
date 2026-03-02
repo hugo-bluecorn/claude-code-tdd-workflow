@@ -6,6 +6,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
 
+## [1.12.0] - 2026-03-02
+
+### Added
+- `scripts/bump-version.sh`: propagates a version string into all discovered
+  version-bearing files (pubspec.yaml, package.json, plugin.json, Cargo.toml,
+  pyproject.toml, CMakeLists.txt). Called by the releaser after CHANGELOG commit
+- `scripts/detect-doc-context.sh`: discovers project documentation files and
+  outputs key=value pairs (readme, claude_md, changelog, docs_dir, doc_files).
+  Used by doc-finalizer for project-agnostic documentation discovery
+- `skills/tdd-release/reference/version-control.md`: new reference location for
+  semver rules (moved from docs/version-control.md); now in context-updater scan
+  path and co-located with its primary consumer
+
+### Changed
+- `agents/tdd-releaser.md` and `skills/tdd-release/SKILL.md`: added directive
+  to read version-control.md as the authority for semver decisions, and a new
+  Step 6 to call bump-version.sh after the CHANGELOG commit
+- `agents/tdd-doc-finalizer.md` and `skills/tdd-finalize-docs/SKILL.md`:
+  generalized from plugin-specific to project-agnostic. Replaced hardcoded file
+  paths with detect-doc-context.sh discovery. Removed all version-bumping
+  responsibility (now owned by the releaser)
+- CLAUDE.md and README.md: updated doc-finalizer descriptions to be
+  project-agnostic; updated releaser description to reflect version propagation
+  responsibility; README file structure updated for new scripts and reference path
+
+### Removed
+- `docs/version-control.md`: moved to `skills/tdd-release/reference/version-control.md`
+
 ## [1.11.0] - 2026-03-01
 
 ### Changed

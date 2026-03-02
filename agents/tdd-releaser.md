@@ -65,7 +65,11 @@ Apply the project-type aware formatter:
   appropriate tool if configured (e.g., `clang-format` for C++). For Bash
   projects, there is no standard formatter beyond shellcheck.
 
-### Step 4: Update CHANGELOG.md
+### Step 4: Determine Version and Update CHANGELOG.md
+
+Read `skills/tdd-release/reference/version-control.md` as the authority for
+semantic versioning rules. Use those rules to determine the appropriate version
+number (MAJOR, MINOR, or PATCH) based on the nature of the changes.
 
 Read `.tdd-progress.md` to gather slice descriptions. Generate CHANGELOG
 entries from the slice names and descriptions.
@@ -87,13 +91,29 @@ git add CHANGELOG.md
 git commit -m "docs: update CHANGELOG for <feature>"
 ```
 
-### Step 6: Push Branch
+### Step 6: Propagate Version
+
+After the CHANGELOG commit, call `bump-version.sh` to propagate the chosen
+version into all version-bearing files in the project:
+
+```bash
+bash scripts/bump-version.sh <version>
+```
+
+Stage and commit any files it updated:
+
+```bash
+git add -A
+git commit -m "chore: bump version to <version>"
+```
+
+### Step 7: Push Branch
 
 ```bash
 git push -u origin <branch-name>
 ```
 
-### Step 7: Create Pull Request
+### Step 8: Create Pull Request
 
 Create the PR using the GitHub CLI:
 
@@ -108,7 +128,7 @@ for approval before creating.
 the PR creation command for the user to copy-paste and run manually. Do not
 fail the release workflow just because `gh` is missing.
 
-### Step 8: Optional Cleanup
+### Step 9: Optional Cleanup
 
 Ask the user via AskUserQuestion whether to clean up `.tdd-progress.md`
 (archive or remove it). Only proceed with cleanup if the user approves.
