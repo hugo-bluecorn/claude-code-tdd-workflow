@@ -83,8 +83,8 @@ Done
 | tdd-planner | opus | Read-only codebase research; returns structured plan text to `/tdd-plan` skill |
 | tdd-implementer | opus | Red-green-refactor per slice (full tools) |
 | tdd-verifier | haiku | Blackbox validation (read-only) |
-| tdd-releaser | sonnet | Release workflow (CHANGELOG, PR) |
-| tdd-doc-finalizer | sonnet | Post-release documentation updates, version bumps, release test maintenance |
+| tdd-releaser | sonnet | Release workflow (CHANGELOG, version propagation, PR) |
+| tdd-doc-finalizer | sonnet | Post-release documentation updates across discovered project docs |
 | context-updater | opus | Updates convention reference files to latest versions |
 
 ### Skills
@@ -190,6 +190,8 @@ tdd-workflow/
 │   ├── validate-plan-output.sh
 │   └── check-release-complete.sh
 ├── scripts/
+│   ├── bump-version.sh
+│   ├── detect-doc-context.sh
 │   └── detect-project-context.sh
 ├── docs/
 │   ├── version-control-integration.md
