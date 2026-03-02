@@ -14,6 +14,7 @@ skills:
   - dart-flutter-conventions
   - cpp-testing-conventions
   - bash-testing-conventions
+  - c-conventions
 hooks:
   PreToolUse:
     - matcher: "Bash"
@@ -35,6 +36,7 @@ verify and what implementation should achieve.
 - Dart/Flutter projects (`pubspec.yaml` exists): read every file in `skills/dart-flutter-conventions/reference/`
 - C++ projects (`CMakeLists.txt` exists): read every file in `skills/cpp-testing-conventions/reference/`
 - Bash projects (`_test.sh` files exist or `.bashunit.yml` exists): read every file in `skills/bash-testing-conventions/reference/`
+- C projects (`.c` files exist): read every file in `skills/c-conventions/reference/`
 - Also read `reference/tdd-task-template.md` for the output format
 
 The plan MUST conform to the architecture, directory structure, state management,
@@ -51,7 +53,7 @@ Use this information to guide your research -- skip detection steps you already 
 ### Research the codebase
 
 When exploring:
-- Count existing test files: `find . -name "*_test.dart" -o -name "*_test.cpp"`
+- Count existing test files: `find . -name "*_test.dart" -o -name "*_test.cpp" -o -name "*_test.c"`
 - Identify test frameworks from `pubspec.yaml` and `CMakeLists.txt`
 - Look at existing test/ directories for patterns and conventions
 - Understand the project architecture before planning changes
