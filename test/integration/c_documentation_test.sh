@@ -74,6 +74,12 @@ function test_claude_md_c_conventions_references_static_analysis() {
   assert_contains "c-static-analysis" "$table_line"
 }
 
+function test_claude_md_c_conventions_triggers_on_c_files() {
+  local table_line
+  table_line=$(grep "c-conventions" "$CLAUDE_MD" | head -1)
+  assert_contains ".c" "$table_line"
+}
+
 # ---------- Test 6: CLAUDE.md has C Testing subsection ----------
 
 function test_claude_md_has_c_testing_subsection() {
@@ -169,12 +175,4 @@ function test_readme_still_has_cpp_testing_conventions() {
 
 function test_readme_still_has_bash_testing_conventions() {
   assert_file_contains "$README_MD" "bash-testing-conventions"
-}
-
-# ---------- Test 6 triggers on .c files ----------
-
-function test_claude_md_c_conventions_triggers_on_c_files() {
-  local table_line
-  table_line=$(grep "c-conventions" "$CLAUDE_MD" | head -1)
-  assert_contains ".c" "$table_line"
 }
