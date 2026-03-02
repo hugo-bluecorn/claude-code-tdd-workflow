@@ -71,9 +71,6 @@ function test_user_guide_no_old_version_control_path() {
 # ---------- Test 6: version-control-integration.md references updated path ----------
 
 function test_vci_references_new_version_control_path() {
-  local matches
-  matches=$(grep "version-control.md" "$VCI_MD" || true)
-  # Should contain references to the new location (or relative path)
   # Should NOT point to docs/version-control.md
   local old_matches
   old_matches=$(grep -c "docs/version-control.md" "$VCI_MD" || true)
