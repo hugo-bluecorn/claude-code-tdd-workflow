@@ -1,0 +1,122 @@
+  # Issue: tdd-planner subagent exceeds research scope
+
+  **Severity:** Medium
+  **Component:** tdd-workflow:tdd-planner
+  **Discovered:** 2026-02-24
+  **Status:** Open
+
+  ## Summary
+
+  The tdd-planner subagent, which is defined as a read-only research agent, can exceed its scope by formulating complete TDD plans, decomposing slices, writing test
+   cases, and attempting to ask for approval — all within its subagent response. This happens when the invoking session (CZ) uses a broad prompt like "research the
+  codebase to plan TDD implementation for Phase N."
+
+  ## Observed Behavior
+
+  1. CZ invoked `/tdd-plan` for Phase 2
+  2. The tdd-plan skill launched `tdd-workflow:tdd-planner` subagent
+  3. The planner correctly performed research (Glob, Grep, Read on phase docs, C headers, existing code)
+  4. The planner then **went beyond scope**: formatted findings as a complete plan with slices, Given/When/Then tests, and attempted to ask for approval via
+  AskUserQuestion (which doesn't reach the user from within a subagent)
+  5. CZ received a mixed response — research data interleaved with a premature plan attempt
+  6. CZ discarded the output and performed research directly, then built the plan manually
+
+  ## Expected Behavior
+
+  The tdd-planner should return **only raw research findings**:
+  - File paths and contents read
+  - Framework/pattern detection results
+  - Existing test patterns observed
+  - Relevant reference test summaries (zenoh-c/cpp)
+  - Architecture observations
+
+  It should **never** return:
+  - Slice decompositions
+  - Test case definitions (Given/When/Then)
+  - Acceptance criteria
+  - Plan approval requests
+  - Summary tables of slices/test counts
+
+  ## Root Cause
+
+  Two contributing factors:
+
+  ### 1. Agent definition is too vague on output constraints
+
+  The tdd-planner agent description says:
+  > "Codebase research agent for TDD planning. Invoked automatically when /tdd-plan skill runs. Explores project structure, test patterns, and architecture to
+  inform plan creation. Read-only."
+
+  "Read-only" constrains the **tools** (no Edit/Write), but does not constrain the **response content**. The agent has no explicit instruction to return raw
+  findings only.
+
+  ### 2. No fixed invocation prompt
+
+  The /tdd-plan skill does not provide a templated prompt for invoking the planner. CZ constructs the prompt ad-hoc, and including words like "plan" or "TDD
+  implementation" causes the planner LLM to interpret its task as plan creation rather than research.
+
+  ## Proposed Fix
+
+  ### Fix A: Add output constraints to the planner agent definition
+
+  In the tdd-planner agent system prompt or description, add explicit output constraints:
+
+  You are a READ-ONLY research agent. Your output must be structured as raw findings:
+
+  Files Read
+
+  - {path}: {summary of relevant content}
+
+  Existing Patterns
+
+  - {pattern observed}
+
+  Reference Tests
+
+  - {zenoh-c/cpp test}: {relevant behaviors/edge cases found}
+
+  Architecture Notes
+
+  - {observation}
+
+  DO NOT:
+  - Decompose into slices or test cases
+  - Write Given/When/Then specifications
+  - Formulate acceptance criteria
+  - Ask for plan approval
+  - Present summary tables of slices/tests
+
+  The main conversation will use your findings to build the plan.
+
+  ### Fix B: Template the invocation prompt in the /tdd-plan skill
+
+  The skill definition should provide a fixed prompt template:
+
+  Research the codebase for Phase {N} ({phase_name}). Return ONLY raw findings:
+  1. Read the phase doc at docs/phases/phase-{NN}-{name}.md
+  2. Read relevant zenoh-c tests in extern/zenoh-c/tests/
+  3. Read relevant zenoh-cpp tests in extern/zenoh-cpp/tests/
+  4. Read existing source files the phase builds on
+  5. Detect test framework and conventions
+
+  Return file contents and observations. Do NOT formulate a plan.
+
+  ### Recommendation
+
+  Apply **both fixes**. Fix A prevents scope creep regardless of how the prompt is worded. Fix B ensures consistent invocation even if the agent definition is
+  updated later.
+
+  ## Impact
+
+  - **No data loss or corruption** — the planner is genuinely read-only (tool-level constraint)
+  - **Workflow disruption** — CZ must discard output and redo research manually
+  - **Time waste** — planner tokens spent on plan formulation are wasted
+  - **Risk of silent quality degradation** — if CZ accepts the planner's premature plan without proper review, plan quality may suffer (the planner lacks the full
+  context the main conversation has)
+
+  ## Workaround
+
+  Until fixed, CZ can:
+  1. Include "return research findings ONLY, do NOT formulate a plan" in the planner invocation prompt
+  2. Or skip the planner subagent entirely and do research reads directly (as was done for Phase 2)
+
