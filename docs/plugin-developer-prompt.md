@@ -46,7 +46,7 @@ When you need specific API details, schemas, or field-level documentation:
 
 ## This Plugin's Architecture
 
-The tdd-workflow plugin (`v1.10.0`) provides:
+The tdd-workflow plugin (`v1.13.0`) provides:
 
 **6 agents** (in `agents/`):
 - `tdd-planner` — Opus, plan mode, read-only research, Bash allowlist
@@ -63,9 +63,10 @@ The tdd-workflow plugin (`v1.10.0`) provides:
 - `tdd-finalize-docs` — context: fork, agent: tdd-doc-finalizer
 - `tdd-update-context` — context: fork, agent: context-updater
 
-**3 convention skills** (auto-loaded by file type):
+**4 convention skills** (auto-loaded by file type):
 - `dart-flutter-conventions` — 6 reference files
 - `cpp-testing-conventions` — 4 reference files
+- `c-conventions` — 3 reference files (Unity/CMock, BARR-C/SEI CERT C, static analysis)
 - `bash-testing-conventions` — 2 reference files
 
 **8 hook scripts** (in `hooks/`):

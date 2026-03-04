@@ -1,6 +1,6 @@
 # tdd-workflow
 
-A Claude Code plugin for Test-Driven Development with context-isolated agents. Enforces red-green-refactor discipline for Dart/Flutter, C++, and Bash/Shell projects.
+A Claude Code plugin for Test-Driven Development with context-isolated agents. Enforces red-green-refactor discipline for Dart/Flutter, C++, C, and Bash/Shell projects.
 
 ## Overview
 
@@ -98,6 +98,7 @@ Done
 | `/tdd-update-context` | Updates convention reference files to latest versions |
 | dart-flutter-conventions | Convention reference (auto-loaded by agents) |
 | cpp-testing-conventions | Convention reference (auto-loaded by agents) |
+| c-conventions | Convention reference (auto-loaded by agents) |
 | bash-testing-conventions | Convention reference (auto-loaded by agents) |
 
 ### Hooks
@@ -176,6 +177,12 @@ tdd-workflow/
 │   │       ├── cmake-integration.md
 │   │       ├── googlemock-guide.md
 │   │       └── clang-tooling.md
+│   ├── c-conventions/
+│   │   ├── SKILL.md
+│   │   └── reference/
+│   │       ├── c-testing-patterns.md
+│   │       ├── c-coding-standards.md
+│   │       └── c-static-analysis.md
 │   └── bash-testing-conventions/
 │       ├── SKILL.md
 │       └── reference/

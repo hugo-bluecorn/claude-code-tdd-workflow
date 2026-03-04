@@ -51,11 +51,11 @@ function test_plugin_json_exists() {
   assert_file_exists "$PLUGIN_JSON"
 }
 
-function test_plugin_json_version_is_1_12_0() {
-  # The version field in plugin.json must be 1.12.0
+function test_plugin_json_version_is_1_13_0() {
+  # The version field in plugin.json must be 1.13.0
   local version
   version=$(grep '"version"' "$PLUGIN_JSON" | sed 's/.*: *"\([^"]*\)".*/\1/')
-  assert_equals "1.12.0" "$version"
+  assert_equals "1.13.0" "$version"
 }
 
 # ---------- Test 3: CHANGELOG version matches plugin.json version ----------

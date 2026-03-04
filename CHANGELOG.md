@@ -6,6 +6,36 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
 
+## [1.13.0] - 2026-03-04
+
+### Added
+- `skills/c-conventions/SKILL.md`: C language conventions skill, auto-loads on
+  `.c` files with `user-invocable: false`. References three new reference docs
+- `skills/c-conventions/reference/c-testing-patterns.md`: Unity/CMock as primary
+  C test framework, assert.h minimal approach, GoogleTest interop via `extern "C"`,
+  build-then-test sequence, Unity bootstrapping with CMake FetchContent
+- `skills/c-conventions/reference/c-coding-standards.md`: BARR-C:2018 (naming,
+  formatting, functions) and SEI CERT C (MEM, INT, STR, ARR categories) with
+  clang-tidy check mappings and fixed-width integer guidance
+- `skills/c-conventions/reference/c-static-analysis.md`: four-tier analysis stack
+  (compiler warnings, cppcheck, clang-tidy cert-*/bugprone-*, gcc -fanalyzer),
+  compile_commands.json setup, TDD verification phase integration
+- C test file detection in `scripts/detect-project-context.sh`: `*_test.c` files
+  now counted alongside existing dart/cpp/sh patterns
+- C project detection in tdd-planner agent body with convention reference loading
+  and `*_test.c` in test file counting
+- C-specific lines in tdd-verifier for test suite and static analysis sections
+- CLAUDE.md: `c-conventions` row in auto-load table, `### C Testing` subsection,
+  `cppcheck`/`clang-tidy` in pre-commit checklist
+- README.md: `c-conventions` in skills table, file structure, and project overview
+- 116 new tests across 7 test files (617 total, 875 assertions)
+
+### Changed
+- `agents/tdd-planner.md`: added `c-conventions` to skills list, added C project
+  detection and `*_test.c` counting to body
+- `agents/tdd-implementer.md`: added `c-conventions` to skills list
+- `agents/context-updater.md`: added `c-conventions` to skills list
+
 ## [1.12.0] - 2026-03-02
 
 ### Added
