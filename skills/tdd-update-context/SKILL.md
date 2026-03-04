@@ -25,6 +25,7 @@ workflow with mandatory user approval before any edits.
 0. **Load and follow convention references** (mandatory, do this first):
    - Dart/Flutter projects: read every file in `skills/dart-flutter-conventions/reference/`
    - C++ projects: read every file in `skills/cpp-testing-conventions/reference/`
+   - C projects: read every file in `skills/c-conventions/reference/`
    - Bash projects: read every file in `skills/bash-testing-conventions/reference/`
    - Also read each convention `SKILL.md` for the quick-reference sections
    Note the framework versions, API patterns, and conventions currently documented.
@@ -118,6 +119,13 @@ C++:
 - https://github.com/google/googletest — GoogleTest repo
 - https://cmake.org/download/ — CMake latest version
 - https://github.com/llvm/llvm-project — Clang/LLVM repo
+
+C:
+- https://www.throwtheswitch.org/unity — Unity test framework
+- https://www.throwtheswitch.org/cmock — CMock mocking framework
+- https://barrgroup.com/embedded-systems/books/embedded-c-coding-standard/ — BARR-C:2018
+- https://wiki.sei.cmu.edu/confluence/display/c/ — SEI CERT C
+- https://cppcheck.sourceforge.io/ — cppcheck static analyzer
 
 Bash:
 - https://github.com/TypedDevs/bashunit — bashunit repo
