@@ -7,8 +7,9 @@ This guide walks through using the tdd-workflow plugin from start to finish.
 ## Prerequisites
 
 - Claude Code installed with plugin support
-- A Dart/Flutter, C++, or Bash/Shell project with test infrastructure already set up
+- A Dart/Flutter, C, C++, or Bash/Shell project with test infrastructure already set up
   - Dart: `flutter_test` or `package:test` in `pubspec.yaml`
+  - C: Unity/CMock available (or assert.h for minimal setups), cppcheck and clang-tidy recommended
   - C++: GoogleTest available via CMake, with a `build/` directory configured
   - Bash: bashunit installed, shellcheck available
 
@@ -434,7 +435,7 @@ chmod +x <plugin-path>/hooks/*.sh
 
 ### Planner can't detect test framework
 
-The auto-detection in `/tdd-plan` checks for `pubspec.yaml` (Dart) or `CMakeLists.txt` (C++). If your project uses a non-standard setup, the planner will still research your codebase — the auto-detection just provides initial hints.
+The auto-detection in `/tdd-plan` checks for `pubspec.yaml` (Dart), `CMakeLists.txt` (C/C++), or `*.sh` files (Bash). If your project uses a non-standard setup, the planner will still research your codebase — the auto-detection just provides initial hints.
 
 ### Verifier reports FAIL but tests look correct
 
@@ -473,4 +474,5 @@ This workflow only modifies reference content files and SKILL.md quick reference
 - `skills/tdd-release/reference/version-control.md` — Git workflow and commit conventions
 - `skills/dart-flutter-conventions/` — Dart/Flutter testing patterns, project conventions, Riverpod guide, and test recipes
 - `skills/cpp-testing-conventions/` — C++ GoogleTest patterns, CMake integration, and Clang tooling
+- `skills/c-conventions/` — C testing patterns (Unity/CMock), coding standards (BARR-C/SEI CERT C), and static analysis
 - `skills/bash-testing-conventions/` — Bash testing with bashunit and shellcheck
