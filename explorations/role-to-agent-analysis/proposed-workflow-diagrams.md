@@ -9,65 +9,66 @@
 >
 > **Key principle:** The tdd-planner agent (spawned by `/tdd-plan`) is
 > what researches the codebase and creates the slice plan. CA/human
-> provides the feature description and reviews the result. `/tdd-decompose`
-> only creates the high-level phase breakdown — the planner creates the
-> actual testable slices within each phase.
+> provides the feature description and reviews the result. If the plan
+> has too many slices, `/tdd-decompose` groups them into phases after
+> the fact — it does not create slices itself.
 
 ---
 
 ## 1. Overall Feature Lifecycle (End-to-End)
 
-CA writes the feature spec. `/tdd-decompose` is an **optional prerequisite**
-— if run, it creates `.tdd-phases.md` and `/tdd-plan` automatically plans
-one phase at a time. If not, `/tdd-plan` plans the whole feature. In both
-cases, the **tdd-planner agent** researches the codebase and creates the
-testable slice plan. CA reviews and approves. CI implements.
-
-Dashed boxes are new/modified components.
+Each step shows the **agent** that does the work and its **deliverable**.
+`/tdd-plan` always runs first. If the resulting plan has too many slices,
+`/tdd-decompose` groups them into phases. Dashed boxes are new/modified.
 
 ```mermaid
 flowchart TD
-    START([Feature Request]) --> SPEC[CA + Human Dialogue<br/>Write spec: CLAUDE.md, issues/*.md]
+    START([Feature Request]) --> SPEC["CA + Human Dialogue<br/>─────────────────<br/>Deliverable: CLAUDE.md, issues/*.md"]
 
-    SPEC --> DECOMPOSE["/tdd-decompose ⟨NEW⟩<br/>Decomposer agent proposes<br/>phase breakdown<br/>→ .tdd-phases.md"]
-    SPEC --> PLAN["/tdd-plan ⟨feature description⟩<br/>Planner agent researches codebase,<br/>creates slice plan with Given/When/Then<br/>→ .tdd-progress.md"]
-
-    DECOMPOSE -.->|optional| CA_PHASES[CA Reviews<br/>Phase Breakdown]
-    CA_PHASES -->|Approve| PLAN
-    CA_PHASES -->|Modify| DECOMPOSE
+    SPEC --> PLAN["/tdd-plan<br/>Agent: tdd-planner<br/>─────────────────<br/>Deliverable: .tdd-progress.md<br/>(all slices with Given/When/Then)"]
 
     PLAN --> CA_REVIEW[CA Reviews<br/>Planner's Slice Plan]
-    CA_REVIEW -->|Approve| IMPLEMENT["/tdd-implement<br/>Per slice: implementer + verifier<br/>RED → GREEN → REFACTOR"]
+    CA_REVIEW -->|Approve| DECOMPOSE_CHECK{Too many slices<br/>for one pass?}
     CA_REVIEW -->|Modify| PLAN
 
-    IMPLEMENT --> PLAN_CHECK{"/tdd-plan checks:<br/>.tdd-phases.md exists<br/>with more phases?"}
+    DECOMPOSE_CHECK -.->|"Yes (optional)"| DECOMPOSE["/tdd-decompose ⟨NEW⟩<br/>Agent: decomposer<br/>─────────────────<br/>Deliverable: .tdd-phases.md<br/>(groups slices into phases,<br/>truncates .tdd-progress.md<br/>to Phase 1 only)"]
+    DECOMPOSE_CHECK -->|No| IMPLEMENT
 
-    PLAN_CHECK -->|"Yes → auto-archives<br/>.tdd-progress.md,<br/>plans next phase"| PLAN
-    PLAN_CHECK -->|No phases or<br/>all phases done| RELEASE["/tdd-release<br/>CHANGELOG, version, push, PR"]
+    DECOMPOSE --> CA_PHASES[CA Reviews<br/>Phase Grouping]
+    CA_PHASES -->|Approve| IMPLEMENT
+    CA_PHASES -->|Modify| DECOMPOSE
 
-    RELEASE --> FINALIZE["/tdd-finalize-docs<br/>Update README, CLAUDE.md, docs/"]
+    IMPLEMENT["/tdd-implement<br/>Agents: implementer + verifier (per slice)<br/>─────────────────<br/>Deliverable: code + tests + commits"]
+
+    IMPLEMENT --> PHASE_CHECK{".tdd-phases.md exists<br/>with more phases?"}
+
+    PHASE_CHECK -->|"Yes → /tdd-plan<br/>auto-archives progress,<br/>loads next phase's slices"| PLAN_NEXT["/tdd-plan (next phase)<br/>Agent: tdd-planner<br/>─────────────────<br/>Deliverable: .tdd-progress.md<br/>(next phase's slices +<br/>cross-phase context via git diff)"]
+    PLAN_NEXT --> CA_REVIEW
+
+    PHASE_CHECK -->|No phases or<br/>all phases done| RELEASE["/tdd-release<br/>Agent: tdd-releaser<br/>─────────────────<br/>Deliverable: CHANGELOG,<br/>version bump, push, PR"]
+
+    RELEASE --> FINALIZE["/tdd-finalize-docs<br/>Agent: tdd-doc-finalizer<br/>─────────────────<br/>Deliverable: updated README,<br/>CLAUDE.md, docs/"]
     FINALIZE --> CA_PR[CA Reviews PR]
-    CA_PR --> MERGE[CI Merges PR]
+    CA_PR --> MERGE["CI Merges PR"]
     MERGE --> DONE([Feature Shipped])
 
     style DECOMPOSE stroke-dasharray: 5 5,stroke:#f90
-    style PLAN_CHECK stroke-dasharray: 5 5,stroke:#f90
+    style PHASE_CHECK stroke-dasharray: 5 5,stroke:#f90
+    style PLAN_NEXT stroke-dasharray: 5 5,stroke:#f90
 ```
 
 **Notes:**
-- There is **no upfront decision** about feature size. `/tdd-decompose` is
-  optional — run it if you want phases, skip it if you don't.
-- **`/tdd-plan` adapts automatically:** if `.tdd-phases.md` exists, it plans
-  one phase at a time (auto-archiving completed phases). If not, it plans
-  the whole feature. See Diagram 4 for the full decision tree.
-- The **tdd-planner agent** does the actual work: researching the codebase,
-  decomposing into testable slices, writing Given/When/Then specs. CA
-  provides the feature description and reviews the result.
-- **`/tdd-decompose`** only creates a high-level phase breakdown (scope,
-  ordering, exit criteria). It does NOT create slices — that's the planner's job.
+- **`/tdd-plan` runs first.** The planner agent researches the codebase and
+  creates ALL slices. CA reviews the result.
+- **`/tdd-decompose` runs after planning**, only if the plan is too large.
+  It groups the planner's existing slices into phases and truncates
+  `.tdd-progress.md` to the first phase. It does NOT create slices.
+- **Phase loop:** After implementing a phase, the next `/tdd-plan` call
+  auto-archives the completed phase and loads the next phase's slices from
+  the original plan.
 - `/tdd-init-roles` is optional at any point — see Diagram 5.
-- Within `/tdd-implement`, the verifier runs after each slice. This is an
-  internal detail of the skill.
+- Within `/tdd-implement`, the verifier runs after each slice (internal
+  detail of the skill).
 
 ---
 
@@ -92,8 +93,8 @@ flowchart LR
 
     subgraph CC ["CC Session (Vanilla Claude Code)"]
         direction TB
-        CC0["/tdd-decompose<br/>→ decomposer agent<br/>proposes phases"]
         CC1["/tdd-plan<br/>→ planner agent<br/>researches + creates slices"]
+        CC0["/tdd-decompose ⟨NEW⟩<br/>→ decomposer agent<br/>groups slices into phases"]
         CC2["/tdd-init-roles ⟨NEW⟩<br/>→ role-initializer agent<br/>generates project roles"]
     end
 
@@ -106,11 +107,10 @@ flowchart LR
         CI5["Merge PR"]
     end
 
-    CA1 -->|"feature description<br/>(if phases wanted)"| CC0
-    CC0 -->|"phase breakdown<br/>(agent's proposal)"| CA2
-    CA2 -->|"approved phases"| CC1
     CA1 -->|"feature description"| CC1
     CC1 -->|"slice plan<br/>(agent's proposal)"| CA3
+    CA3 -->|"too many slices<br/>(optional)"| CC0
+    CC0 -->|"phase grouping<br/>(agent's proposal)"| CA2
     CA3 -->|"approved plan"| CI1
     CI1 -->|"implementation done"| CA4
     CA4 -->|"verified"| CI2
@@ -153,17 +153,19 @@ stateDiagram-v2
     }
 
     state "Phased Path" as Phased {
-        NoFiles --> PhasesOnly: /tdd-decompose\n(decomposer creates phases)
-        note right of PhasesOnly: .tdd-phases.md created\nAll phases: pending
+        NoFiles --> FullPlan: /tdd-plan\n(planner creates ALL slices)
+        note right of FullPlan: .tdd-progress.md with all slices
 
-        PhasesOnly --> BothFiles: /tdd-plan Phase N\n(planner creates slices\nfor this phase only)
-        note right of BothFiles: .tdd-progress.md created\n(Phase N slices only)
+        FullPlan --> BothFiles: /tdd-decompose\n(groups slices into phases)
+        note right of BothFiles: .tdd-phases.md created\n.tdd-progress.md truncated\nto Phase 1 slices only
 
         BothFiles --> Implementing: /tdd-implement
-        Implementing --> PhaseComplete: All slices terminal
+        Implementing --> PhaseComplete: All phase slices terminal
 
-        PhaseComplete --> PhasesOnly: /tdd-plan detects\ncompleted phase +\nmore phases pending\n→ archives progress\n→ updates phases
+        PhaseComplete --> NextPhase: /tdd-plan loads\nnext phase's slices\ninto .tdd-progress.md\n+ archives completed phase
         PhaseComplete --> AllPhasesComplete: Last phase done
+
+        NextPhase --> Implementing
 
         AllPhasesComplete --> Released: /tdd-release
     }
@@ -379,9 +381,8 @@ Legend:  ┌──────┐ = existing     ┌ ─ ─ ─┐ = proposed n
 
 ## 7. Phased Planning Sequence (Detailed)
 
-A complete walkthrough of a 3-phase feature. Emphasizes that the planner
-agent creates the slice plan — CA provides feature scope and reviews the
-planner's output.
+A complete walkthrough of a 3-phase feature. The planner creates all
+slices first, then the decomposer groups them into phases.
 
 ```mermaid
 sequenceDiagram
@@ -396,25 +397,26 @@ sequenceDiagram
     H->>CA: Define feature scope
     CA->>CA: Write issues/*.md + CLAUDE.md (spec)
 
-    Note over H,FS: ── Phase Decomposition ──
+    Note over H,FS: ── Full Planning ──
 
-    CA->>CC: "Run /tdd-decompose <feature description>"
-    CC->>CC: /tdd-decompose spawns decomposer agent
-    Note over CC: Decomposer researches project structure,<br/>proposes phase breakdown
-    CC->>H: Proposed phases (AskUserQuestion)
-    H->>CC: Approve with modifications
-    CC->>FS: Write .tdd-phases.md
-    CC->>CA: Phase breakdown ready for review
-
-    Note over H,FS: ── Phase 1: Planning ──
-
-    CA->>CC: "Run /tdd-plan Phase 1: Foundation"
+    CA->>CC: "Run /tdd-plan <feature description>"
     CC->>CC: /tdd-plan spawns tdd-planner agent
-    Note over CC: Planner researches codebase,<br/>creates testable slices with<br/>Given/When/Then specs
-    CC->>H: Present planner's slice plan for approval
+    Note over CC: Planner researches codebase,<br/>creates ALL testable slices<br/>with Given/When/Then specs
+    CC->>H: Present planner's full slice plan
     H->>CC: Approve
-    CC->>FS: Write .tdd-progress.md (Phase 1 slices)
-    CC->>CA: Plan approved
+    CC->>FS: Write .tdd-progress.md (all slices)
+    CC->>CA: Plan approved — 14 slices
+
+    Note over H,FS: ── Phase Decomposition (plan too large) ──
+
+    CA->>CC: "Run /tdd-decompose — too many slices for one pass"
+    CC->>CC: /tdd-decompose spawns decomposer agent
+    Note over CC: Decomposer reads .tdd-progress.md,<br/>groups existing slices into phases<br/>by architectural layer
+    CC->>H: Proposed phase grouping (AskUserQuestion)
+    H->>CC: Approve
+    CC->>FS: Write .tdd-phases.md (3 phases)
+    CC->>FS: Truncate .tdd-progress.md to Phase 1 slices only
+    CC->>CA: Phases ready — Phase 1 has slices 1-4
 
     Note over H,FS: ── Phase 1: Implementation ──
 
@@ -429,19 +431,15 @@ sequenceDiagram
     CA->>CA: Verify Phase 1
 
     Note over H,FS: ── Phase Transition 1→2 ──
-    Note over CC: /tdd-plan auto-handles transition:<br/>detects completed .tdd-progress.md +<br/>.tdd-phases.md with more phases
+    Note over CC: /tdd-plan auto-handles transition:<br/>loads next phase's slices from<br/>the original plan
 
-    CA->>CC: "Run /tdd-plan Phase 2"
+    CA->>CC: "Run /tdd-plan (next phase)"
     CC->>CC: /tdd-plan detects completed phase
-    CC->>FS: Archive .tdd-progress.md → planning/
+    CC->>FS: Archive Phase 1 .tdd-progress.md → planning/
     CC->>FS: Update .tdd-phases.md (Phase 1 → done)
-    CC->>H: "Proceed to Phase 2?"
+    CC->>FS: Load Phase 2 slices into .tdd-progress.md
+    CC->>H: "Phase 2 loaded. Proceed?"
     H->>CC: Yes
-    CC->>CC: Spawn planner for Phase 2
-    Note over CC: Planner auto-gathers cross-phase<br/>context via git diff main...HEAD
-    CC->>H: Present planner's Phase 2 slice plan
-    H->>CC: Approve
-    CC->>FS: Write fresh .tdd-progress.md (Phase 2 slices)
 
     Note over H,FS: ── Phase 2: Implementation ──
 
@@ -452,10 +450,8 @@ sequenceDiagram
 
     Note over H,FS: ── Phase 3 (final) ──
 
-    CA->>CC: "Run /tdd-plan Phase 3"
-    CC->>CC: /tdd-plan (archive Phase 2, spawn planner for Phase 3)
-    CC->>H: Present planner's Phase 3 slice plan, approve
-    CC->>FS: Write .tdd-progress.md (Phase 3 slices)
+    CA->>CC: "Run /tdd-plan (next phase)"
+    CC->>CC: /tdd-plan (archive Phase 2, load Phase 3 slices)
     CA->>CI: "Proceed"
     CI->>CI: /tdd-implement
     CI->>CA: Phase 3 complete
@@ -481,21 +477,27 @@ sequenceDiagram
 Time →
 ────────────────────────────────────────────────────────────────────→
 
+.tdd-progress.md:
+  ┌─ALL slices──────┐
+  │ created by       │  /tdd-decompose
+  │ planner agent    │  truncates to
+  │ (full plan)      │  Phase 1 only
+  └────────┬─────────┘
+           ▼
+  ┌─Phase 1 slices─┐           ┌─Phase 2 slices─┐     ┌─Phase 3─┐
+  │ consumed by     │ archived  │ loaded from     │ arch│ loaded  │ archived
+  │ /tdd-implement  │ by next   │ original plan   │ by  │ from    │ by
+  │                 │ /tdd-plan │ by /tdd-plan    │ next│ original│ /tdd-
+  │                 │ ────→     │ consumed by     │ ──→ │ plan    │ release
+  │                 │ planning/ │ /tdd-implement  │     │         │ ──→
+  └─────────────────┘           └─────────────────┘     └─────────┘
+                                                                  planning/
+
 .tdd-phases.md (persistent, per-feature):
-  Created by decomposer agent ───────────────────────────────────→
+  Created by decomposer (after planner) ─────────────────────────→
   [Phase 1: pending]    [Phase 1: done]     [Phase 2: done]     [all done]
                         ↑ updated by        ↑ updated by
                         /tdd-plan           /tdd-plan
-
-.tdd-progress.md (ephemeral, per-phase):
-  ┌─Phase 1 slices─┐           ┌─Phase 2 slices─┐     ┌─Phase 3─┐
-  │ slices created  │ archived  │ slices created  │ arch│ slices  │ archived
-  │ by planner      │ by next   │ by planner      │ by  │ created │ by
-  │ agent           │ /tdd-plan │ agent           │ next│ by plan.│ /tdd-
-  │ consumed by     │ ────→     │ consumed by     │ ──→ │ agent   │ release
-  │ /tdd-implement  │ planning/ │ /tdd-implement  │     │         │ ──→
-  └─────────────────┘           └─────────────────┘     └─────────┘
-                                                                  planning/
 
 planning/ directory (archives):
                       phase-1-*.md          phase-2-*.md    phase-3-*.md
@@ -585,7 +587,7 @@ Feature branch (single branch, all phases):
 
 | Component | Type | Purpose |
 |-----------|------|---------|
-| `/tdd-decompose` | Skill + Agent | Decomposer agent proposes phase breakdown → `.tdd-phases.md` |
+| `/tdd-decompose` | Skill + Agent | Groups planner's slices into phases → `.tdd-phases.md`. Runs AFTER `/tdd-plan`. |
 | `/tdd-init-roles` | Skill + Agent | Role-initializer agent generates project-specific CA + CI roles (optional) |
 | `/tdd-status` | Skill (inline) | Report TDD session state (phase + slice level) |
 | `.tdd-phases.md` | State file | Master phase plan — tracks phase status, enables transitions |
@@ -617,8 +619,8 @@ Feature branch (single branch, all phases):
 | Artifact | Created By | Reviewed By |
 |----------|-----------|-------------|
 | Feature spec (issues, CLAUDE.md) | CA + human | — |
-| Phase breakdown (.tdd-phases.md) | Decomposer agent | CA + human |
 | Slice plan (.tdd-progress.md) | Planner agent | CA + human |
+| Phase grouping (.tdd-phases.md) | Decomposer agent (from planner's slices) | CA + human |
 | Code + tests | Implementer agent | Verifier agent, then CA |
 | Role files (context/roles/) | Role-initializer agent | CA + human |
 | CHANGELOG, version | Releaser agent | CA |
