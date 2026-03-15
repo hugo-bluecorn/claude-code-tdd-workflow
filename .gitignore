@@ -1,1 +1,5 @@
 .tdd-plan-locked
+.tdd-progress.md
+.claude/settings.local.json
+.claude/agent-memory/
+.claude/worktrees/
