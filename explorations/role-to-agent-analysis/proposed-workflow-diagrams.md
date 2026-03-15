@@ -42,8 +42,7 @@ flowchart TD
 
     IMPLEMENT --> PHASE_CHECK{".tdd-phases.md exists<br/>with more phases?"}
 
-    PHASE_CHECK -->|"Yes → /tdd-plan<br/>auto-archives progress,<br/>loads next phase's slices"| PLAN_NEXT["/tdd-plan (next phase)<br/>Agent: tdd-planner<br/>─────────────────<br/>Deliverable: .tdd-progress.md<br/>(next phase's slices +<br/>cross-phase context via git diff)"]
-    PLAN_NEXT --> CA_REVIEW
+    PHASE_CHECK -->|"Yes → archive completed phase,<br/>load next phase's slices<br/>into .tdd-progress.md"| IMPLEMENT
 
     PHASE_CHECK -->|No phases or<br/>all phases done| RELEASE["/tdd-release<br/>Agent: tdd-releaser<br/>─────────────────<br/>Deliverable: CHANGELOG,<br/>version bump, push, PR"]
 
@@ -54,7 +53,6 @@ flowchart TD
 
     style DECOMPOSE stroke-dasharray: 5 5,stroke:#f90
     style PHASE_CHECK stroke-dasharray: 5 5,stroke:#f90
-    style PLAN_NEXT stroke-dasharray: 5 5,stroke:#f90
 ```
 
 **Notes:**
@@ -63,9 +61,10 @@ flowchart TD
 - **`/tdd-decompose` runs after planning**, only if the plan is too large.
   It groups the planner's existing slices into phases and truncates
   `.tdd-progress.md` to the first phase. It does NOT create slices.
-- **Phase loop:** After implementing a phase, the next `/tdd-plan` call
-  auto-archives the completed phase and loads the next phase's slices from
-  the original plan.
+- **Phase loop:** After implementing a phase, the completed phase is
+  archived and the next phase's slices (already created by the planner)
+  are loaded into `.tdd-progress.md`. No re-planning needed — the loop
+  goes straight back to `/tdd-implement`.
 - `/tdd-init-roles` is optional at any point — see Diagram 5.
 - Within `/tdd-implement`, the verifier runs after each slice (internal
   detail of the skill).
@@ -162,7 +161,7 @@ stateDiagram-v2
         BothFiles --> Implementing: /tdd-implement
         Implementing --> PhaseComplete: All phase slices terminal
 
-        PhaseComplete --> NextPhase: /tdd-plan loads\nnext phase's slices\ninto .tdd-progress.md\n+ archives completed phase
+        PhaseComplete --> NextPhase: Archive completed phase,\nload next phase's slices\ninto .tdd-progress.md
         PhaseComplete --> AllPhasesComplete: Last phase done
 
         NextPhase --> Implementing
@@ -176,49 +175,52 @@ stateDiagram-v2
 
 ---
 
-## 4. `/tdd-plan` Decision Tree (Modified)
+## 4. Decision Trees
 
-Shows the proposed phase-aware branching logic. Current behavior is
-preserved for non-phased features. New branches (dashed) handle phase
-transitions. In all cases, the **tdd-planner agent** does the actual
-codebase research and slice creation.
+### 4a. `/tdd-plan` — Creates the slice plan (runs once per feature)
 
 ```mermaid
 flowchart TD
-    START["/tdd-plan invoked<br/>with feature description"] --> CHECK_PROGRESS{.tdd-progress.md<br/>exists?}
+    START["/tdd-plan invoked"] --> CHECK_PROGRESS{.tdd-progress.md<br/>exists?}
 
-    CHECK_PROGRESS -->|No| CHECK_PHASES_A{.tdd-phases.md<br/>exists?}
-    CHECK_PHASES_A -->|No| PLAN_FULL["Spawn tdd-planner agent<br/>Agent researches codebase,<br/>creates full slice plan<br/>(current behavior)"]
-    CHECK_PHASES_A -->|Yes| FIND_NEXT["Find first pending<br/>phase in .tdd-phases.md"]
-    FIND_NEXT --> PLAN_PHASE["Spawn tdd-planner agent<br/>Agent researches codebase,<br/>creates slices for this phase<br/>+ auto-gathers cross-phase<br/>context via git diff"]
+    CHECK_PROGRESS -->|No| PLAN_FULL["Spawn tdd-planner agent<br/>Agent researches codebase,<br/>creates full slice plan<br/>(current behavior)"]
 
     CHECK_PROGRESS -->|Yes| CHECK_PENDING{Has pending<br/>slices?}
     CHECK_PENDING -->|Yes| BLOCK["'Run /tdd-implement first'<br/>(current behavior)"]
-
-    CHECK_PENDING -->|"No (all terminal)"| CHECK_PHASES_B{.tdd-phases.md<br/>exists?}
-    CHECK_PHASES_B -->|No .tdd-phases.md| SUGGEST_RELEASE["'All slices done.<br/>Run /tdd-release'<br/>(current behavior)"]
-    CHECK_PHASES_B -->|"Yes, more pending"| ARCHIVE["Archive .tdd-progress.md<br/>→ planning/phase-N-*.md"]
-    ARCHIVE --> UPDATE_PHASES["Update .tdd-phases.md<br/>Mark phase as done"]
-    UPDATE_PHASES --> CONFIRM["Ask user: proceed to<br/>next phase?"]
-    CONFIRM -->|Yes| FIND_NEXT
-    CONFIRM -->|No| STOP["Stop. User can review<br/>before continuing."]
-
-    CHECK_PHASES_B -->|"Yes, all done"| SUGGEST_RELEASE_ALL["'All phases complete.<br/>Run /tdd-release'"]
+    CHECK_PENDING -->|"No (all terminal)"| SUGGEST_RELEASE["'All slices done.<br/>Run /tdd-release'<br/>(current behavior)"]
 
     PLAN_FULL --> PRESENT["Present planner's plan<br/>for approval"]
-    PLAN_PHASE --> PRESENT
     PRESENT --> APPROVAL{User approves?}
     APPROVAL -->|Approve| WRITE["Write .tdd-progress.md<br/>+ planning archive"]
     APPROVAL -->|Modify| RESUME["Resume planner agent<br/>with feedback"]
     RESUME --> PRESENT
     APPROVAL -->|Discard| DISCARD["No files written"]
+```
+
+### 4b. Phase transition (after each phase completes)
+
+The phase transition is a lightweight file operation — no re-planning.
+The planner already created all slices. This could be handled by
+`/tdd-implement` (auto-advance) or a separate mechanism.
+
+```mermaid
+flowchart TD
+    DONE["All slices in current<br/>.tdd-progress.md terminal"] --> HAS_PHASES{.tdd-phases.md<br/>exists?}
+
+    HAS_PHASES -->|No| SUGGEST_RELEASE["'Run /tdd-release'"]
+
+    HAS_PHASES -->|Yes| MORE{More pending<br/>phases?}
+    MORE -->|No| SUGGEST_RELEASE_ALL["'All phases complete.<br/>Run /tdd-release'"]
+
+    MORE -->|Yes| ARCHIVE["Archive .tdd-progress.md<br/>→ planning/phase-N-*.md"]
+    ARCHIVE --> UPDATE["Update .tdd-phases.md<br/>Mark phase as done"]
+    UPDATE --> LOAD["Load next phase's slices<br/>into .tdd-progress.md<br/>(from original plan)"]
+    LOAD --> READY["'Phase N+1 loaded.<br/>Run /tdd-implement'"]
 
     style ARCHIVE stroke-dasharray: 5 5,stroke:#f90
-    style UPDATE_PHASES stroke-dasharray: 5 5,stroke:#f90
-    style CONFIRM stroke-dasharray: 5 5,stroke:#f90
-    style FIND_NEXT stroke-dasharray: 5 5,stroke:#f90
+    style UPDATE stroke-dasharray: 5 5,stroke:#f90
+    style LOAD stroke-dasharray: 5 5,stroke:#f90
     style SUGGEST_RELEASE_ALL stroke-dasharray: 5 5,stroke:#f90
-    style PLAN_PHASE stroke-dasharray: 5 5,stroke:#f90
 ```
 
 ---
@@ -431,30 +433,26 @@ sequenceDiagram
     CA->>CA: Verify Phase 1
 
     Note over H,FS: ── Phase Transition 1→2 ──
-    Note over CC: /tdd-plan auto-handles transition:<br/>loads next phase's slices from<br/>the original plan
+    Note over CI: Phase transition is a file operation,<br/>no re-planning needed
 
-    CA->>CC: "Run /tdd-plan (next phase)"
-    CC->>CC: /tdd-plan detects completed phase
-    CC->>FS: Archive Phase 1 .tdd-progress.md → planning/
-    CC->>FS: Update .tdd-phases.md (Phase 1 → done)
-    CC->>FS: Load Phase 2 slices into .tdd-progress.md
-    CC->>H: "Phase 2 loaded. Proceed?"
-    H->>CC: Yes
+    CI->>FS: Archive Phase 1 .tdd-progress.md → planning/
+    CI->>FS: Update .tdd-phases.md (Phase 1 → done)
+    CI->>FS: Load Phase 2 slices into .tdd-progress.md
+    CI->>CA: Phase 1 complete, Phase 2 loaded
 
     Note over H,FS: ── Phase 2: Implementation ──
 
     CA->>CI: "Proceed with /tdd-implement"
     CI->>CI: /tdd-implement (Phase 2 slices)
-    CI->>CA: Phase 2 complete
+    CI->>FS: Archive Phase 2, load Phase 3
+    CI->>CA: Phase 2 complete, Phase 3 loaded
     CA->>CA: Verify Phase 2
 
-    Note over H,FS: ── Phase 3 (final) ──
+    Note over H,FS: ── Phase 3 (final): Implementation ──
 
-    CA->>CC: "Run /tdd-plan (next phase)"
-    CC->>CC: /tdd-plan (archive Phase 2, load Phase 3 slices)
-    CA->>CI: "Proceed"
-    CI->>CI: /tdd-implement
-    CI->>CA: Phase 3 complete
+    CA->>CI: "Proceed with /tdd-implement"
+    CI->>CI: /tdd-implement (Phase 3 slices)
+    CI->>CA: Phase 3 complete — all phases done
     CA->>CA: Verify all phases
 
     Note over H,FS: ── Release ──
@@ -597,7 +595,8 @@ Feature branch (single branch, all phases):
 
 | Component | Change |
 |-----------|--------|
-| `/tdd-plan` skill | Phase-aware branching: detect completed phases, archive, auto-transition, cross-phase context gathering. Planner agent still does all slice creation. |
+| `/tdd-plan` skill | No phase-related changes needed. Plans the full feature as before. |
+| `/tdd-implement` skill | Phase-aware: when all slices terminal and `.tdd-phases.md` has more phases, auto-archives and loads next phase's slices. |
 | `docs/dev-roles/cp-planner.md` | Deprecation notice (absorbed by `/tdd-plan` + tdd-planner agent) |
 
 ### Unchanged Components
