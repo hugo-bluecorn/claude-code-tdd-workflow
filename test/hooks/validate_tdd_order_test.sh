@@ -269,3 +269,112 @@ function test_malformed_json_passes_through() {
   run_hook_raw_stdin "not json at all"
   assert_exit_code 0
 }
+
+# ========== agent_type Guard Tests (Slice 2, Issue 004) ==========
+
+# Helper: build PreToolUse JSON with agent_type field
+build_json_with_agent_type() {
+  local file_path="$1"
+  local agent_type="$2"
+  printf '{"tool_name":"Write","agent_type":"%s","tool_input":{"file_path":"%s","content":"#!/bin/bash"}}\n' "$agent_type" "$file_path"
+}
+
+# Helper: run hook in repo with agent_type, capturing both exit code and stderr
+run_hook_in_repo_with_agent_type() {
+  local repo_dir="$1"
+  local file_path="$2"
+  local agent_type="$3"
+  local json
+  json=$(build_json_with_agent_type "$file_path" "$agent_type")
+  (cd "$repo_dir" && echo "$json" | bash "$repo_dir/validate-tdd-order.sh" 2>/dev/null)
+}
+
+run_hook_in_repo_with_agent_type_stderr() {
+  local repo_dir="$1"
+  local file_path="$2"
+  local agent_type="$3"
+  local json
+  json=$(build_json_with_agent_type "$file_path" "$agent_type")
+  (cd "$repo_dir" && { echo "$json" | bash "$repo_dir/validate-tdd-order.sh" >/dev/null; } 2>&1)
+}
+
+# ---------- Test 20: Namespaced implementer agent_type preserves blocking ----------
+
+function test_namespaced_implementer_agent_type_preserves_blocking() {
+  local tmp_repo
+  tmp_repo=$(create_tmp_repo)
+
+  run_hook_in_repo_with_agent_type "$tmp_repo" "hooks/my_script.sh" "tdd-workflow:tdd-implementer"
+  local rc=$?
+
+  local stderr_output
+  stderr_output=$(run_hook_in_repo_with_agent_type_stderr "$tmp_repo" "hooks/my_script.sh" "tdd-workflow:tdd-implementer")
+
+  assert_equals 2 "$rc"
+  assert_contains "BLOCKED" "$stderr_output"
+
+  rm -rf "$tmp_repo"
+}
+
+# ---------- Test 21: Plain implementer agent_type preserves blocking ----------
+
+function test_plain_implementer_agent_type_preserves_blocking() {
+  local tmp_repo
+  tmp_repo=$(create_tmp_repo)
+
+  run_hook_in_repo_with_agent_type "$tmp_repo" "hooks/my_script.sh" "tdd-implementer"
+  local rc=$?
+
+  local stderr_output
+  stderr_output=$(run_hook_in_repo_with_agent_type_stderr "$tmp_repo" "hooks/my_script.sh" "tdd-implementer")
+
+  assert_equals 2 "$rc"
+  assert_contains "BLOCKED" "$stderr_output"
+
+  rm -rf "$tmp_repo"
+}
+
+# ---------- Test 22: Non-implementer agent_type passes through ----------
+
+function test_non_implementer_agent_type_passes_through() {
+  local tmp_repo
+  tmp_repo=$(create_tmp_repo)
+
+  run_hook_in_repo_with_agent_type "$tmp_repo" "hooks/my_script.sh" "tdd-workflow:tdd-planner"
+  local rc=$?
+
+  assert_equals 0 "$rc"
+
+  rm -rf "$tmp_repo"
+}
+
+# ---------- Test 23: Empty agent_type preserves original behavior ----------
+
+function test_empty_agent_type_preserves_original_behavior() {
+  local tmp_repo
+  tmp_repo=$(create_tmp_repo)
+
+  # Use build_json (no agent_type field) via existing helper
+  run_hook_in_repo "$tmp_repo" "hooks/my_script.sh"
+  local rc=$?
+
+  assert_equals 2 "$rc"
+
+  rm -rf "$tmp_repo"
+}
+
+# ---------- Test 24: Namespaced implementer allows when tests exist ----------
+
+function test_namespaced_implementer_allows_when_tests_exist() {
+  local tmp_repo
+  tmp_repo=$(create_tmp_repo)
+
+  # Stage a test file
+  echo '#!/bin/bash' > "$tmp_repo/my_test.sh"
+  git -C "$tmp_repo" add my_test.sh
+
+  run_hook_in_repo_with_agent_type "$tmp_repo" "hooks/my_script.sh" "tdd-workflow:tdd-implementer"
+  assert_exit_code 0
+
+  rm -rf "$tmp_repo"
+}
