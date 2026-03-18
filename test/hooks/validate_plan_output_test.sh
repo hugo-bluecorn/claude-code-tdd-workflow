@@ -391,12 +391,13 @@ function test_hooks_json_non_planner_hooks_preserved() {
   assert_contains "check-tdd-progress.sh" "$stop"
 }
 
-# ---------- Test S3-4: SubagentStop count is 3 ----------
+# ---------- Test S3-4: SubagentStop count is 5 ----------
+# Updated from 3 to 5 after Issue 004 added tdd-verifier and context-updater entries
 
-function test_hooks_json_subagent_stop_count_is_three() {
+function test_hooks_json_subagent_stop_count_is_five() {
   local count
   count=$(jq '.hooks.SubagentStop | length' "$HOOKS_JSON")
-  assert_equals "3" "$count"
+  assert_equals "5" "$count"
 }
 
 # ---------- Test S3-5: SubagentStart count is 1 ----------
