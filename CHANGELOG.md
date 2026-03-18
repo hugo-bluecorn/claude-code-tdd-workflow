@@ -30,7 +30,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   hooks.json entries, ensuring enforcement works regardless of installation
   method (marketplace or local development)
 
-
 ## [1.13.0] - 2026-03-04
 
 ### Added
@@ -61,8 +60,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - `agents/tdd-implementer.md`: added `c-conventions` to skills list
 - `agents/context-updater.md`: added `c-conventions` to skills list
 
-
-## [1.13.0] - 2026-03-04
 ## [1.12.0] - 2026-03-02
 
 ### Added
@@ -88,8 +85,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   project-agnostic; updated releaser description to reflect version propagation
   responsibility; README file structure updated for new scripts and reference path
 
-
-## [1.13.0] - 2026-03-04
 ### Removed
 - `docs/version-control.md`: moved to `skills/tdd-release/reference/version-control.md`
 
@@ -113,8 +108,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - CLAUDE.md and plugin-developer-prompt.md updated to reflect
   research-only planner and inline skill orchestration
 
-
-## [1.13.0] - 2026-03-04
 ### Removed
 - `.tdd-plan-locked` lock file mechanism (~30 lines)
 - `.tdd-plan-approval-retries` retry counter (~20 lines)
@@ -150,8 +143,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   — it is a utility script invoked by the tdd-plan skill, not an event-driven
   hook. Updated references in SKILL.md, README, and extensibility audit.
 
-
-## [1.13.0] - 2026-03-04
 ## [1.9.0] - 2026-02-28
 
 ### Added
@@ -203,8 +194,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - CLAUDE.md: added invocation warning after Available Commands section advising
   against manual Task tool invocation of tdd-planner
 
-
-## [1.13.0] - 2026-03-04
 ### Added
 - `test/agents/tdd_planner_identity_test.sh` — 26 tests verifying agent
   description accuracy, identity guard content, and CLAUDE.md documentation
@@ -234,8 +223,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   `/tdd-update-context` workflow; updated reference list with new files
 - CLAUDE.md: updated convention skills table with new reference file names
 
-
-## [1.13.0] - 2026-03-04
 ## [1.7.0] - 2026-02-23
 
 ### Added
@@ -277,8 +264,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   with no-codegen stance, updated provider types, sealed Ref class, and
   `ref.mounted` async safety checks
 
-
-## [1.13.0] - 2026-03-04
 ## [1.6.4] - 2026-02-18
 
 ### Fixed
@@ -305,8 +290,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Disabled `maxTurns` limit on tdd-planner agent to prevent premature
   termination during complex planning sessions
 
-
-## [1.13.0] - 2026-03-04
 ## [1.6.1] - 2026-02-18
 
 ### Changed
@@ -315,8 +298,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - User guide: added "Changing the test specification format" configuration section
 - README: added Test Specification Format to Configuration section
 
-
-## [1.13.0] - 2026-03-04
 ## [1.6.0] - 2026-02-16
 
 ### Added
@@ -357,8 +338,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Planner SKILL.md: added step 1 to run `detect-project-context.sh` via Bash
   tool for test runner, test count, branch, dirty files, and FVM detection
 
-
-## [1.13.0] - 2026-03-04
 ### Fixed
 - `!` backtick preprocessing blocked by Claude Code permission system — even
   via helper script. Replaced with planner step 1 running detect script directly
@@ -433,8 +412,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   ChangeNotifier/ValueNotifier only for widget-local state (animations, form
   focus), Riverpod required for all app/business state
 
-
-## [1.13.0] - 2026-03-04
 ### Fixed
 - FVM detection: moved from agent system prompt (ignored after research) to
   SKILL.md step 1 (task prompt, reliably executed)

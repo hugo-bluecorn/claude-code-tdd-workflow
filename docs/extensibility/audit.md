@@ -1,7 +1,7 @@
 # TDD Workflow Plugin — Claude Code Extensibility Audit
 
 **Revision date:** 2026-03-18
-**Plugin version:** 1.13.0
+**Plugin version:** 1.14.0
 **Feature inventory:** audit-prompt.md v3.0 (2026-03-18)
 **Previous audit:** audit-v1.6.6.md (2026-02-20, v2.1 inventory)
 
@@ -61,7 +61,7 @@ current implementation. Update it after each significant plugin change.
 | A24 | @-mention invocation | ✅ N/A | Skills invoke agents programmatically; user @-mentions not the primary pattern |
 | A25 | `--agent` / `agent` setting | ⊘ | TDD agents are task-specific subagents, not session-wide agents |
 | A26 | `/agents` command | ✅ N/A | Plugin agents appear in `/agents` automatically |
-| A27 | Plugin agent restrictions | ❌ | **CRITICAL** — see §3 item M1. Plugin agents cannot use `hooks`, `mcpServers`, or `permissionMode`. Our planner, implementer, verifier, releaser, doc-finalizer, and context-updater all define hooks in frontmatter. Planner and verifier also rely on `permissionMode: plan`. These are silently ignored when loaded from a plugin |
+| A27 | Plugin agent restrictions | ✅ | **Mitigated** — see §3 item M1 (resolved in v1.14.0). Hook scripts have `agent_type` guards; all enforcement hooks are duplicated in `hooks.json` (PreToolUse ×2, PostToolUse ×1, SubagentStop ×5, SubagentStart ×2). Agent frontmatter hooks remain in place for local development. `permissionMode: plan` loss is accepted — `tools` allowlist provides equivalent protection |
 | A28 | Transcript persistence | ⊘ | Default behavior sufficient; no custom cleanup needed |
 
 #### Memory Details (A9)
@@ -129,13 +129,13 @@ current implementation. Update it after each significant plugin change.
 | C1 | `SessionStart` | ⊘ | Could detect in-progress TDD sessions. Low priority — planner completes in one context window. **→ N2** |
 | C2 | `InstructionsLoaded` | ⊘ | Not relevant to TDD workflow |
 | C3 | `UserPromptSubmit` | ⊘ | Not relevant to TDD workflow |
-| C4 | `PreToolUse` | ✅ | Implementer: `validate-tdd-order.sh` on `Write\|Edit\|MultiEdit`. Planner: `planner-bash-guard.sh` on `Bash` |
+| C4 | `PreToolUse` | ✅ | Implementer: `validate-tdd-order.sh` on `Write\|Edit\|MultiEdit`. Planner: `planner-bash-guard.sh` on `Bash`. Both also in `hooks.json` with `agent_type` guards for marketplace installs |
 | C5 | `PermissionRequest` | ⊘ | `permissionMode: plan` on read-only agents eliminates dialogs |
-| C6 | `PostToolUse` | ✅ | Implementer: `auto-run-tests.sh` on `Write\|Edit\|MultiEdit` |
+| C6 | `PostToolUse` | ✅ | Implementer: `auto-run-tests.sh` on `Write\|Edit\|MultiEdit`. Also in `hooks.json` with `agent_type` guard for marketplace installs |
 | C7 | `PostToolUseFailure` | ⊘ | No failure recovery logic needed |
 | C8 | `Notification` | ⊘ | Desktop notification on slice completion would improve UX. **→ N1** |
-| C9 | `SubagentStart` | ✅ | Context-updater: git branch, last commit, dirty file count via `additionalContext` |
-| C10 | `SubagentStop` | ✅ | `hooks.json`: prompt hook on `tdd-implementer` validates R-G-R cycle. Command hooks on `tdd-releaser` and `tdd-doc-finalizer` validate branch pushed |
+| C9 | `SubagentStart` | ✅ | Context-updater: git branch, last commit, dirty file count via `additionalContext`. Tdd-planner: git context (branch, last commit, dirty file count) added in v1.14.0 |
+| C10 | `SubagentStop` | ✅ | `hooks.json`: prompt hook on `tdd-implementer` validates R-G-R cycle. Command hooks on `tdd-releaser` and `tdd-doc-finalizer` validate branch pushed. Prompt hooks on `tdd-verifier` and `context-updater` added in v1.14.0 (total: 5 SubagentStop entries) |
 | C11 | `Stop` | ✅ | Main thread: `check-tdd-progress.sh` prevents session end with pending slices. Agent frontmatter: verifier prompt check, releaser/doc-finalizer command check, context-updater prompt check |
 | C12 | `TeammateIdle` | ⊘ | No agent teams |
 | C13 | `TaskCompleted` | ⊘ | Not relevant |
@@ -208,7 +208,7 @@ current implementation. Update it after each significant plugin change.
 | # | Field | Status | Notes |
 |---|-------|--------|-------|
 | D1 | `name` | ✅ | `"tdd-workflow"` |
-| D2 | `version` | ✅ | `"1.13.0"` |
+| D2 | `version` | ✅ | `"1.14.0"` |
 | D3 | `description` | ✅ | Present and descriptive |
 | D4-D8 | Metadata | ⊘ | Optional; add when publishing to marketplace |
 | D9-D11 | Component paths | ⊘ | Using default directory conventions |
@@ -229,7 +229,7 @@ current implementation. Update it after each significant plugin change.
 | D24 | LSP servers | ⊘ | Could add Dart/C analysis server; complexity vs benefit |
 | D25 | `strict: false` | ⊘ | Not in a marketplace |
 | D26 | Plugin `settings.json` | ⊘ | No default settings needed; only `agent` supported and not applicable |
-| D27 | Plugin agent restrictions | ❌ | **CRITICAL** — see §3 item M1. Same as A27 |
+| D27 | Plugin agent restrictions | ✅ | **Mitigated** — see §3 item M1 (resolved in v1.14.0). Same as A27 |
 | D28 | Path traversal | ✅ N/A | All paths are within plugin directory |
 
 #### Directory Structure
@@ -391,6 +391,9 @@ The v1.6.6 audit was written against the v2.1 feature inventory. Since then:
 | Model assignments: doc-finalizer=sonnet, context-updater=opus | v1.12.0 |
 | C language conventions: Unity/CMock, BARR-C:2018, SEI CERT C, static analysis | v1.13.0 |
 | 617 tests, 875 assertions (from 237/298 at v1.6.6) | v1.13.0 |
+| Plugin agent hook mitigation: agent_type guards + hooks.json dual delivery | v1.14.0 |
+| SubagentStart for tdd-planner (git context), SubagentStop for verifier + context-updater | v1.14.0 |
+| 691 tests, 970 assertions (+74 tests) | v1.14.0 |
 
 ### All items from v1.6.6 audit
 
@@ -420,14 +423,14 @@ The v1.6.6 audit was written against the v2.1 feature inventory. Since then:
 
 | # | Item | Effort | Rationale | Ref |
 |---|------|--------|-----------|-----|
-| M1 | **Mitigate plugin agent restrictions** | Medium | Plugin agents silently ignore `hooks` and `permissionMode` in frontmatter. This breaks: (1) planner Bash guard — planner can run any command, (2) planner `plan` mode — planner gets write access, (3) implementer test-first enforcement — no PreToolUse validation, (4) implementer auto-test-running — no PostToolUse feedback, (5) verifier `plan` mode — verifier can modify files, (6) all agent Stop hooks — no completion validation. Session-level hooks in `hooks.json` (SubagentStop, Stop, SubagentStart) still work. **Fix options** described in §4.1 | A27, D27 |
+| M1 | ~~**Mitigate plugin agent restrictions**~~ | ~~Medium~~ | **Resolved in v1.14.0.** `agent_type` guards added to all 3 enforcement scripts; all hooks duplicated in `hooks.json` (PreToolUse ×2, PostToolUse ×1, SubagentStop ×5, SubagentStart ×2). `permissionMode: plan` loss accepted — `tools` allowlist is equivalent. | A27, D27 |
 
 ### S — Should-Have (Quality / Robustness)
 
 | # | Item | Effort | Rationale | Ref |
 |---|------|--------|-----------|-----|
-| S1 | **Add SubagentStart git context for planner** | ~5 lines | Context-updater has SubagentStart context injection but planner does not. Planner would benefit from knowing current branch and dirty file count at startup | C9 |
-| S2 | **Add SubagentStop hook for verifier in hooks.json** | ~10 lines | Verifier currently relies on a Stop hook in agent frontmatter (which is ignored for plugin agents per M1). Moving to hooks.json SubagentStop ensures it works in all installation modes | C10 |
+| S1 | ~~**Add SubagentStart git context for planner**~~ | ~~5 lines~~ | **Resolved in v1.14.0.** `hooks.json` SubagentStart for tdd-planner added, providing branch, last commit, and dirty file count | C9 |
+| S2 | ~~**Add SubagentStop hook for verifier in hooks.json**~~ | ~~10 lines~~ | **Resolved in v1.14.0.** `hooks.json` SubagentStop for tdd-verifier and context-updater both added | C10 |
 
 ### N — Nice-to-Have (Distribution / UX)
 
@@ -441,62 +444,39 @@ The v1.6.6 audit was written against the v2.1 feature inventory. Since then:
 
 ## 4. Revised Component Specifications
 
-### 4.1 Mitigate Plugin Agent Restrictions (M1)
+### 4.1 Mitigate Plugin Agent Restrictions (M1) — RESOLVED in v1.14.0
 
 **Problem:** When installed as a marketplace plugin, agent frontmatter `hooks`
 and `permissionMode` fields are silently ignored. This is a Claude Code
 security design — plugin agents cannot escalate permissions or inject hooks.
 
-**Impact on tdd-workflow:**
+**Solution implemented (v1.14.0):** Dual delivery via `agent_type` guards.
 
-| Agent | Lost Feature | Severity |
-|-------|-------------|----------|
-| tdd-planner | PreToolUse Bash guard | Critical — planner can run any command |
-| tdd-planner | `permissionMode: plan` | Critical — planner gets write access |
-| tdd-implementer | PreToolUse validate-tdd-order | Critical — no test-first enforcement |
-| tdd-implementer | PostToolUse auto-run-tests | Moderate — loses auto-feedback loop |
-| tdd-verifier | `permissionMode: plan` | Moderate — verifier can modify files |
-| tdd-verifier | Stop prompt hook | Moderate — no completion check |
-| tdd-releaser | Stop command hook | Low — SubagentStop in hooks.json covers this |
-| tdd-doc-finalizer | Stop command hook | Low — SubagentStop in hooks.json covers this |
-| context-updater | Stop prompt hook | Low — has AskUserQuestion for approval |
+All three enforcement hook scripts (`planner-bash-guard.sh`,
+`validate-tdd-order.sh`, `auto-run-tests.sh`) now extract `agent_type` from
+the hook input JSON. If `agent_type` is non-empty and does not match the
+target agent (in either namespaced `tdd-workflow:tdd-planner` or plain
+`tdd-planner` format), the script exits 0 silently. This allows all three
+scripts to be safely registered in `hooks.json` as session-level hooks
+without interfering with other agents.
 
-**What still works (hooks.json session-level hooks):**
-- SubagentStop on tdd-implementer (R-G-R validation) ✅
-- SubagentStop on tdd-releaser (branch pushed check) ✅
-- SubagentStop on tdd-doc-finalizer (branch pushed check) ✅
-- SubagentStart on context-updater (git context injection) ✅
-- Stop on main thread (check-tdd-progress) ✅
+**`hooks.json` entries added:**
+- PreToolUse: Bash matcher → `planner-bash-guard.sh` (timeout 5)
+- PreToolUse: Write|Edit|MultiEdit matcher → `validate-tdd-order.sh` (timeout 10)
+- PostToolUse: Write|Edit|MultiEdit matcher → `auto-run-tests.sh` (timeout 30)
+- SubagentStop: `tdd-verifier` → prompt hook (timeout 30)
+- SubagentStop: `context-updater` → prompt hook (timeout 30)
+- SubagentStart: `tdd-planner` → git context (branch, last commit, dirty files)
 
-**Architectural constraint:** Agent-scoped PreToolUse hooks (planner Bash
-guard, implementer validate-tdd-order) CANNOT be moved to hooks.json because
-PreToolUse matches on tool name, not agent name. A global Bash guard would
-block ALL agents from running Bash, including the implementer which needs it
-for tests.
+**`permissionMode: plan` loss:** Accepted as non-issue. The `tools` allowlist
+on planner and verifier agents already restricts them to read-only tools,
+providing equivalent protection without requiring `permissionMode`.
 
-**Fix options (in order of preference):**
+**Agent frontmatter hooks:** Preserved unchanged. Both delivery paths coexist;
+Claude Code deduplicates identical command hooks automatically.
 
-**Option A: Document + post-install setup script** (Recommended near-term)
-- Document the limitation clearly in README
-- Provide a `scripts/post-install.sh` that copies agent files from the plugin
-  cache to `.claude/agents/` where they have full frontmatter support
-- Add a SessionStart hook that warns if agents are loaded from plugin scope
-  without the required hooks
-
-**Option B: Duplicate critical hooks into hooks.json where possible**
-- Add SubagentStop hook for verifier (currently missing from hooks.json)
-- Add SubagentStart hooks with `additionalContext` reminding planner/verifier
-  of their read-only constraints (soft enforcement via prompt, not hard block)
-- Accept that PreToolUse agent-scoped hooks cannot be replicated
-
-**Option C: Wait for Anthropic to add plugin hook support**
-- Track Claude Code changelog for changes to plugin agent restrictions
-- This may happen as the plugin ecosystem matures
-
-**Recommended approach: Option A + Option B combined.** Implement Option B
-immediately (S2 covers the verifier SubagentStop). Document the limitation
-and provide the post-install script. This gives partial protection for
-marketplace installs and full protection after running the setup script.
+**Current hooks.json summary:** PreToolUse (2), PostToolUse (1),
+SubagentStop (5), SubagentStart (2), Stop (1).
 
 ### 4.2 SubagentStart Git Context for Planner (S1)
 

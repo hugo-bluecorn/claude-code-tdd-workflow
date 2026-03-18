@@ -105,14 +105,19 @@ Done
 
 | Hook | Type | Purpose |
 |------|------|---------|
-| validate-tdd-order.sh | PreToolUse (command) | Blocks implementation writes before test exists |
-| auto-run-tests.sh | PostToolUse (command) | Runs tests after every file change |
-| planner-bash-guard.sh | PreToolUse (command) | Allowlists read-only commands for planner |
+| validate-tdd-order.sh | PreToolUse (command) | Blocks implementation writes before test exists; agent_type guard ensures safe dual delivery from hooks.json |
+| auto-run-tests.sh | PostToolUse (command) | Runs tests after every file change; agent_type guard ensures safe dual delivery from hooks.json |
+| planner-bash-guard.sh | PreToolUse (command) | Allowlists read-only commands for planner; agent_type guard ensures safe dual delivery from hooks.json |
 | validate-plan-output.sh | standalone utility | Validates plan file structure (required sections, no refactoring leak); called by `/tdd-plan` skill after approval |
 | check-tdd-progress.sh | Stop (command) | Prevents session end with pending slices |
 | SubagentStart (context-updater) | command | Injects git context with edit warning |
+| SubagentStart (tdd-planner) | command | Injects git context (branch, last commit, dirty file count) |
 | check-release-complete.sh | SubagentStop (command) | Validates branch is pushed to remote (releaser + doc-finalizer) |
 | SubagentStop (implementer) | prompt | Verifies R-G-R cycle completion |
+| SubagentStop (tdd-verifier) | prompt | Validates verifier ran full test suite and static analysis |
+| SubagentStop (context-updater) | prompt | Validates framework version changes require user approval |
+
+> **Dual delivery:** Hook scripts are registered in both agent frontmatter and `hooks.json`. Agent frontmatter hooks work for local development; `hooks.json` session-level hooks ensure enforcement when the plugin is installed from a marketplace (where frontmatter hooks are silently ignored).
 
 ## Configuration
 
