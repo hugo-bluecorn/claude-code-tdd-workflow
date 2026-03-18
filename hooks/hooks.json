@@ -44,6 +44,26 @@
             "timeout": 15
           }
         ]
+      },
+      {
+        "matcher": "tdd-verifier",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "The tdd-verifier has finished. Review its output and check:\n1. Did it run the COMPLETE test suite (not just new tests)?\n2. Did it run static analysis (shellcheck/analyze/lint)?\n3. Are there any failures or warnings?\n\nIf incomplete, note what was missed. Report results to the user.",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "context-updater",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "The context-updater has finished. Verify:\n1. Did it research latest framework versions via web search?\n2. Did it produce a prioritized change proposal?\n3. Did it wait for user approval before applying changes?\n\nReport what was updated and any issues found.",
+            "timeout": 30
+          }
+        ]
       }
     ],
     "PreToolUse": [
