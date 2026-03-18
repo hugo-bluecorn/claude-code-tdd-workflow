@@ -4,7 +4,7 @@
 
 README_MD="README.md"
 USER_GUIDE="docs/user-guide.md"
-VCI_MD="docs/version-control-integration.md"
+VCI_MD="docs/archive/version-control-integration.md"
 
 # ---------- Test 1: version-control.md exists at new location ----------
 

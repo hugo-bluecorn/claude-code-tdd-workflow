@@ -201,11 +201,14 @@ tdd-workflow/
 │   ├── detect-doc-context.sh
 │   └── detect-project-context.sh
 ├── docs/
-│   ├── version-control-integration.md
+│   ├── extensibility/
+│   │   ├── audit.md
+│   │   └── audit-prompt.md
+│   ├── archive/
+│   │   └── version-control-integration.md
 │   ├── user-guide.md
-│   ├── tdd-workflow-extensibility-audit.md
-│   ├── extensibility-audit-prompt.md
-│   └── new-feature_documentation_skill.md
+│   └── prompts/
+│       └── doc-audit.md
 ├── CLAUDE.md
 ├── README.md
 ├── CHANGELOG.md

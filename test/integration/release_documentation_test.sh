@@ -6,8 +6,8 @@
 README_MD="README.md"
 CLAUDE_MD="CLAUDE.md"
 USER_GUIDE="docs/user-guide.md"
-AUDIT_MD="docs/tdd-workflow-extensibility-audit.md"
-VCI_MD="docs/version-control-integration.md"
+AUDIT_MD="docs/extensibility/audit.md"
+VCI_MD="docs/archive/version-control-integration.md"
 
 # ---------- Test 1: README mentions /tdd-release skill ----------
 

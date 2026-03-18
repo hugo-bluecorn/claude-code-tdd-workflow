@@ -189,8 +189,8 @@ function test_body_does_not_hardcode_plugin_doc_paths() {
   local body
   body=$(get_body)
   assert_not_contains "docs/user-guide.md" "$body"
-  assert_not_contains "docs/version-control-integration.md" "$body"
-  assert_not_contains "docs/tdd-workflow-extensibility-audit.md" "$body"
+  assert_not_contains "docs/archive/version-control-integration.md" "$body"
+  assert_not_contains "docs/extensibility/audit.md" "$body"
 }
 
 # ---------- Slice 5 Test 9: Agent body does NOT reference release integration test files ----------
