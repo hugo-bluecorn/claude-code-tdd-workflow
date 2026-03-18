@@ -313,4 +313,110 @@ function test_implement_skill_contains_approval_verification_gate() {
   assert_file_contains "$SKILL_IMPLEMENT" "/tdd-plan"
 }
 
+# =====================================================================
+# Issue 004 Slice 1 — agent_type guard for session-level hook support
+# =====================================================================
+
+# Helper: build PreToolUse JSON with agent_type field
+build_json_with_agent_type() {
+  local cmd="$1"
+  local agent_type="$2"
+  printf '{"tool_name":"Bash","tool_input":{"command":"%s"},"agent_type":"%s"}\n' "$cmd" "$agent_type"
+}
+
+# Helper: run hook with agent_type, suppressing stderr
+run_hook_with_agent_type() {
+  local cmd="$1"
+  local agent_type="$2"
+  local json
+  json=$(build_json_with_agent_type "$cmd" "$agent_type")
+  echo "$json" | bash "$HOOK_ABS" 2>/dev/null
+}
+
+# Helper: run hook with agent_type, capturing stderr
+run_hook_with_agent_type_stderr() {
+  local cmd="$1"
+  local agent_type="$2"
+  local json
+  json=$(build_json_with_agent_type "$cmd" "$agent_type")
+  # shellcheck disable=SC2069
+  echo "$json" | bash "$HOOK_ABS" 2>&1 >/dev/null
+}
+
+# ---------- Test AT1: Namespaced planner agent_type preserves blocking ----------
+
+function test_agent_type_namespaced_planner_blocks_disallowed_command() {
+  run_hook_with_agent_type "python3 --version" "tdd-workflow:tdd-planner"
+  assert_exit_code 2
+}
+
+function test_agent_type_namespaced_planner_blocks_disallowed_stderr() {
+  local stderr_output
+  stderr_output=$(run_hook_with_agent_type_stderr "python3 --version" "tdd-workflow:tdd-planner")
+  assert_contains "BLOCKED" "$stderr_output"
+}
+
+# ---------- Test AT2: Plain planner agent_type preserves blocking ----------
+
+function test_agent_type_plain_planner_blocks_disallowed_command() {
+  run_hook_with_agent_type "python3 --version" "tdd-planner"
+  assert_exit_code 2
+}
+
+function test_agent_type_plain_planner_blocks_disallowed_stderr() {
+  local stderr_output
+  stderr_output=$(run_hook_with_agent_type_stderr "python3 --version" "tdd-planner")
+  assert_contains "BLOCKED" "$stderr_output"
+}
+
+# ---------- Test AT3: Namespaced planner agent_type preserves allow ----------
+
+function test_agent_type_namespaced_planner_allows_allowlisted_command() {
+  run_hook_with_agent_type "cat README.md" "tdd-workflow:tdd-planner"
+  assert_exit_code 0
+}
+
+# ---------- Test AT4: Non-planner agent_type passes through ----------
+
+function test_agent_type_non_planner_passes_through_disallowed_command() {
+  run_hook_with_agent_type "python3 --version" "tdd-workflow:tdd-implementer"
+  assert_exit_code 0
+}
+
+# ---------- Test AT5: Different non-planner agent_type passes through ----------
+
+function test_agent_type_verifier_passes_through_dangerous_command() {
+  run_hook_with_agent_type "rm -rf /" "tdd-verifier"
+  assert_exit_code 0
+}
+
+# ---------- Test AT6: Empty agent_type preserves original behavior ----------
+
+function test_agent_type_empty_preserves_original_blocking() {
+  run_hook "python3 --version"
+  assert_exit_code 2
+}
+
+function test_agent_type_empty_preserves_original_blocking_stderr() {
+  local stderr_output
+  stderr_output=$(run_hook_stderr "python3 --version")
+  assert_contains "BLOCKED" "$stderr_output"
+}
+
+# ---------- Test AT7: Null agent_type preserves original behavior ----------
+
+function test_agent_type_null_preserves_original_blocking() {
+  local json
+  json='{"tool_name":"Bash","tool_input":{"command":"python3 --version"},"agent_type":null}'
+  echo "$json" | bash "$HOOK_ABS" 2>/dev/null
+  assert_exit_code 2
+}
+
+function test_agent_type_null_preserves_original_blocking_stderr() {
+  local json stderr_output
+  json='{"tool_name":"Bash","tool_input":{"command":"python3 --version"},"agent_type":null}'
+  # shellcheck disable=SC2069
+  stderr_output=$(echo "$json" | bash "$HOOK_ABS" 2>&1 >/dev/null)
+  assert_contains "BLOCKED" "$stderr_output"
+}
 
