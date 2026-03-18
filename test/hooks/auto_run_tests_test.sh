@@ -608,3 +608,127 @@ function test_empty_file_path_exits_silently() {
 
   rm -rf "$tmp_dir"
 }
+
+# ==========================================================================
+# Slice 4 — agent_type Guard Tests
+# Tests that the hook filters by agent_type when invoked from hooks.json,
+# only running auto-test logic for tdd-implementer agents.
+# ==========================================================================
+
+# Helper: build PostToolUse JSON with an agent_type field
+build_json_with_agent_type() {
+  local file_path="$1"
+  local agent_type="$2"
+  printf '{"tool_name":"Write","agent_type":"%s","tool_input":{"file_path":"%s","content":"echo hello"}}\n' "$agent_type" "$file_path"
+}
+
+# ---------- Guard Test 1: Namespaced implementer agent_type preserves auto-test behavior ----------
+
+function test_namespaced_implementer_agent_type_preserves_auto_test() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env --with-bashunit)
+
+  # Create source and matching test file
+  mkdir -p "$tmp_dir/test/hooks"
+  echo '#!/bin/bash' > "$tmp_dir/hooks/my_script.sh"
+  echo '#!/bin/bash' > "$tmp_dir/test/hooks/my_script_test.sh"
+
+  local json
+  json=$(build_json_with_agent_type "hooks/my_script.sh" "tdd-workflow:tdd-implementer")
+  local output
+  output=$(cd "$tmp_dir" && echo "$json" | bash "$tmp_dir/$HOOK" 2>/dev/null)
+
+  assert_contains "systemMessage" "$output"
+  assert_contains "bashunit" "$output"
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- Guard Test 2: Plain implementer agent_type preserves auto-test behavior ----------
+
+function test_plain_implementer_agent_type_preserves_auto_test() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env --with-bashunit)
+
+  # Create source and matching test file
+  mkdir -p "$tmp_dir/test/hooks"
+  echo '#!/bin/bash' > "$tmp_dir/hooks/my_script.sh"
+  echo '#!/bin/bash' > "$tmp_dir/test/hooks/my_script_test.sh"
+
+  local json
+  json=$(build_json_with_agent_type "hooks/my_script.sh" "tdd-implementer")
+  local output
+  output=$(cd "$tmp_dir" && echo "$json" | bash "$tmp_dir/$HOOK" 2>/dev/null)
+
+  assert_contains "systemMessage" "$output"
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- Guard Test 3: Non-implementer agent_type passes through silently ----------
+
+function test_non_implementer_agent_type_passes_through_silently() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env --with-bashunit)
+
+  # Create source and matching test file
+  mkdir -p "$tmp_dir/test/hooks"
+  echo '#!/bin/bash' > "$tmp_dir/hooks/my_script.sh"
+  echo '#!/bin/bash' > "$tmp_dir/test/hooks/my_script_test.sh"
+
+  local json
+  json=$(build_json_with_agent_type "hooks/my_script.sh" "tdd-workflow:tdd-planner")
+  local output
+  local exit_code
+  output=$(cd "$tmp_dir" && echo "$json" | bash "$tmp_dir/$HOOK" 2>/dev/null)
+  exit_code=$?
+
+  assert_equals 0 "$exit_code"
+  assert_equals "" "$output"
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- Guard Test 4: Empty agent_type preserves original behavior ----------
+
+function test_empty_agent_type_preserves_original_behavior() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env --with-bashunit)
+
+  # Create source and matching test file
+  mkdir -p "$tmp_dir/test/hooks"
+  echo '#!/bin/bash' > "$tmp_dir/hooks/my_script.sh"
+  echo '#!/bin/bash' > "$tmp_dir/test/hooks/my_script_test.sh"
+
+  # JSON with no agent_type field at all
+  local json
+  json=$(build_json "hooks/my_script.sh")
+  local output
+  output=$(cd "$tmp_dir" && echo "$json" | bash "$tmp_dir/$HOOK" 2>/dev/null)
+
+  assert_contains "systemMessage" "$output"
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- Guard Test 5: Non-source file with non-implementer agent_type exits silently ----------
+
+function test_non_source_file_with_non_implementer_exits_silently() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+
+  mkdir -p "$tmp_dir/docs"
+  echo '# Hello' > "$tmp_dir/docs/readme.md"
+
+  local json
+  json=$(build_json_with_agent_type "docs/readme.md" "tdd-workflow:tdd-verifier")
+  local output
+  local exit_code
+  output=$(cd "$tmp_dir" && echo "$json" | bash "$tmp_dir/$HOOK" 2>/dev/null)
+  exit_code=$?
+
+  assert_equals 0 "$exit_code"
+  assert_equals "" "$output"
+
+  rm -rf "$tmp_dir"
+}
