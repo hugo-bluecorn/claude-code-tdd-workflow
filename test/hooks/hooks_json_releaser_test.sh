@@ -57,8 +57,8 @@ function test_existing_subagent_stop_entries_preserved() {
   implementer_type=$(jq -r '.hooks.SubagentStop[] | select(.matcher == "tdd-implementer") | .hooks[0].type' "$HOOKS_JSON")
   assert_equals "prompt" "$implementer_type"
 
-  # Verify total SubagentStop entries count is 3 (implementer + releaser + doc-finalizer)
+  # Verify total SubagentStop entries count is 5 (implementer + releaser + doc-finalizer + verifier + context-updater)
   local count
   count=$(jq '.hooks.SubagentStop | length' "$HOOKS_JSON")
-  assert_equals "3" "$count"
+  assert_equals "5" "$count"
 }

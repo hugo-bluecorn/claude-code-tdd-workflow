@@ -3,6 +3,16 @@
 # Reads JSON from stdin. Exit 0 = allow, exit 2 = block.
 
 INPUT=$(cat)
+
+# agent_type guard: when invoked from hooks.json (session-level), agent_type
+# identifies the calling agent. Pass through for non-planner agents.
+AGENT_TYPE=$(echo "$INPUT" | jq -r '.agent_type // ""')
+if [ -n "$AGENT_TYPE" ] \
+  && [ "$AGENT_TYPE" != "tdd-planner" ] \
+  && [ "$AGENT_TYPE" != "tdd-workflow:tdd-planner" ]; then
+  exit 0
+fi
+
 COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // ""')
 
 # Block empty commands

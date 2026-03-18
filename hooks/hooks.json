@@ -12,6 +12,16 @@
             "timeout": 5
           }
         ]
+      },
+      {
+        "matcher": "tdd-planner",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"{\\\"additionalContext\\\": \\\"Current branch: $(git branch --show-current 2>/dev/null || echo 'unknown'). Last commit: $(git log --oneline -1 2>/dev/null || echo 'none'). Dirty files: $(git status --porcelain 2>/dev/null | wc -l | tr -d ' ').\\\"}\"",
+            "timeout": 5
+          }
+        ]
       }
     ],
     "SubagentStop": [
@@ -42,6 +52,60 @@
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/check-release-complete.sh",
             "timeout": 15
+          }
+        ]
+      },
+      {
+        "matcher": "tdd-verifier",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "The tdd-verifier has finished. Review its output and check:\n1. Did it run the COMPLETE test suite (not just new tests)?\n2. Did it run static analysis (shellcheck/analyze/lint)?\n3. Are there any failures or warnings?\n\nIf incomplete, note what was missed. Report results to the user.",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "context-updater",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "The context-updater has finished. Verify:\n1. Did it research latest framework versions via web search?\n2. Did it produce a prioritized change proposal?\n3. Did it wait for user approval before applying changes?\n\nReport what was updated and any issues found.",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/planner-bash-guard.sh",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/validate-tdd-order.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/auto-run-tests.sh",
+            "timeout": 30
           }
         ]
       }

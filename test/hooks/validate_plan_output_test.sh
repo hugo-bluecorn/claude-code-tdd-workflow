@@ -351,12 +351,12 @@ PLAN
 
 HOOKS_JSON="hooks/hooks.json"
 
-# ---------- Test S3-1: No SubagentStart entry for tdd-planner ----------
+# ---------- Test S3-1: SubagentStart entry for tdd-planner exists ----------
 
-function test_hooks_json_no_subagent_start_tdd_planner() {
+function test_hooks_json_subagent_start_tdd_planner_exists() {
   local result
   result=$(jq -r '.hooks.SubagentStart[] | select(.matcher == "tdd-planner") | .matcher' "$HOOKS_JSON")
-  assert_empty "$result"
+  assert_equals "tdd-planner" "$result"
 }
 
 # ---------- Test S3-2: No SubagentStop entry for tdd-planner ----------
@@ -391,20 +391,21 @@ function test_hooks_json_non_planner_hooks_preserved() {
   assert_contains "check-tdd-progress.sh" "$stop"
 }
 
-# ---------- Test S3-4: SubagentStop count is 3 ----------
+# ---------- Test S3-4: SubagentStop count is 5 ----------
+# Updated from 3 to 5 after Issue 004 added tdd-verifier and context-updater entries
 
-function test_hooks_json_subagent_stop_count_is_three() {
+function test_hooks_json_subagent_stop_count_is_five() {
   local count
   count=$(jq '.hooks.SubagentStop | length' "$HOOKS_JSON")
-  assert_equals "3" "$count"
+  assert_equals "5" "$count"
 }
 
-# ---------- Test S3-5: SubagentStart count is 1 ----------
+# ---------- Test S3-5: SubagentStart count is 2 ----------
 
-function test_hooks_json_subagent_start_count_is_one() {
+function test_hooks_json_subagent_start_count_is_two() {
   local count
   count=$(jq '.hooks.SubagentStart | length' "$HOOKS_JSON")
-  assert_equals "1" "$count"
+  assert_equals "2" "$count"
 }
 
 # ---------- Test S3-6: hooks.json is valid JSON ----------
