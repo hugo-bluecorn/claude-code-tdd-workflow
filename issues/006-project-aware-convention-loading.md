@@ -266,6 +266,31 @@ initialization. If no conventions are configured, agents run without
 convention context — they still work, they just don't have
 language-specific patterns preloaded.
 
+## Design Decisions (2026-03-19)
+
+1. **Version 2.0** — this is a breaking change. No migration path. Clean
+   slate for convention loading.
+
+2. **Convention repo format** — move existing convention skills as-is to a
+   new GitHub repo. Keep the current structure (SKILL.md + reference/ dir).
+   Add a minimal index file listing available conventions. Format refinement
+   is future work.
+
+3. **Config format** — KISS. `.claude/tdd-conventions.json`:
+   ```json
+   {
+     "conventions": [
+       "https://github.com/tdd-workflow/conventions",
+       "/home/user/my-conventions"
+     ]
+   }
+   ```
+   URLs = fetch and cache. Paths = read directly. That's it.
+
+4. **No backward compatibility** — existing users update to v2.0 and
+   configure their convention sources. The 4 built-in convention skills
+   are removed from the plugin and published as an external repo.
+
 ## Acceptance Criteria
 
 1. Agents load only conventions relevant to the project's tech stack
