@@ -30,20 +30,18 @@ has_files() {
   [ "$(find . -name "$pattern" -not -path "./.git/*" 2>/dev/null | head -1 | wc -l)" -gt 0 ]
 }
 
-# Output convention content for a skill directory
+# Output convention content for a skill directory; returns 0 if content found
 output_skill() {
   local skill_dir="$1"
   [ -d "$skill_dir" ] || return 1
 
   local found=false
 
-  # Output SKILL.md
   if [ -f "$skill_dir/SKILL.md" ]; then
     cat "$skill_dir/SKILL.md"
     found=true
   fi
 
-  # Output all reference/*.md files
   if [ -d "$skill_dir/reference" ]; then
     for ref_file in "$skill_dir/reference/"*.md; do
       [ -f "$ref_file" ] || continue
@@ -54,6 +52,15 @@ output_skill() {
   fi
 
   [ "$found" = true ]
+}
+
+# Populate convention_roots from cache directory subdirectories
+scan_cache_roots() {
+  [ -d "$conventions_root" ] || return
+  for repo_dir in "$conventions_root"/*/; do
+    [ -d "$repo_dir" ] || continue
+    convention_roots+=("${repo_dir%/}")
+  done
 }
 
 # ---------- Detect project types ----------
@@ -100,32 +107,20 @@ if [ -f "$config_file" ]; then
         # URL: extract repo name, resolve to cache path
         repo_name=$(basename "$source" .git)
         cache_path="${conventions_root}/${repo_name}"
-        if [ -d "$cache_path" ]; then
-          convention_roots+=("$cache_path")
-        fi
+        [ -d "$cache_path" ] && convention_roots+=("$cache_path")
       elif [ -d "$source" ]; then
         # Local path: use directly
         convention_roots+=("$source")
       fi
-      # Skip nonexistent paths silently
+      # Nonexistent paths are skipped silently
     done <<< "$sources"
   else
-    # Malformed JSON or empty: fall back to cache
-    if [ -d "$conventions_root" ]; then
-      for repo_dir in "$conventions_root"/*/; do
-        [ -d "$repo_dir" ] || continue
-        convention_roots+=("${repo_dir%/}")
-      done
-    fi
+    # Malformed JSON or empty conventions: fall back to cache
+    scan_cache_roots
   fi
 else
   # No config file: fall back to scanning cache
-  if [ -d "$conventions_root" ]; then
-    for repo_dir in "$conventions_root"/*/; do
-      [ -d "$repo_dir" ] || continue
-      convention_roots+=("${repo_dir%/}")
-    done
-  fi
+  scan_cache_roots
 fi
 
 # Exit if no convention roots resolved
