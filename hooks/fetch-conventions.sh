@@ -37,12 +37,12 @@ while IFS= read -r source; do
 
   if [ -d "$cache_path/.git" ]; then
     # Existing cache: refresh via pull
-    if ! git -C "$cache_path" pull --quiet 2>&1 >&2; then
+    if ! git -C "$cache_path" pull --quiet; then
       echo "fetch-conventions: failed to pull $source" >&2
     fi
   else
     # Fresh clone
-    if ! git clone --quiet "$source" "$cache_path" 2>&1 >&2; then
+    if ! git clone --quiet "$source" "$cache_path"; then
       echo "fetch-conventions: failed to clone $source" >&2
     fi
   fi
