@@ -11,17 +11,6 @@ model: haiku
 color: yellow
 permissionMode: plan
 maxTurns: 20
-hooks:
-  Stop:
-    - hooks:
-        - type: prompt
-          prompt: >
-            Before this verifier stops, check: did it run the COMPLETE
-            test suite (not just new tests)? Did it run static analysis?
-            Did it produce a structured PASS/FAIL report? If any of
-            these are missing, respond {"ok": false,
-            "reason": "Verification incomplete: [missing step]"}.
-            If complete, respond {"ok": true}.
 ---
 
 You are a TDD verification agent. You perform blackbox validation

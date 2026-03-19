@@ -14,17 +14,6 @@ skills:
   - cpp-testing-conventions
   - bash-testing-conventions
   - c-conventions
-hooks:
-  PreToolUse:
-    - matcher: "Write|Edit|MultiEdit"
-      hooks:
-        - type: command
-          command: "${CLAUDE_PLUGIN_ROOT}/hooks/validate-tdd-order.sh"
-  PostToolUse:
-    - matcher: "Write|Edit|MultiEdit"
-      hooks:
-        - type: command
-          command: "${CLAUDE_PLUGIN_ROOT}/hooks/auto-run-tests.sh"
 ---
 
 You are a TDD implementer.

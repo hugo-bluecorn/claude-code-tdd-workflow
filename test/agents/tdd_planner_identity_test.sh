@@ -129,11 +129,10 @@ function test_planner_body_contains_self_check() {
   assert_contains "Self-check" "$body"
 }
 
-# ---------- Test 7: PreToolUse bash guard preserved ----------
+# ---------- Test 7: PreToolUse hook removed (hooks.json handles it now) ----------
 
-function test_planner_pretooluse_hook_preserved() {
-  assert_file_contains "$AGENT_FILE" "PreToolUse:"
-  assert_file_contains "$AGENT_FILE" "planner-bash-guard.sh"
+function test_planner_pretooluse_hook_removed() {
+  assert_file_not_contains "$AGENT_FILE" "PreToolUse:"
 }
 
 # ---------- Test 8: Skills, memory, model, permissionMode preserved ----------

@@ -7,9 +7,9 @@ INPUT=$(cat)
 # agent_type guard: when invoked from hooks.json (session-level), agent_type
 # identifies the calling agent. Pass through silently for non-implementer agents.
 AGENT_TYPE=$(echo "$INPUT" | jq -r '.agent_type // ""')
-if [ -n "$AGENT_TYPE" ] \
-  && [ "$AGENT_TYPE" != "tdd-implementer" ] \
-  && [ "$AGENT_TYPE" != "tdd-workflow:tdd-implementer" ]; then
+if [ -z "$AGENT_TYPE" ] \
+  || { [ "$AGENT_TYPE" != "tdd-implementer" ] \
+    && [ "$AGENT_TYPE" != "tdd-workflow:tdd-implementer" ]; }; then
   exit 0
 fi
 

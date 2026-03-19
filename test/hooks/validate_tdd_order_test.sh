@@ -9,7 +9,7 @@ HOOK_ABS="$(pwd)/hooks/validate-tdd-order.sh"
 # Helper: build PreToolUse JSON for a given file path
 build_json() {
   local file_path="$1"
-  printf '{"tool_name":"Write","tool_input":{"file_path":"%s","content":"#!/bin/bash"}}\n' "$file_path"
+  printf '{"tool_name":"Write","tool_input":{"file_path":"%s","content":"#!/bin/bash"},"agent_type":"tdd-workflow:tdd-implementer"}\n' "$file_path"
 }
 
 # Helper: run the hook with a given file path (uses project root git repo)
@@ -348,17 +348,19 @@ function test_non_implementer_agent_type_passes_through() {
   rm -rf "$tmp_repo"
 }
 
-# ---------- Test 23: Empty agent_type preserves original behavior ----------
+# ---------- Test 23: Empty agent_type passes through (main thread) ----------
 
-function test_empty_agent_type_preserves_original_behavior() {
+function test_empty_agent_type_passes_through() {
   local tmp_repo
   tmp_repo=$(create_tmp_repo)
 
-  # Use build_json (no agent_type field) via existing helper
-  run_hook_in_repo "$tmp_repo" "hooks/my_script.sh"
+  # Send JSON without agent_type to simulate main thread
+  local json
+  json=$(printf '{"tool_name":"Write","tool_input":{"file_path":"hooks/my_script.sh","content":"#!/bin/bash"}}\n')
+  (cd "$tmp_repo" && echo "$json" | bash "$tmp_repo/validate-tdd-order.sh" 2>/dev/null)
   local rc=$?
 
-  assert_equals 2 "$rc"
+  assert_equals 0 "$rc"
 
   rm -rf "$tmp_repo"
 }

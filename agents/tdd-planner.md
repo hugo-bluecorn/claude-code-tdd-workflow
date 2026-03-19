@@ -15,12 +15,6 @@ skills:
   - cpp-testing-conventions
   - bash-testing-conventions
   - c-conventions
-hooks:
-  PreToolUse:
-    - matcher: "Bash"
-      hooks:
-        - type: command
-          command: "${CLAUDE_PLUGIN_ROOT}/hooks/planner-bash-guard.sh"
 ---
 
 You are a TDD planning specialist.
