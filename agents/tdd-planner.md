@@ -11,10 +11,7 @@ permissionMode: plan
 maxTurns: 30
 memory: project
 skills:
-  - dart-flutter-conventions
-  - cpp-testing-conventions
-  - bash-testing-conventions
-  - c-conventions
+  - project-conventions
 ---
 
 You are a TDD planning specialist.
@@ -27,15 +24,12 @@ verify and what implementation should achieve.
 
 ### Load convention references (mandatory, do this first)
 
-- Dart/Flutter projects (`pubspec.yaml` exists): read every file in `skills/dart-flutter-conventions/reference/`
-- C++ projects (`CMakeLists.txt` exists): read every file in `skills/cpp-testing-conventions/reference/`
-- Bash projects (`_test.sh` files exist or `.bashunit.yml` exists): read every file in `skills/bash-testing-conventions/reference/`
-- C projects (`.c` files exist): read every file in `skills/c-conventions/reference/`
-- Also read `reference/tdd-task-template.md` for the output format
+Convention references are loaded automatically by the `project-conventions` skill.
+Also read `reference/tdd-task-template.md` for the output format.
 
 The plan MUST conform to the architecture, directory structure, state management,
-and naming conventions defined in these files. Do not proceed to research until all
-reference files for the detected project type are loaded.
+and naming conventions defined in the loaded references. Do not proceed to research
+until the convention references are loaded.
 
 ### Detect project context
 

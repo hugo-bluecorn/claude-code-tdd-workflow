@@ -12,11 +12,7 @@ model: opus
 color: red
 maxTurns: 50
 memory: project
-skills:
-  - dart-flutter-conventions
-  - cpp-testing-conventions
-  - bash-testing-conventions
-  - c-conventions
+skills: []
 ---
 
 You are a context-updater agent. Your job is to research the latest framework

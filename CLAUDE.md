@@ -166,14 +166,11 @@ Before proposing commits, ensure:
 
 ## Plugin Convention Skills
 
-The plugin auto-loads convention skills based on file type:
+The plugin dynamically loads language conventions based on project configuration:
 
-| Skill | Triggers On | Reference Docs |
-|-------|------------|----------------|
-| `dart-flutter-conventions` | `.dart` files | test-patterns, test-recipes, mocking-guide, widget-testing, project-conventions, riverpod-guide |
-| `cpp-testing-conventions` | `.cpp`, `.h` files | googletest-patterns, cmake-integration, googlemock-guide, clang-tooling |
-| `c-conventions` | `.c` files | c-testing-patterns, c-coding-standards, c-static-analysis |
-| `bash-testing-conventions` | `.sh` files | bashunit-patterns, shellcheck-guide |
+| Skill | Behavior | Reference Docs |
+|-------|----------|----------------|
+| `project-conventions` | Dynamic loading based on project type; loads cached convention files at agent startup via `.claude/tdd-conventions.json` | Configured per project |
 
 Planning reference templates (used by tdd-planner agent):
 - `skills/tdd-plan/reference/tdd-task-template.md` — test specification format
