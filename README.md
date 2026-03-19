@@ -172,11 +172,13 @@ tdd-workflow/
 │   ├── check-tdd-progress.sh
 │   ├── planner-bash-guard.sh
 │   ├── validate-plan-output.sh
-│   └── check-release-complete.sh
+│   ├── check-release-complete.sh
+│   └── fetch-conventions.sh
 ├── scripts/
 │   ├── bump-version.sh
 │   ├── detect-doc-context.sh
-│   └── detect-project-context.sh
+│   ├── detect-project-context.sh
+│   └── load-conventions.sh
 ├── docs/
 │   ├── extensibility/
 │   │   ├── audit.md
@@ -195,7 +197,7 @@ tdd-workflow/
 
 ## Bash/Shell Prerequisites
 
-To use bash testing support, install bashunit and shellcheck:
+If your project uses bash conventions (via external convention repo or local config), install bashunit and shellcheck:
 
 ### bashunit
 

@@ -88,8 +88,9 @@ reads `.tdd-progress.md` and resumes from the last incomplete slice.
 
 ### Flutter/Dart Best Practices
 
-Full details are available in the plugin's `dart-flutter-conventions` skill
-(auto-loaded when editing `.dart` files). Key points:
+Full details are available via the `project-conventions` skill, which loads
+your project's configured Dart/Flutter conventions dynamically. Key points
+typically covered:
 
 - **Code Style**: PascalCase for classes, camelCase for members, snake_case for files
 - **Widget Composition**: Prefer composition over inheritance
@@ -108,8 +109,9 @@ Full details are available in the plugin's `dart-flutter-conventions` skill
 
 ### C++ Testing
 
-Full details are available in the plugin's `cpp-testing-conventions` skill
-(auto-loaded when editing `.cpp` or `.h` files). Key points:
+Full details are available via the `project-conventions` skill, which loads
+your project's configured C++ conventions dynamically. Key points typically
+covered:
 
 - **Framework**: GoogleTest for unit tests, GoogleMock for test doubles
 - **CMake Integration**: Tests registered via `add_test()` and run with `ctest`
@@ -117,8 +119,9 @@ Full details are available in the plugin's `cpp-testing-conventions` skill
 
 ### C Testing
 
-Full details are available in the plugin's C conventions skill
-(auto-loaded when editing `.c` files). Key points:
+Full details are available via the `project-conventions` skill, which loads
+your project's configured C conventions dynamically. Key points typically
+covered:
 
 - **Framework**: Unity for unit tests, CMock for test doubles
 - **Coding Standards**: BARR-C:2018 (style) and SEI CERT C (security/correctness)
@@ -127,8 +130,9 @@ Full details are available in the plugin's C conventions skill
 
 ### Bash Testing
 
-Full details are available in the plugin's bash testing conventions skill
-(auto-loaded when editing `.sh` files). Key points:
+Full details are available via the `project-conventions` skill, which loads
+your project's configured Bash conventions dynamically. Key points typically
+covered:
 
 - **Framework**: bashunit for unit and integration tests
 - **Static Analysis**: shellcheck for linting and correctness checks
@@ -141,24 +145,17 @@ Full details are available in the plugin's bash testing conventions skill
 - **Documentation Updates**: CHANGELOG always, README when needed
 - **Version Numbering**: Semantic versioning (MAJOR.MINOR.PATCH)
 
-### Project Structure
-
-- **Feature-Based Organization**: Recommended for medium/large apps (MVVM hybrid)
-- **Directory Naming**: snake_case, descriptive names
-- **File Organization**: Under 300-400 lines per file
-- **Import Organization**: Dart SDK, packages, local (alphabetical)
-
 ---
 
 ## Pre-Commit Checklist
 
 Before proposing commits, ensure:
 
-- [ ] `flutter pub get` if dependencies changed
-- [ ] `flutter analyze` or `dart analyze` passes with no issues
+- [ ] `flutter pub get` if dependencies changed (Dart projects)
+- [ ] `flutter analyze` or `dart analyze` passes with no issues (Dart projects)
 - [ ] `flutter test` or `ctest` or `bashunit` passes — all tests green
 - [ ] `CHANGELOG.md` updated with changes
-- [ ] `cppcheck` or `clang-tidy` for C projects (cert-*, bugprone-* checks)
+- [ ] `cppcheck` or `clang-tidy` for C/C++ projects (cert-*, bugprone-* checks)
 - [ ] `dart format` or `clang-format` or `shellcheck` applied
 - [ ] No secrets or credentials in staged files
 

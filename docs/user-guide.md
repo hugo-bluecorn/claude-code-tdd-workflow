@@ -7,11 +7,10 @@ This guide walks through using the tdd-workflow plugin from start to finish.
 ## Prerequisites
 
 - Claude Code installed with plugin support
-- A Dart/Flutter, C, C++, or Bash/Shell project with test infrastructure already set up
-  - Dart: `flutter_test` or `package:test` in `pubspec.yaml`
-  - C: Unity/CMock available (or assert.h for minimal setups), cppcheck and clang-tidy recommended
-  - C++: GoogleTest available via CMake, with a `build/` directory configured
-  - Bash: bashunit installed, shellcheck available
+- A project with test infrastructure already set up (any language)
+- Language conventions configured in `.claude/tdd-conventions.json`, or an
+  external conventions repo accessible at session start (see
+  `skills/project-conventions/SKILL.md` for setup)
 
 ---
 
@@ -452,7 +451,7 @@ The Stop hook prevents Claude from ending the session while `.tdd-progress.md` h
 
 ## Updating Convention References
 
-Run `/tdd-update-context` to update the plugin's convention reference files to the latest framework versions. This is useful when a new major version of GoogleTest, Flutter, or another framework is released and the plugin's documentation becomes stale.
+Run `/tdd-update-context` to update convention reference files to the latest framework versions. This is useful when a new major version of a framework your project uses is released and the cached conventions become stale.
 
 The context-updater agent will:
 
@@ -465,6 +464,8 @@ The context-updater agent will:
 7. Apply approved changes and commit
 
 This workflow only modifies reference content files and SKILL.md quick references — it never touches agent definitions, hook scripts, or workflow logic.
+
+> **Note:** In v2.0.0, language conventions are no longer bundled with the plugin. They live in an external conventions repo configured per project. Run `/tdd-update-context` against your external conventions repo, not the plugin itself.
 
 ---
 
