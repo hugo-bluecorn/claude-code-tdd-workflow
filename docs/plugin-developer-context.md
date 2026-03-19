@@ -63,11 +63,8 @@ The tdd-workflow plugin (`v1.14.0`) provides:
 - `tdd-finalize-docs` — context: fork, agent: tdd-doc-finalizer
 - `tdd-update-context` — context: fork, agent: context-updater
 
-**4 convention skills** (auto-loaded by file type):
-- `dart-flutter-conventions` — 6 reference files
-- `cpp-testing-conventions` — 4 reference files
-- `c-conventions` — 3 reference files (Unity/CMock, BARR-C/SEI CERT C, static analysis)
-- `bash-testing-conventions` — 2 reference files
+**1 convention skill** (dynamic loading):
+- `project-conventions` — loads cached convention files based on project configuration
 
 **8 hook scripts** (in `hooks/`):
 - `validate-tdd-order.sh` — PreToolUse: blocks impl writes before test exists (agent_type guard for dual delivery)
