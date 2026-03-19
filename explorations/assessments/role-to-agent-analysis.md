@@ -312,14 +312,22 @@ The `/tdd-plan` skill already encapsulates the complete CP workflow.
 
 #### What should happen to CP?
 
-**CP should be retired as a role.** The role document should be updated to
-say: "This role has been absorbed by the `/tdd-plan` skill and tdd-planner
-agent. Any developer in any session can run `/tdd-plan` to get the full
-planning workflow with mechanical quality enforcement."
+**For plugin development:** CP should be retired as a role. The plugin's
+own dev-roles (`docs/dev-roles/cp-planner.md`) can be updated with a
+deprecation notice: "This role has been absorbed by the `/tdd-plan` skill
+and tdd-planner agent." The CP prompt template in CA memory remains useful
+as a handoff pattern, but the role definition itself adds nothing beyond
+what the plugin provides.
 
-The CP session is still useful *as a session* — it provides context isolation
-for iterative planning. But it doesn't need a role prompt; any session
-running `/tdd-plan` is effectively CP.
+**For projects using the plugin:** The CP *session pattern* remains
+valuable. A dedicated planning session provides context isolation for
+iterative planning — keeping planner research, CA feedback loops, and
+plan revision history out of the CA and CI context windows. Any session
+running `/tdd-plan` is effectively CP, but projects with complex features
+benefit from designating a session for it. The `/tdd-init-roles` concept
+(see `explorations/features/tdd-init-roles.md`) correctly generates only
+CA + CI roles, leaving the CP session pattern as implicit guidance rather
+than a formal role document.
 
 ---
 
