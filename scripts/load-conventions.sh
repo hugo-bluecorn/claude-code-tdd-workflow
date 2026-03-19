@@ -15,12 +15,11 @@
 
 set -euo pipefail
 
-# Exit gracefully if CLAUDE_PLUGIN_DATA is not set
-if [ -z "${CLAUDE_PLUGIN_DATA:-}" ]; then
-  exit 0
+# Set cache root (empty if CLAUDE_PLUGIN_DATA is unset — config local paths still work)
+conventions_root=""
+if [ -n "${CLAUDE_PLUGIN_DATA:-}" ]; then
+  conventions_root="${CLAUDE_PLUGIN_DATA}/conventions"
 fi
-
-conventions_root="${CLAUDE_PLUGIN_DATA}/conventions"
 
 # ---------- Helpers ----------
 
@@ -56,7 +55,7 @@ output_skill() {
 
 # Populate convention_roots from cache directory subdirectories
 scan_cache_roots() {
-  [ -d "$conventions_root" ] || return
+  [ -d "$conventions_root" ] || return 0
   for repo_dir in "$conventions_root"/*/; do
     [ -d "$repo_dir" ] || continue
     convention_roots+=("${repo_dir%/}")

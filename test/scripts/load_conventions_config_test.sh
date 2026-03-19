@@ -205,6 +205,33 @@ EOF
   rm -rf "$tmp_dir" "$empty_plugin_data"
 }
 
+# ---------- Test 7: Config local path works without CLAUDE_PLUGIN_DATA ----------
+
+function test_config_local_path_works_without_plugin_data() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_dir)
+
+  # Create Dart project
+  touch "$tmp_dir/pubspec.yaml"
+
+  # Config points to local clone
+  mkdir -p "$tmp_dir/.claude"
+  cat > "$tmp_dir/.claude/tdd-conventions.json" << EOF
+{"conventions": ["$CONVENTIONS_CLONE/tdd-workflow-conventions"]}
+EOF
+
+  # Run WITHOUT CLAUDE_PLUGIN_DATA — local paths should still resolve
+  local output
+  output=$(cd "$tmp_dir" && unset CLAUDE_PLUGIN_DATA && bash "$SCRIPT" 2>/dev/null)
+  local rc=$?
+
+  assert_equals 0 "$rc"
+  assert_contains "dart-flutter-conventions" "$output"
+  assert_contains "Riverpod" "$output"
+
+  rm -rf "$tmp_dir"
+}
+
 # ---------- Cleanup ----------
 
 function tear_down_after_script() {
