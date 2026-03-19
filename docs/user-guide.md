@@ -529,3 +529,21 @@ This is a manual step today. The agents learn well within their own scope;
 closing the loop across agents requires human judgment about what deserves
 promotion. Consider making this part of your post-implementation review
 routine.
+
+### Future: automated promotion (not currently planned)
+
+If the manual approach proves insufficient, several automation paths exist:
+
+- **`/tdd-sync-memory` skill** — a dedicated skill that reads all agent
+  memories, identifies cross-cutting insights, and proposes promotions to
+  shared context for your review
+- **Cross-reading agent memories** — configuring agents to read each
+  other's per-agent memory directories (e.g., the planner reads the
+  implementer's memory for test pattern knowledge)
+- **SubagentStop hooks** — hooks that fire when an agent finishes and
+  extract key learnings from the agent's output for surfacing to the user
+
+None of these are currently planned. The manual approach is lightweight
+and gives you full control over what enters shared context. If you
+experiment with any of these patterns, we'd welcome feedback on what
+works.
