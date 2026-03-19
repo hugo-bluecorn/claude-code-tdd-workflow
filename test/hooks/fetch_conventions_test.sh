@@ -36,7 +36,7 @@ run_hook_in_dir() {
 # Helper: run the hook and capture stderr
 run_hook_in_dir_stderr() {
   local dir="$1"
-  (cd "$dir" && CLAUDE_PLUGIN_DATA="$dir/plugin-data" bash "$HOOK_ABS" 2>&1 >/dev/null)
+  { cd "$dir" && CLAUDE_PLUGIN_DATA="$dir/plugin-data" bash "$HOOK_ABS" 1>/dev/null; } 2>&1
 }
 
 # ---------- Test 1: Script exists and is executable ----------
