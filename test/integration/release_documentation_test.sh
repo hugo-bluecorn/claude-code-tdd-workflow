@@ -443,7 +443,7 @@ function test_readme_lists_all_agents_and_skills() {
   assert_contains "tdd-doc-finalizer" "$agents_section"
   assert_contains "context-updater" "$agents_section"
 
-  # README must still list all eight skills (5 command + 3 convention)
+  # README must still list command skills + project-conventions
   local skills_section
   skills_section=$(sed -n '/### Skills/,/^###/p' "$README_MD")
   assert_contains "/tdd-plan" "$skills_section"
@@ -451,7 +451,5 @@ function test_readme_lists_all_agents_and_skills() {
   assert_contains "/tdd-release" "$skills_section"
   assert_contains "/tdd-finalize-docs" "$skills_section"
   assert_contains "/tdd-update-context" "$skills_section"
-  assert_contains "dart-flutter-conventions" "$skills_section"
-  assert_contains "cpp-testing-conventions" "$skills_section"
-  assert_contains "bash-testing-conventions" "$skills_section"
+  assert_contains "project-conventions" "$skills_section"
 }

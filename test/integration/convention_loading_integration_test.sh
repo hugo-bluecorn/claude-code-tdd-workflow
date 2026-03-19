@@ -68,29 +68,30 @@ function test_planner_identity_test_exists() {
 }
 
 function test_planner_identity_no_dart_flutter_conventions_assertion() {
+  # The test file may use assert_not_contains with old names (that's correct — it's
+  # verifying absence). We check that no POSITIVE assertion (assert_contains/assert_file_contains)
+  # claims old convention skills are present.
   local content
-  content=$(cat "test/agents/tdd_planner_identity_test.sh")
+  content=$(grep -v "assert_not_contains\|assert_not_matches" "test/agents/tdd_planner_identity_test.sh")
   assert_not_contains "dart-flutter-conventions" "$content"
 }
 
 function test_planner_identity_no_cpp_testing_conventions_assertion() {
   local content
-  content=$(cat "test/agents/tdd_planner_identity_test.sh")
+  content=$(grep -v "assert_not_contains\|assert_not_matches" "test/agents/tdd_planner_identity_test.sh")
   assert_not_contains "cpp-testing-conventions" "$content"
 }
 
 function test_planner_identity_no_bash_testing_conventions_assertion() {
   local content
-  content=$(cat "test/agents/tdd_planner_identity_test.sh")
+  content=$(grep -v "assert_not_contains\|assert_not_matches" "test/agents/tdd_planner_identity_test.sh")
   assert_not_contains "bash-testing-conventions" "$content"
 }
 
 function test_planner_identity_no_c_conventions_assertion() {
   local content
-  content=$(cat "test/agents/tdd_planner_identity_test.sh")
-  # Must not assert old "c-conventions" skill — but "project-conventions" is fine
-  # Use regex to match c-conventions NOT preceded by "project-"
-  assert_not_matches 'assert.*[^t]-conventions"' "$content"
+  content=$(grep -v "assert_not_contains\|assert_not_matches" "test/agents/tdd_planner_identity_test.sh")
+  assert_not_contains "c-conventions" "$content"
 }
 
 function test_planner_identity_asserts_project_conventions() {

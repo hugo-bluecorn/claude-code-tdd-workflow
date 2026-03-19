@@ -54,10 +54,10 @@ function test_readme_exists() {
 }
 
 function test_readme_overview_mentions_bash() {
-  # Overview/description mentions bash or shell alongside Dart/Flutter and C++
+  # Overview/description conveys extensibility (language-agnostic since v2.0)
   local overview
   overview=$(sed -n '1,10p' "$README_MD")
-  assert_matches "bash|Bash|shell|Shell" "$overview"
+  assert_matches "extensible|convention" "$overview"
 }
 
 function test_readme_hooks_mentions_sh_support() {
@@ -160,13 +160,13 @@ function test_claude_md_still_has_cpp_testing_content() {
 }
 
 function test_readme_still_mentions_dart_flutter() {
-  # README still references Dart/Flutter
-  assert_file_contains "$README_MD" "Dart/Flutter"
+  # README conveys extensible conventions (language-agnostic since v2.0)
+  assert_file_contains "$README_MD" "project-conventions"
 }
 
 function test_readme_still_mentions_cpp() {
-  # README still references C++
-  assert_file_contains "$README_MD" "C++"
+  # README conveys extensible conventions (language-agnostic since v2.0)
+  assert_file_contains "$README_MD" "convention"
 }
 
 function test_changelog_still_has_initial_release() {

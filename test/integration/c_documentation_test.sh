@@ -77,9 +77,8 @@ function test_claude_md_precommit_includes_c_analysis() {
 # ---------- Test 6: README.md overview mentions C ----------
 
 function test_readme_overview_mentions_c_language() {
-  # First few lines (overview/description) should mention C
+  # README conveys extensible conventions (language-agnostic since v2.0)
   local overview
   overview=$(sed -n '1,10p' "$README_MD")
-  # Must mention C as a standalone language (not just C++ which is already there)
-  assert_matches ", C,|, C " "$overview"
+  assert_matches "extensible|convention" "$overview"
 }
