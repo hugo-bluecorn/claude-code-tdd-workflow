@@ -29,6 +29,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 - `skills/project-conventions/SKILL.md` — dynamic convention loading skill
+- `scripts/load-conventions.sh` — project type detection and convention content loading
+- `hooks/fetch-conventions.sh` — SessionStart hook for cloning/refreshing convention repos
+- SessionStart hook registration in `hooks/hooks.json`
+- External conventions repo `hugo-bluecorn/tdd-workflow-conventions` with all 4 language conventions
+- `.claude/tdd-conventions.json` config file support for custom convention sources
 
 
 ## [1.14.1] - 2026-03-19
