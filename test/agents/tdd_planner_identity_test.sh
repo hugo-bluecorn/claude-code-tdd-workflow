@@ -138,9 +138,7 @@ function test_planner_pretooluse_hook_removed() {
 # ---------- Test 8: Skills, memory, model, permissionMode preserved ----------
 
 function test_planner_preserved_fields() {
-  assert_file_contains "$AGENT_FILE" "dart-flutter-conventions"
-  assert_file_contains "$AGENT_FILE" "cpp-testing-conventions"
-  assert_file_contains "$AGENT_FILE" "bash-testing-conventions"
+  assert_file_contains "$AGENT_FILE" "project-conventions"
   assert_file_contains "$AGENT_FILE" "memory: project"
   assert_file_contains "$AGENT_FILE" "model: opus"
   assert_file_contains "$AGENT_FILE" "permissionMode: plan"

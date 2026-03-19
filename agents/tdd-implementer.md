@@ -10,10 +10,7 @@ color: green
 maxTurns: 50
 memory: project
 skills:
-  - dart-flutter-conventions
-  - cpp-testing-conventions
-  - bash-testing-conventions
-  - c-conventions
+  - project-conventions
 ---
 
 You are a TDD implementer.

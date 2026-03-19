@@ -20,26 +20,27 @@ extract_body() {
 
 # ---------- Test 1: Planner agent skills list includes c-conventions ----------
 
-function test_planner_skills_include_c_conventions() {
+function test_planner_skills_include_project_conventions() {
   local frontmatter
   frontmatter=$(extract_frontmatter "$PLANNER_FILE")
-  assert_contains "c-conventions" "$frontmatter"
+  assert_contains "project-conventions" "$frontmatter"
 }
 
-# ---------- Test 2: Implementer agent skills list includes c-conventions ----------
+# ---------- Test 2: Implementer agent skills list includes project-conventions ----------
 
-function test_implementer_skills_include_c_conventions() {
+function test_implementer_skills_include_project_conventions() {
   local frontmatter
   frontmatter=$(extract_frontmatter "$IMPLEMENTER_FILE")
-  assert_contains "c-conventions" "$frontmatter"
+  assert_contains "project-conventions" "$frontmatter"
 }
 
-# ---------- Test 3: Context-updater agent skills list includes c-conventions ----------
+# ---------- Test 3: Context-updater agent has no convention skills ----------
 
-function test_context_updater_skills_include_c_conventions() {
+function test_context_updater_no_convention_skills() {
   local frontmatter
   frontmatter=$(extract_frontmatter "$CONTEXT_UPDATER_FILE")
-  assert_contains "c-conventions" "$frontmatter"
+  assert_not_contains "c-conventions" "$frontmatter"
+  assert_not_contains "project-conventions" "$frontmatter"
 }
 
 # ---------- Test 4: Planner body includes C project detection ----------
@@ -50,8 +51,7 @@ function test_planner_body_has_c_project_detection() {
   # Must reference .c files for detection (distinct from .cpp/.css etc)
   # Match *.c or .c followed by a non-alphanumeric character
   assert_matches '\.c[^a-zA-Z+]' "$body"
-  # Must reference c-conventions reference directory
-  assert_contains "skills/c-conventions/reference/" "$body"
+  # Convention loading now handled by project-conventions skill
 }
 
 # ---------- Test 5: Planner body includes *_test.c in find command ----------
@@ -66,32 +66,29 @@ function test_planner_body_has_test_c_in_find_command() {
 
 # ---------- Test 6: Existing skills not removed from planner ----------
 
-function test_planner_existing_skills_preserved() {
+function test_planner_uses_project_conventions() {
   local frontmatter
   frontmatter=$(extract_frontmatter "$PLANNER_FILE")
-  assert_contains "dart-flutter-conventions" "$frontmatter"
-  assert_contains "cpp-testing-conventions" "$frontmatter"
-  assert_contains "bash-testing-conventions" "$frontmatter"
+  assert_contains "project-conventions" "$frontmatter"
 }
 
-# ---------- Test 7: Existing skills not removed from implementer ----------
+# ---------- Test 7: Implementer uses project-conventions ----------
 
-function test_implementer_existing_skills_preserved() {
+function test_implementer_uses_project_conventions() {
   local frontmatter
   frontmatter=$(extract_frontmatter "$IMPLEMENTER_FILE")
-  assert_contains "dart-flutter-conventions" "$frontmatter"
-  assert_contains "cpp-testing-conventions" "$frontmatter"
-  assert_contains "bash-testing-conventions" "$frontmatter"
+  assert_contains "project-conventions" "$frontmatter"
 }
 
-# ---------- Test 8: Existing skills not removed from context-updater ----------
+# ---------- Test 8: Context-updater has no convention skills ----------
 
-function test_context_updater_existing_skills_preserved() {
+function test_context_updater_has_no_convention_skills() {
   local frontmatter
   frontmatter=$(extract_frontmatter "$CONTEXT_UPDATER_FILE")
-  assert_contains "dart-flutter-conventions" "$frontmatter"
-  assert_contains "cpp-testing-conventions" "$frontmatter"
-  assert_contains "bash-testing-conventions" "$frontmatter"
+  assert_not_contains "dart-flutter-conventions" "$frontmatter"
+  assert_not_contains "cpp-testing-conventions" "$frontmatter"
+  assert_not_contains "bash-testing-conventions" "$frontmatter"
+  assert_not_contains "c-conventions" "$frontmatter"
 }
 
 # ---------- Test 9: Planner body still has Dart and C++ detection ----------
