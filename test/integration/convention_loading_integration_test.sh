@@ -5,7 +5,6 @@
 # doc tests updated, and end-to-end DCI pipeline works.
 
 SCRIPT="$(pwd)/scripts/load-conventions.sh"
-PROJECT_ROOT="$(pwd)"
 
 # ---------- Helpers ----------
 
