@@ -17,6 +17,16 @@ create_tmp_env() {
   echo "$tmp_dir"
 }
 
+# Helper: assert a directory exists (bashunit assert_file_exists uses -f, not -d)
+assert_directory_exists() {
+  local dir="$1"
+  if [ -d "$dir" ]; then
+    assert_equals "exists" "exists"
+  else
+    assert_equals "directory $dir exists" "directory $dir does not exist"
+  fi
+}
+
 # Helper: run the hook in a given directory
 run_hook_in_dir() {
   local dir="$1"
@@ -57,13 +67,13 @@ EOF
   local rc=$?
 
   assert_equals 0 "$rc"
-  assert_file_exists "$tmp_dir/plugin-data/conventions/tdd-workflow-conventions/.git"
+  assert_directory_exists "$tmp_dir/plugin-data/conventions/tdd-workflow-conventions/.git"
 
   # Check that convention skill directories exist
-  assert_file_exists "$tmp_dir/plugin-data/conventions/tdd-workflow-conventions/dart-flutter-conventions"
-  assert_file_exists "$tmp_dir/plugin-data/conventions/tdd-workflow-conventions/cpp-testing-conventions"
-  assert_file_exists "$tmp_dir/plugin-data/conventions/tdd-workflow-conventions/bash-testing-conventions"
-  assert_file_exists "$tmp_dir/plugin-data/conventions/tdd-workflow-conventions/c-conventions"
+  assert_directory_exists "$tmp_dir/plugin-data/conventions/tdd-workflow-conventions/dart-flutter-conventions"
+  assert_directory_exists "$tmp_dir/plugin-data/conventions/tdd-workflow-conventions/cpp-testing-conventions"
+  assert_directory_exists "$tmp_dir/plugin-data/conventions/tdd-workflow-conventions/bash-testing-conventions"
+  assert_directory_exists "$tmp_dir/plugin-data/conventions/tdd-workflow-conventions/c-conventions"
 
   rm -rf "$tmp_dir"
 }
@@ -92,7 +102,7 @@ EOF
   assert_equals 0 "$rc"
 
   # The .git directory should still exist (pull, not fresh clone)
-  assert_file_exists "$tmp_dir/plugin-data/conventions/tdd-workflow-conventions/.git"
+  assert_directory_exists "$tmp_dir/plugin-data/conventions/tdd-workflow-conventions/.git"
 
   # The inode should be the same — directory was NOT replaced
   local git_inode_after
@@ -122,7 +132,11 @@ EOF
 
   # No .git directory should be in the local path (not cloned into)
   local git_dir="$tmp_dir/my-local-conventions/.git"
-  assert_file_not_exists "$git_dir"
+  if [ -d "$git_dir" ]; then
+    assert_equals "no .git directory" "found .git directory in local path"
+  else
+    assert_equals "no .git" "no .git"
+  fi
 
   # The conventions cache should be empty or not contain the local path
   local cached_count
@@ -145,7 +159,7 @@ function test_no_config_creates_empty_cache() {
   local rc=$?
 
   assert_equals 0 "$rc"
-  assert_file_exists "$tmp_dir/plugin-data/conventions"
+  assert_directory_exists "$tmp_dir/plugin-data/conventions"
 
   # Should be empty
   local count

@@ -110,6 +110,12 @@
         ]
       }
     ],
+    "SessionStart": [
+      {
+        "type": "command",
+        "command": "${CLAUDE_PLUGIN_ROOT}/hooks/fetch-conventions.sh"
+      }
+    ],
     "Stop": [
       {
         "hooks": [
