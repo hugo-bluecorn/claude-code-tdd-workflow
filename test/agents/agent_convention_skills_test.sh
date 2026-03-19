@@ -20,8 +20,6 @@ get_body() {
   sed -n '/^---$/,/^---$/d; p' "$file" | sed '/./,$!d'
 }
 
-OLD_SKILLS=("dart-flutter-conventions" "cpp-testing-conventions" "bash-testing-conventions" "c-conventions")
-
 # ===== Test 1: Planner skills field contains project-conventions =====
 
 function test_planner_skills_contains_project_conventions() {
