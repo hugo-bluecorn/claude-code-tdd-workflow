@@ -10,12 +10,12 @@ HOOK_ABS="$(pwd)/$HOOK"
 # Helper: build PreToolUse JSON for a given bash command
 build_json() {
   local cmd="$1"
-  printf '{"tool_name":"Bash","tool_input":{"command":"%s"}}\n' "$cmd"
+  printf '{"tool_name":"Bash","tool_input":{"command":"%s"},"agent_type":"tdd-workflow:tdd-planner"}\n' "$cmd"
 }
 
 # Helper: build PreToolUse JSON with no command field
 build_json_no_command() {
-  printf '{"tool_name":"Bash","tool_input":{"description":"do something"}}\n'
+  printf '{"tool_name":"Bash","tool_input":{"description":"do something"},"agent_type":"tdd-workflow:tdd-planner"}\n'
 }
 
 # Helper: run the hook with a given command, suppressing stderr
@@ -253,16 +253,12 @@ PLANNER_MD="agents/tdd-planner.md"
 
 # ---------- Test S5-1: Frontmatter contains PreToolUse Bash hook ----------
 
-function test_frontmatter_contains_pretooluse_hook() {
-  assert_file_contains "$PLANNER_MD" "PreToolUse:"
+function test_frontmatter_does_not_contain_hooks_section() {
+  assert_file_not_contains "$PLANNER_MD" "hooks:"
 }
 
-function test_frontmatter_contains_bash_matcher() {
-  assert_file_contains "$PLANNER_MD" 'matcher: "Bash"'
-}
-
-function test_frontmatter_contains_planner_bash_guard_hook() {
-  assert_file_contains "$PLANNER_MD" "planner-bash-guard.sh"
+function test_frontmatter_does_not_contain_pretooluse() {
+  assert_file_not_contains "$PLANNER_MD" "PreToolUse:"
 }
 
 # ---------- Edge Case: Existing frontmatter fields preserved ----------
@@ -390,33 +386,22 @@ function test_agent_type_verifier_passes_through_dangerous_command() {
   assert_exit_code 0
 }
 
-# ---------- Test AT6: Empty agent_type preserves original behavior ----------
+# ---------- Test AT6: Empty agent_type passes through (main thread) ----------
 
-function test_agent_type_empty_preserves_original_blocking() {
-  run_hook "python3 --version"
-  assert_exit_code 2
+function test_agent_type_empty_passes_through() {
+  # Send JSON without agent_type to simulate main thread
+  local json
+  json='{"tool_name":"Bash","tool_input":{"command":"python3 --version"}}'
+  echo "$json" | bash "$HOOK_ABS" 2>/dev/null
+  assert_exit_code 0
 }
 
-function test_agent_type_empty_preserves_original_blocking_stderr() {
-  local stderr_output
-  stderr_output=$(run_hook_stderr "python3 --version")
-  assert_contains "BLOCKED" "$stderr_output"
-}
+# ---------- Test AT7: Null agent_type passes through (main thread) ----------
 
-# ---------- Test AT7: Null agent_type preserves original behavior ----------
-
-function test_agent_type_null_preserves_original_blocking() {
+function test_agent_type_null_passes_through() {
   local json
   json='{"tool_name":"Bash","tool_input":{"command":"python3 --version"},"agent_type":null}'
   echo "$json" | bash "$HOOK_ABS" 2>/dev/null
-  assert_exit_code 2
-}
-
-function test_agent_type_null_preserves_original_blocking_stderr() {
-  local json stderr_output
-  json='{"tool_name":"Bash","tool_input":{"command":"python3 --version"},"agent_type":null}'
-  # shellcheck disable=SC2069
-  stderr_output=$(echo "$json" | bash "$HOOK_ABS" 2>&1 >/dev/null)
-  assert_contains "BLOCKED" "$stderr_output"
+  assert_exit_code 0
 }
 

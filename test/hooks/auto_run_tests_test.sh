@@ -10,7 +10,7 @@ HOOK_ABS="$PROJECT_ROOT/$HOOK"
 # Helper: build PostToolUse JSON for a given file path
 build_json() {
   local file_path="$1"
-  printf '{"tool_name":"Write","tool_input":{"file_path":"%s","content":"echo hello"}}\n' "$file_path"
+  printf '{"tool_name":"Write","tool_input":{"file_path":"%s","content":"echo hello"},"agent_type":"tdd-workflow:tdd-implementer"}\n' "$file_path"
 }
 
 # Helper: run the hook with a given file path from the project root
@@ -689,9 +689,9 @@ function test_non_implementer_agent_type_passes_through_silently() {
   rm -rf "$tmp_dir"
 }
 
-# ---------- Guard Test 4: Empty agent_type preserves original behavior ----------
+# ---------- Guard Test 4: Empty agent_type passes through silently (main thread) ----------
 
-function test_empty_agent_type_preserves_original_behavior() {
+function test_empty_agent_type_passes_through_silently() {
   local tmp_dir
   tmp_dir=$(create_tmp_env --with-bashunit)
 
@@ -700,13 +700,16 @@ function test_empty_agent_type_preserves_original_behavior() {
   echo '#!/bin/bash' > "$tmp_dir/hooks/my_script.sh"
   echo '#!/bin/bash' > "$tmp_dir/test/hooks/my_script_test.sh"
 
-  # JSON with no agent_type field at all
+  # JSON with no agent_type field at all — main thread should pass through
   local json
-  json=$(build_json "hooks/my_script.sh")
+  json='{"tool_name":"Write","tool_input":{"file_path":"hooks/my_script.sh","content":"echo hello"}}'
   local output
+  local exit_code
   output=$(cd "$tmp_dir" && echo "$json" | bash "$tmp_dir/$HOOK" 2>/dev/null)
+  exit_code=$?
 
-  assert_contains "systemMessage" "$output"
+  assert_equals 0 "$exit_code"
+  assert_equals "" "$output"
 
   rm -rf "$tmp_dir"
 }

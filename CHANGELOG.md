@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
 
+## [1.14.1] - 2026-03-19
+
+### Fixed
+- agent_type guard in hook scripts no longer blocks main thread Bash commands
+- Empty/absent agent_type now treated as main thread (pass-through) instead of target agent
+
+### Removed
+- Removed hooks: sections from agent frontmatter (planner, implementer, verifier, context-updater) — hooks.json is now the sole delivery path
+- Deleted agent_frontmatter_preservation_test.sh (replaced by hooks.json-only testing)
+
+
 ## [1.14.0] - 2026-03-18
 
 ### Added

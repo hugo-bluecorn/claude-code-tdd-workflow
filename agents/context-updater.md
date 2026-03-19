@@ -17,21 +17,6 @@ skills:
   - cpp-testing-conventions
   - bash-testing-conventions
   - c-conventions
-hooks:
-  Stop:
-    - hooks:
-        - type: prompt
-          prompt: >
-            The context-updater agent is stopping. Check:
-            1. Did it research latest framework versions via web search?
-            2. Did it produce a structured change proposal?
-            3. Did it ask for user approval before making edits?
-            4. If approved, did it apply the changes?
-            Respond {"ok": true} if the workflow completed or was
-            intentionally aborted by the user (Discard).
-            Respond {"ok": false, "reason": "..."} if the agent
-            stopped prematurely without completing or getting user input.
-          timeout: 15
 ---
 
 You are a context-updater agent. Your job is to research the latest framework
