@@ -31,13 +31,6 @@ run_load_in_dir() {
   (cd "$dir" && CLAUDE_PLUGIN_DATA="$plugin_data" bash "$SCRIPT" 2>/dev/null)
 }
 
-# Run load-conventions.sh capturing stderr
-run_load_in_dir_stderr() {
-  local dir="$1"
-  local plugin_data="$2"
-  (cd "$dir" && CLAUDE_PLUGIN_DATA="$plugin_data" bash "$SCRIPT" 2>&1 >/dev/null)
-}
-
 # ---------- Suite setup / teardown ----------
 
 function set_up() {

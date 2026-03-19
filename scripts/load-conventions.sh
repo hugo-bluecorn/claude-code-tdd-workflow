@@ -22,56 +22,35 @@ if [ ! -d "$conventions_root" ]; then
   exit 0
 fi
 
+# ---------- Helpers ----------
+
+# Returns 0 if any files matching the glob pattern exist (excluding .git/)
+has_files() {
+  local pattern="$1"
+  [ "$(find . -name "$pattern" -not -path "./.git/*" 2>/dev/null | head -1 | wc -l)" -gt 0 ]
+}
+
 # ---------- Detect project types ----------
-
-detect_dart=false
-detect_cpp=false
-detect_bash=false
-detect_c=false
-
-# Dart/Flutter: pubspec.yaml
-if [ -f "pubspec.yaml" ]; then
-  detect_dart=true
-fi
-
-# C++: CMakeLists.txt with .cpp source files
-if [ -f "CMakeLists.txt" ]; then
-  cpp_count=$(find . -name "*.cpp" -not -path "./.git/*" 2>/dev/null | head -1 | wc -l)
-  if [ "$cpp_count" -gt 0 ]; then
-    detect_cpp=true
-  fi
-fi
-
-# Bash: _test.sh files or .bashunit.yml
-if [ -f ".bashunit.yml" ]; then
-  detect_bash=true
-else
-  bash_count=$(find . -name "*_test.sh" -not -path "./.git/*" 2>/dev/null | head -1 | wc -l)
-  if [ "$bash_count" -gt 0 ]; then
-    detect_bash=true
-  fi
-fi
-
-# C: .c source files
-c_count=$(find . -name "*.c" -not -path "./.git/*" 2>/dev/null | head -1 | wc -l)
-if [ "$c_count" -gt 0 ]; then
-  detect_c=true
-fi
-
-# ---------- Map detected types to convention directory names ----------
 
 declare -a skills=()
 
-if [ "$detect_dart" = true ]; then
+# Dart/Flutter: pubspec.yaml
+if [ -f "pubspec.yaml" ]; then
   skills+=("dart-flutter-conventions")
 fi
-if [ "$detect_cpp" = true ]; then
+
+# C++: CMakeLists.txt with .cpp source files
+if [ -f "CMakeLists.txt" ] && has_files "*.cpp"; then
   skills+=("cpp-testing-conventions")
 fi
-if [ "$detect_bash" = true ]; then
+
+# Bash: _test.sh files or .bashunit.yml
+if [ -f ".bashunit.yml" ] || has_files "*_test.sh"; then
   skills+=("bash-testing-conventions")
 fi
-if [ "$detect_c" = true ]; then
+
+# C: .c source files
+if has_files "*.c"; then
   skills+=("c-conventions")
 fi
 
@@ -110,7 +89,6 @@ for repo_dir in "$conventions_root"/*/; do
   done
 done
 
-# Ensure clean exit even if no output was generated
 if [ "$output_generated" = false ]; then
   exit 0
 fi
