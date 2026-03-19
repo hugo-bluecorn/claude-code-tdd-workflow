@@ -30,8 +30,8 @@ function test_body_contains_dci_invocation() {
   content=$(cat "$SKILL_FILE")
   # DCI syntax: !`path/to/script`
   assert_contains "load-conventions.sh" "$content"
-  # Verify it uses the !` DCI pattern
-  assert_matches '!\`' "$content"
+  # Verify it uses the !` DCI pattern (backtick after !)
+  assert_contains '!`' "$content"
 }
 
 function test_dci_references_plugin_root_variable() {
@@ -60,5 +60,8 @@ function test_no_unfilled_template_placeholders() {
   assert_file_exists "$SKILL_FILE"
   local content
   content=$(cat "$SKILL_FILE")
-  assert_not_matches '\{[a-zA-Z_]+\}' "$content"
+  # Match {placeholder} but not ${VARIABLE} (shell variables are intentional)
+  local stripped
+  stripped=$(echo "$content" | sed 's/\${[^}]*}//g')
+  assert_not_matches '\{[a-zA-Z_]+\}' "$stripped"
 }
