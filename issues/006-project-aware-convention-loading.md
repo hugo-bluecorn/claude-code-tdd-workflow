@@ -324,3 +324,8 @@ language-specific patterns preloaded.
 - Convention scaffolding — a future `/tdd-create-convention` skill that
   helps users create new convention packages from scratch when no existing
   package exists for their language/framework (separate issue)
+- Context-updater agent scope — currently exists to update convention
+  reference files locally. With conventions externalized, its purpose needs
+  rethinking (keep for plugin? useful for customers? still needed?).
+  For this issue: just remove convention skills from its frontmatter like
+  the other agents. Scope redesign is a separate decision.
