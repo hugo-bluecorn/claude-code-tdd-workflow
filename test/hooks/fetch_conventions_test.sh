@@ -214,18 +214,24 @@ function test_hooks_json_has_session_start_section() {
 
 function test_hooks_json_session_start_references_fetch_conventions() {
   local command
-  command=$(jq -r '.hooks.SessionStart[].command // .hooks.SessionStart[].hooks[]?.command // empty' "$HOOKS_JSON" 2>/dev/null)
-
-  # Try the direct format first
-  if [ -z "$command" ]; then
-    command=$(jq -r '.hooks.SessionStart[] | .command // empty' "$HOOKS_JSON" 2>/dev/null)
-  fi
-
+  command=$(jq -r '.hooks.SessionStart[].hooks[].command' "$HOOKS_JSON" 2>/dev/null)
   assert_contains "fetch-conventions.sh" "$command"
 }
 
 function test_hooks_json_session_start_type_is_command() {
   local hook_type
-  hook_type=$(jq -r '.hooks.SessionStart[] | .type // empty' "$HOOKS_JSON" 2>/dev/null)
+  hook_type=$(jq -r '.hooks.SessionStart[].hooks[].type' "$HOOKS_JSON" 2>/dev/null)
   assert_equals "command" "$hook_type"
+}
+
+function test_hooks_json_session_start_has_hooks_array_wrapper() {
+  # SessionStart entries must use the { "hooks": [...] } wrapper structure,
+  # matching all other events in hooks.json
+  local has_hooks_key
+  has_hooks_key=$(jq -r '.hooks.SessionStart[0] | has("hooks")' "$HOOKS_JSON" 2>/dev/null)
+  assert_equals "true" "$has_hooks_key"
+
+  local hooks_type
+  hooks_type=$(jq -r '.hooks.SessionStart[0].hooks | type' "$HOOKS_JSON" 2>/dev/null)
+  assert_equals "array" "$hooks_type"
 }
