@@ -1,7 +1,7 @@
 # `/tdd-init-roles` — Project-Specific Role Initializer
 
 > **Date:** 2026-03-15
-> **Extends:** `explorations/role-to-agent-analysis/analysis.md`
+> **Extends:** `explorations/assessments/role-to-agent-analysis.md`
 > **Motivation:** The prior analysis concluded "keep roles as documentation."
 > That conclusion had a blind spot: the generic roles in `docs/dev-roles/`
 > must be manually customized for every new project. This document analyzes
