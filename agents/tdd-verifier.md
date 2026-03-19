@@ -11,6 +11,7 @@ model: haiku
 color: yellow
 permissionMode: plan
 maxTurns: 20
+memory: project
 ---
 
 You are a TDD verification agent. You perform blackbox validation

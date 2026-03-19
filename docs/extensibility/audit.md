@@ -71,7 +71,7 @@ current implementation. Update it after each significant plugin change.
 | Planner `project` | ✅ | `.claude/agent-memory/tdd-planner/MEMORY.md` — persists architecture, naming, test framework findings |
 | Implementer `project` | ✅ | `.claude/agent-memory/tdd-implementer/MEMORY.md` — accumulates test fixtures, assertion styles, edge cases |
 | Context-updater `project` | ✅ | `.claude/agent-memory/context-updater/MEMORY.md` — persists framework version findings |
-| Verifier | ⊘ | Procedural work, no cross-session learning needed |
+| Verifier `project` | ✅ | `.claude/agent-memory/tdd-verifier/MEMORY.md` — accumulates test runner commands, failure patterns, flaky tests, static analysis quirks |
 | Releaser | ⊘ | Each release is independent, no cross-session learning needed |
 | Doc-finalizer | ⊘ | Each release is independent |
 

@@ -476,3 +476,56 @@ This workflow only modifies reference content files and SKILL.md quick reference
 - `skills/cpp-testing-conventions/` — C++ GoogleTest patterns, CMake integration, and Clang tooling
 - `skills/c-conventions/` — C testing patterns (Unity/CMock), coding standards (BARR-C/SEI CERT C), and static analysis
 - `skills/bash-testing-conventions/` — Bash testing with bashunit and shellcheck
+
+---
+
+## Addendum: Agent Memory and Knowledge Promotion
+
+> **Status:** Developing concept. This guidance reflects current understanding
+> of how the plugin's agents learn and how that knowledge can be leveraged
+> across sessions.
+
+### How the agents learn
+
+Three of the plugin's work agents have persistent memory (`memory: project`):
+
+| Agent | Memory location | What it learns |
+|---|---|---|
+| tdd-planner | `.claude/agent-memory/tdd-planner/` | Architecture patterns, naming conventions, test framework preferences |
+| tdd-implementer | `.claude/agent-memory/tdd-implementer/` | Assertion styles, test fixtures, edge case patterns, common pitfalls |
+| tdd-verifier | `.claude/agent-memory/tdd-verifier/` | Test runner commands, failure patterns, flaky tests, static analysis quirks |
+| context-updater | `.claude/agent-memory/context-updater/` | Framework version findings, URL validity, update history |
+
+Each agent accumulates domain-specific knowledge across invocations. This
+happens automatically — the agent writes what it learns, and reloads it on
+the next run.
+
+### The promotion gap
+
+Agent memories are **siloed by design**. The planner doesn't see what the
+implementer learned, and neither feeds into your project's shared memory
+(MEMORY.md or CLAUDE.md) automatically. Valuable insights — a test pattern
+that works well, an architectural constraint discovered during implementation,
+a framework quirk — stay locked in the agent that found them.
+
+### Recommended practice
+
+After a feature completes (all slices implemented, tests green), review
+the work agents' per-agent memory for insights worth promoting to your
+project's shared context:
+
+1. **Read agent memories** — check `.claude/agent-memory/tdd-planner/MEMORY.md`
+   and `.claude/agent-memory/tdd-implementer/MEMORY.md` for new entries
+2. **Identify project-wide insights** — patterns, conventions, or constraints
+   that would benefit future planning and implementation, not just the agent
+   that discovered them
+3. **Promote to shared context** — add relevant insights to your project's
+   CLAUDE.md, auto-memory, or convention documentation where all sessions
+   and agents can access them
+4. **Prune stale agent memory** — remove entries that were specific to a
+   completed feature and no longer apply
+
+This is a manual step today. The agents learn well within their own scope;
+closing the loop across agents requires human judgment about what deserves
+promotion. Consider making this part of your post-implementation review
+routine.
