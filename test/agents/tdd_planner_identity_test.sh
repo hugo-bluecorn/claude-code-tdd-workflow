@@ -158,6 +158,91 @@ function test_planner_body_contains_planning_process() {
   assert_contains "## Planning Process" "$body"
 }
 
+# ===== Slice 8: Planner Body Convention-Loading Instructions Removal =====
+
+# ---------- Test S8-1: Body does not instruct reading convention reference dirs ----------
+
+function test_planner_body_no_read_every_file_instruction() {
+  local body
+  body=$(get_body)
+  assert_not_contains "read every file" "$body"
+}
+
+function test_planner_body_no_read_all_reference_files_instruction() {
+  local body
+  body=$(get_body)
+  assert_not_contains "read all" "$body"
+}
+
+function test_planner_body_no_hardcoded_dart_convention_skill_name() {
+  local body
+  body=$(get_body)
+  assert_not_contains "dart-flutter-conventions" "$body"
+}
+
+function test_planner_body_no_hardcoded_cpp_convention_skill_name() {
+  local body
+  body=$(get_body)
+  assert_not_contains "cpp-testing-conventions" "$body"
+}
+
+function test_planner_body_no_hardcoded_bash_convention_skill_name() {
+  local body
+  body=$(get_body)
+  assert_not_contains "bash-testing-conventions" "$body"
+}
+
+function test_planner_body_no_hardcoded_c_convention_skill_name() {
+  local body
+  body=$(get_body)
+  assert_not_contains "c-conventions" "$body"
+}
+
+# ---------- Test S8-2: Body still has project detection instructions ----------
+
+function test_planner_body_still_has_detect_project_context() {
+  local body
+  body=$(get_body)
+  assert_contains "detect-project-context.sh" "$body"
+}
+
+# ---------- Test S8-3: Body does not reference convention skill file patterns in loading context ----------
+
+function test_planner_body_no_convention_loading_with_test_dart_pattern() {
+  # The body may reference *_test.dart in research context (find command),
+  # but should NOT have it in a "load conventions" or "read reference" context.
+  # Extract only the "Load convention references" section.
+  local load_section
+  load_section=$(get_body | sed -n '/### Load convention references/,/^###/p')
+  assert_not_contains "_test.dart" "$load_section"
+}
+
+# ---------- Test S8-4: Body still has general planning process instructions ----------
+
+function test_planner_body_still_has_planning_process_section() {
+  local body
+  body=$(get_body)
+  assert_contains "## Planning Process" "$body"
+}
+
+function test_planner_body_still_has_key_principles() {
+  local body
+  body=$(get_body)
+  assert_contains "## Key Principles" "$body"
+}
+
+function test_planner_body_still_has_output_format() {
+  local body
+  body=$(get_body)
+  assert_contains "## Output Format" "$body"
+}
+
+function test_planner_body_still_has_constraints() {
+  local body
+  body=$(get_body)
+  assert_contains "## Constraints" "$body"
+}
+
 # ===== Slice 6: CLAUDE.md Documentation Updates =====
 
 CLAUDE_FILE="CLAUDE.md"
