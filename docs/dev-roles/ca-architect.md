@@ -42,7 +42,7 @@ that every TDD agent has done its job correctly.
 - Update memory after each milestone (plan approved, implementation complete, release merged)
 - Record architectural decisions, open questions, and follow-up items
 - Clean up stale entries (completed features, resolved blockers)
-- Create topic files (e.g., `memory/c-conventions-plan.md`) for feature-specific
+- Create topic files (e.g., `memory/feature-plan.md`) for feature-specific
   context that would bloat MEMORY.md. Delete them when the feature ships.
 - **CA is the sole memory writer.** CP and CI read memory but never write to it.
   This keeps shared state coherent — one author, no conflicts.

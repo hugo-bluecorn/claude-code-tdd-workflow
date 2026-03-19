@@ -163,11 +163,13 @@ Before proposing commits, ensure:
 
 ## Plugin Convention Skills
 
-The plugin dynamically loads language conventions based on project configuration:
+The plugin is **language-agnostic** — no language convention content is shipped.
+Conventions are loaded dynamically from external sources at agent startup:
 
-| Skill | Behavior | Reference Docs |
-|-------|----------|----------------|
-| `project-conventions` | Dynamic loading based on project type; loads cached convention files at agent startup via `.claude/tdd-conventions.json` | Configured per project |
+- **Source:** configured in `.claude/tdd-conventions.json` (URLs or local paths)
+- **Official conventions:** `https://github.com/hugo-bluecorn/tdd-workflow-conventions` (Dart/Flutter, C++, C, Bash)
+- **Mechanism:** `project-conventions` skill uses `load-conventions.sh` via DCI (`!`cmd``) to detect project type and inject only relevant conventions
+- **Caching:** `fetch-conventions.sh` SessionStart hook clones/refreshes repos to `${CLAUDE_PLUGIN_DATA}/conventions/`
 
 Planning reference templates (used by tdd-planner agent):
 - `skills/tdd-plan/reference/tdd-task-template.md` — test specification format

@@ -30,6 +30,50 @@ Look for `loading plugin: tdd-workflow` in the output. The `/tdd-plan`, `/tdd-im
 
 ---
 
+## Configuring Convention Sources
+
+The plugin is language-agnostic — it ships no language convention content. Conventions are loaded dynamically from external sources configured per project.
+
+### Setup
+
+Create `.claude/tdd-conventions.json` in your project root:
+
+```json
+{
+  "conventions": [
+    "https://github.com/hugo-bluecorn/tdd-workflow-conventions"
+  ]
+}
+```
+
+The official repo includes conventions for Dart/Flutter, C++, C, and Bash. You can also point to local directories or your own convention repos:
+
+```json
+{
+  "conventions": [
+    "https://github.com/hugo-bluecorn/tdd-workflow-conventions",
+    "/home/user/my-rust-conventions"
+  ]
+}
+```
+
+### How it works
+
+1. **SessionStart hook** (`fetch-conventions.sh`) clones or refreshes URL sources to `${CLAUDE_PLUGIN_DATA}/conventions/` on each session start
+2. **Agent startup** — when a TDD agent spawns, the `project-conventions` skill runs `load-conventions.sh` via Dynamic Context Injection
+3. **Project detection** — the script detects your project type (pubspec.yaml → Dart, CMakeLists.txt + .cpp → C++, .c files → C, _test.sh → Bash) and outputs only relevant conventions
+4. **Multi-language** — projects using multiple languages get all relevant conventions loaded
+
+### Without configuration
+
+If no `.claude/tdd-conventions.json` exists, agents run without language convention context. They still work — they just don't have language-specific testing patterns preloaded.
+
+### Local development with --plugin-dir
+
+When using `--plugin-dir` for local plugin development, `${CLAUDE_PLUGIN_DATA}` is not set. URL sources won't be cached. Use local paths in your config instead.
+
+---
+
 ## Updating the Plugin
 
 How you update depends on how the plugin was installed.

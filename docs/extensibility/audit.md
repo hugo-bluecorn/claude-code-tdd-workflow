@@ -1,7 +1,7 @@
 # TDD Workflow Plugin — Claude Code Extensibility Audit
 
-**Revision date:** 2026-03-18
-**Plugin version:** 1.14.0
+**Revision date:** 2026-03-19
+**Plugin version:** 2.0.0
 **Feature inventory:** audit-prompt.md v3.0 (2026-03-18)
 **Previous audit:** audit-v1.6.6.md (2026-02-20, v2.1 inventory)
 
@@ -37,8 +37,8 @@ current implementation. Update it after each significant plugin change.
 | A5 | `model` | ✅ | Planner/implementer/context-updater: `opus`. Verifier: `haiku`. Releaser/doc-finalizer: `sonnet` |
 | A6 | `permissionMode` | ✅ | Planner: `plan`. Verifier: `plan`. Others: default (correct — need interactive approval or write access) |
 | A7 | `maxTurns` | ✅ | Planner: 30. Implementer: 50. Verifier: 20. Releaser: 30. Doc-finalizer: 30. Context-updater: 50 |
-| A8 | `skills` | ✅ | Planner, implementer, context-updater preload all 4 convention skills: `dart-flutter-conventions`, `cpp-testing-conventions`, `bash-testing-conventions`, `c-conventions` |
-| A9 | `memory` | ✅ | Planner: `project`. Implementer: `project`. Context-updater: `project`. Others: none (correct — procedural/independent work) |
+| A8 | `skills` | ✅ | Planner, implementer: `project-conventions` (dynamic loading via DCI). Context-updater: `skills: []` (no conventions — scope redesign deferred). Others: none |
+| A9 | `memory` | ✅ | Planner: `project`. Implementer: `project`. Verifier: `project`. Context-updater: `project`. Others: none (correct — procedural/independent work) |
 | A10 | `mcpServers` | ⊘ | No MCP servers provide value for TDD workflow |
 | A11 | `hooks` | ✅ | Planner: PreToolUse Bash guard. Implementer: PreToolUse + PostToolUse. Verifier: Stop (prompt). Releaser: Stop (command). Doc-finalizer: Stop (command). Context-updater: Stop (prompt) |
 | A12 | `background` | ⊘ | TDD phases are sequential by design |
@@ -83,7 +83,7 @@ current implementation. Update it after each significant plugin change.
 
 | # | Field | Status | Notes |
 |---|-------|--------|-------|
-| B1 | `name` | ✅ | All 9 skills: 5 workflow (`tdd-plan`, `tdd-implement`, `tdd-release`, `tdd-finalize-docs`, `tdd-update-context`) + 4 convention |
+| B1 | `name` | ✅ | All 6 skills: 5 workflow (`tdd-plan`, `tdd-implement`, `tdd-release`, `tdd-finalize-docs`, `tdd-update-context`) + 1 convention (`project-conventions`) |
 | B2 | `description` | ✅ | All skills have descriptions with trigger phrases |
 | B3 | `argument-hint` | ✅ | `/tdd-plan` has `argument-hint: "[feature description]"` |
 | B4 | `disable-model-invocation` | ✅ | Set on `/tdd-plan`, `/tdd-release`, `/tdd-finalize-docs`, `/tdd-update-context` |
@@ -258,18 +258,8 @@ tdd-workflow/                               Status
 │   │   └── SKILL.md                        ✅
 │   ├── tdd-update-context/
 │   │   └── SKILL.md                        ✅
-│   ├── dart-flutter-conventions/
-│   │   ├── SKILL.md                        ✅
-│   │   └── reference/  (6 files)           ✅
-│   ├── cpp-testing-conventions/
-│   │   ├── SKILL.md                        ✅
-│   │   └── reference/  (4 files)           ✅
-│   ├── bash-testing-conventions/
-│   │   ├── SKILL.md                        ✅
-│   │   └── reference/  (2 files)           ✅
-│   └── c-conventions/
-│       ├── SKILL.md                        ✅
-│       └── reference/  (3 files)           ✅
+│   └── project-conventions/
+│       └── SKILL.md                        ✅  (DCI loads external conventions)
 ├── hooks/
 │   ├── hooks.json                          ✅
 │   ├── validate-tdd-order.sh               ✅
@@ -619,8 +609,7 @@ relevance to this plugin:
 
 ---
 
-*Audit completed 2026-03-18 against v3.0 feature inventory.*
-*Plugin version: 1.13.0. 6 agents, 9 skills, 7 hook scripts, 3 utility scripts.*
-*617 tests, 875 assertions.*
-*Critical finding: A27/D27 plugin agent restrictions affect all 6 agents.*
-*Next audit: after M1 mitigation is implemented.*
+*Audit updated 2026-03-19 against v3.0 feature inventory.*
+*Plugin version: 2.0.0. 6 agents, 6 skills (5 workflow + 1 dynamic convention), 7 hook scripts, 3 utility scripts.*
+*647 tests, 941 assertions.*
+*A27/D27 resolved in v1.14.0. Convention externalization completed in v2.0.0.*

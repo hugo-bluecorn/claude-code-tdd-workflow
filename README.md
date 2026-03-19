@@ -113,6 +113,7 @@ Done
 | SubagentStop (implementer) | prompt | Verifies R-G-R cycle completion |
 | SubagentStop (tdd-verifier) | prompt | Validates verifier ran full test suite and static analysis |
 | SubagentStop (context-updater) | prompt | Validates framework version changes require user approval |
+| fetch-conventions.sh | SessionStart (command) | Clones/refreshes convention repos to `${CLAUDE_PLUGIN_DATA}/conventions/` |
 
 > **Dual delivery:** Hook scripts are registered in both agent frontmatter and `hooks.json`. Agent frontmatter hooks work for local development; `hooks.json` session-level hooks ensure enforcement when the plugin is installed from a marketplace (where frontmatter hooks are silently ignored).
 
