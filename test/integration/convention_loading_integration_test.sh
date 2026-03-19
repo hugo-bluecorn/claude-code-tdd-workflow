@@ -130,11 +130,21 @@ function test_bash_doc_test_exists() {
   assert_file_exists "test/integration/bash_documentation_test.sh"
 }
 
-function test_bash_doc_test_no_bash_testing_conventions_in_skills_table_assert() {
-  local content
-  content=$(cat "test/integration/bash_documentation_test.sh")
-  # Should not assert bash-testing-conventions is present in CLAUDE.md skills table
-  assert_not_contains "bash-testing-conventions" "$content"
+function test_bash_doc_test_no_bash_testing_conventions_in_claude_md_assert() {
+  # Should not assert bash-testing-conventions in CLAUDE.md (skills table assertions removed)
+  # CHANGELOG references are fine (historical entries)
+  local claude_md_lines
+  claude_md_lines=$(grep -n "CLAUDE_MD.*bash-testing-conventions\|bash-testing-conventions.*CLAUDE_MD" \
+    "test/integration/bash_documentation_test.sh" || true)
+  assert_empty "$claude_md_lines"
+}
+
+function test_bash_doc_test_no_bash_testing_conventions_in_readme_skills_assert() {
+  # Should not assert bash-testing-conventions in README skills table
+  local readme_skills_lines
+  readme_skills_lines=$(grep -n "README_MD.*bash-testing-conventions\|bash-testing-conventions.*README" \
+    "test/integration/bash_documentation_test.sh" || true)
+  assert_empty "$readme_skills_lines"
 }
 
 # ---------- Test 6: C documentation test has no old skill name assertions ----------

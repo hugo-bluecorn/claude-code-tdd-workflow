@@ -2,41 +2,16 @@
 
 # Test suite for documentation updates: CLAUDE.md, README.md, CHANGELOG.md
 # Verifies that bash/shell support is documented alongside Dart/Flutter and C++
+# Updated for v2.0: old convention skill names removed from assertions
 
 CLAUDE_MD="CLAUDE.md"
 README_MD="README.md"
 CHANGELOG_MD="CHANGELOG.md"
 
-# ---------- Test 1: CLAUDE.md references bash-testing-conventions skill ----------
+# ---------- Test 1: CLAUDE.md has Bash Testing content ----------
 
 function test_claude_md_exists() {
   assert_file_exists "$CLAUDE_MD"
-}
-
-function test_claude_md_plugin_skills_table_has_bash_row() {
-  # The Plugin Convention Skills table must include bash-testing-conventions
-  assert_file_contains "$CLAUDE_MD" "bash-testing-conventions"
-}
-
-function test_claude_md_bash_skill_triggers_on_sh_files() {
-  # The triggers column for bash skill mentions .sh files
-  local table_line
-  table_line=$(grep "bash-testing-conventions" "$CLAUDE_MD" | head -1)
-  assert_contains ".sh" "$table_line"
-}
-
-function test_claude_md_bash_skill_references_bashunit_patterns() {
-  # The reference docs column mentions bashunit-patterns
-  local table_line
-  table_line=$(grep "bash-testing-conventions" "$CLAUDE_MD" | head -1)
-  assert_contains "bashunit-patterns" "$table_line"
-}
-
-function test_claude_md_bash_skill_references_shellcheck_guide() {
-  # The reference docs column mentions shellcheck-guide
-  local table_line
-  table_line=$(grep "bash-testing-conventions" "$CLAUDE_MD" | head -1)
-  assert_contains "shellcheck-guide" "$table_line"
 }
 
 function test_claude_md_has_bash_testing_subsection() {
@@ -80,22 +55,9 @@ function test_readme_exists() {
 
 function test_readme_overview_mentions_bash() {
   # Overview/description mentions bash or shell alongside Dart/Flutter and C++
-  # Check the first few lines for bash/shell reference
   local overview
   overview=$(sed -n '1,10p' "$README_MD")
   assert_matches "bash|Bash|shell|Shell" "$overview"
-}
-
-function test_readme_skills_table_has_bash() {
-  # Skills table includes bash-testing-conventions
-  assert_file_contains "$README_MD" "bash-testing-conventions"
-}
-
-function test_readme_file_structure_has_bash_conventions_dir() {
-  # File Structure section shows bash-testing-conventions/ directory
-  local file_structure
-  file_structure=$(sed -n '/## File Structure/,/^##/p' "$README_MD")
-  assert_contains "bash-testing-conventions" "$file_structure"
 }
 
 function test_readme_hooks_mentions_sh_support() {
@@ -185,17 +147,7 @@ function test_changelog_has_permissions_entry() {
   assert_matches "permission|Permission" "$section"
 }
 
-# ---------- Edge Cases: Additive-only documentation ----------
-
-function test_claude_md_still_has_dart_flutter_skill() {
-  # Existing dart-flutter-conventions skill must still be present
-  assert_file_contains "$CLAUDE_MD" "dart-flutter-conventions"
-}
-
-function test_claude_md_still_has_cpp_skill() {
-  # Existing cpp-testing-conventions skill must still be present
-  assert_file_contains "$CLAUDE_MD" "cpp-testing-conventions"
-}
+# ---------- Edge Cases: Preserved non-convention documentation ----------
 
 function test_claude_md_still_has_dart_testing_content() {
   # Testing Approach still has Dart test content
@@ -215,14 +167,6 @@ function test_readme_still_mentions_dart_flutter() {
 function test_readme_still_mentions_cpp() {
   # README still references C++
   assert_file_contains "$README_MD" "C++"
-}
-
-function test_readme_still_has_dart_conventions_in_skills() {
-  assert_file_contains "$README_MD" "dart-flutter-conventions"
-}
-
-function test_readme_still_has_cpp_conventions_in_skills() {
-  assert_file_contains "$README_MD" "cpp-testing-conventions"
 }
 
 function test_changelog_still_has_initial_release() {
