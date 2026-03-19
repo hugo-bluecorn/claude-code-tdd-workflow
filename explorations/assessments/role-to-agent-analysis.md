@@ -1,8 +1,8 @@
 # Dev Roles as Claude Code Agents/Skills — Feasibility Analysis
 
-> **Date:** 2026-03-15
-> **Plugin version:** 1.13.0
-> **Extensibility inventory:** extensibility-audit-prompt.md v2.1
+> **Date:** 2026-03-15 (revised 2026-03-19)
+> **Plugin version:** 1.14.1
+> **Extensibility inventory:** extensibility-audit-prompt.md v3.0
 > **Scope:** Should the three dev roles (CA, CP, CI) be converted to
 > formal Claude Code agents, skills, or some hybrid? How would they
 > integrate into the tdd-workflow plugin?
@@ -58,14 +58,24 @@ Today, constraints like "CA never writes code" or "CI never runs `/tdd-plan`"
 are enforced by convention — the developer follows the prompt. Claude Code
 offers multiple mechanisms to make enforcement mechanical:
 
-| Mechanism | Enforcement Type | Granularity |
-|-----------|-----------------|-------------|
-| Agent `tools` allowlist (A3) | Hard — tool unavailable | Per-agent |
-| Agent `disallowedTools` (A4) | Hard — tool blocked | Per-agent |
-| `permissions.deny` (F2) | Hard — permission denied | Per-session/project |
-| `permissionMode` (A6) | Hard — read-only modes | Per-agent |
-| PreToolUse hooks (C3) | Soft — can block with exit 2 | Per-tool pattern |
-| Skill `disable-model-invocation` (B4) | Soft — Claude won't auto-invoke | Per-skill |
+| Mechanism | Enforcement Type | Granularity | Plugin-safe? |
+|-----------|-----------------|-------------|--------------|
+| Agent `tools` allowlist (A3) | Hard — tool unavailable | Per-agent | Yes |
+| Agent `disallowedTools` (A4) | Hard — tool blocked | Per-agent | Yes |
+| `permissions.deny` (F2) | Hard — permission denied | Per-session/project | Yes |
+| `permissionMode` (A6) | Hard — read-only modes | Per-agent | **No** — silently ignored for plugin agents (A27/D27) |
+| PreToolUse hooks (C4) | Soft — can block with exit 2 | Per-tool pattern | Only via `hooks.json` with `agent_type` guard |
+| Skill `disable-model-invocation` (B4) | Soft — Claude won't auto-invoke | Per-skill | Yes |
+
+> **Lesson from Issue 004/005 (v1.14.0–v1.14.1):** Plugin agent restrictions
+> (A27/D27) silently strip `hooks`, `mcpServers`, and `permissionMode` from
+> plugin agent frontmatter. The tdd-workflow plugin learned this the hard way:
+> Issue 004 required 7 slices and 74 tests to implement `agent_type` guard
+> enforcement via `hooks.json`. Issue 005 then found the guard logic blocked
+> the main thread when `agent_type` was absent — a subtle bug requiring
+> another fix. Frontmatter hooks are now confirmed dead code; `hooks.json`
+> is the **sole delivery path**. Any hypothetical role-agent enforcement
+> would face the same complexity.
 
 ### 2.2 Formalization: Should the role become a first-class plugin component?
 
@@ -115,29 +125,35 @@ execute, return result. Subagents cannot:
 - Have multi-turn conversations with the user (they run autonomously)
 - Span multiple user interactions (each invocation is one task)
 - Invoke skills (no Skill tool available to subagents)
-- Spawn other subagents (A16: no-nesting constraint)
+- Spawn other subagents (A18: no-nesting constraint)
 
 CA's job is to *be the conversation partner*. It decides, reviews, and
 iterates over multiple exchanges. This is the antithesis of a fire-and-forget
 subagent.
 
 **Extensibility features that confirm this:**
-- A16 (no-nesting) prevents CA from spawning planner/implementer/verifier
-- A17 (background execution) prevents CA from monitoring ongoing work
+- A18 (no-nesting) prevents CA from spawning planner/implementer/verifier
+- A19 (background execution) prevents CA from monitoring ongoing work
 - Subagents lack AskUserQuestion in most configurations
 - No mechanism for a subagent to "be" the session
 
-#### CA as `--agent` Main Thread? **MAYBE**
+#### CA as `--agent` Main Thread? **MAYBE — stronger case since v3.0**
 
-The `--agent` flag (A13, A19) runs Claude Code *as* a specific agent. This
-replaces the default system prompt with the agent's definition. Unlike
-subagents, a `--agent` session:
+The `--agent` flag (A25) and `agent` setting (F13) run Claude Code *as* a
+specific agent. This replaces the default system prompt with the agent's
+definition. Unlike subagents, an `--agent` session:
 - IS the main thread — full conversational capability
 - CAN spawn subagents via the Agent tool
 - CAN use skills via the Skill tool
 - Has full user interaction
 
 This is the only mechanism that matches CA's conversational nature.
+
+**v3.0 update:** The `agent` setting (F13) now persists across session
+resumes. This makes role-as-agent significantly more practical: set it once
+and every `claude --resume` preserves the role identity. This addresses the
+original concern that `--agent` was only for headless/SDK use — it is now a
+first-class interactive session feature.
 
 **What it would look like:**
 
@@ -153,14 +169,14 @@ tools: Read, Glob, Grep, Bash, Write, Edit, Agent, Skill, AskUserQuestion
 model: opus
 color: red
 memory: project
-hooks:
-  PreToolUse:
-    - matcher: "Write|Edit"
-      hooks:
-        - type: command
-          command: "${CLAUDE_PLUGIN_ROOT}/hooks/ca-write-guard.sh"
 ---
 ```
+
+> **Note (v1.14.1):** Plugin agent frontmatter `hooks` are silently ignored
+> (A27/D27). Write-path enforcement for CA would require a `hooks.json`
+> entry with an `agent_type` guard filtering on `ca-architect`, following the
+> same pattern established for Issue 004. The `ca-write-guard.sh` hook would
+> go in `hooks.json`, not in the agent frontmatter.
 
 The `ca-write-guard.sh` hook would allow writes only to:
 - `issues/*.md`
@@ -176,15 +192,17 @@ And block writes to:
 
 **Problems with this approach:**
 
-1. **`--agent` is designed for headless/SDK use.** While it works
-   interactively, it's not the expected usage pattern. The agent's system
-   prompt *replaces* Claude's default, which means losing built-in behaviors
-   (auto-memory, status line, etc.) unless explicitly re-added.
+1. **System prompt replacement.** The agent's system prompt *replaces*
+   Claude's default, which means losing built-in behaviors (auto-memory,
+   status line, etc.) unless explicitly re-added. ~~The `--agent` flag was
+   designed for headless/SDK use~~ — the `agent` setting (F13) now makes
+   this a supported interactive pattern, but the system prompt loss remains.
 
 2. **Tool restriction is too blunt.** The `tools` allowlist would need to
    include Agent and Skill (so CA can delegate to CP and CI) but there's no
    way to say "allow Agent but only for research, not implementation." The
-   hook-based guard is the right answer, but it adds complexity.
+   hook-based guard is the right answer, but it adds complexity — and must
+   go in `hooks.json` with `agent_type` filtering (A27/D27 constraint).
 
 3. **Session isolation is lost.** If CA, CP, and CI become agents invocable
    from a single session, the context window pressure problem returns. The
@@ -194,7 +212,9 @@ And block writes to:
    three terminals, you'd have one terminal doing `claude --agent ca-architect`,
    then separately `claude --agent ci-implementer`. This is functionally
    identical to the current model (paste prompt into each session) but with
-   mechanical enforcement.
+   mechanical enforcement. The `agent` setting persistence (F13) makes this
+   smoother — resume always restores the role — but doesn't change the
+   fundamental equivalence.
 
 #### CA as Skill? **PARTIALLY — specific functions only**
 
@@ -264,7 +284,7 @@ But:
    sections, refactoring leaks, and incomplete formats.
 2. Iteration memory is handled by the `/tdd-plan` skill's Step 3 (Modify
    path), which resumes the planner subagent with user feedback using
-   agent resumption (A12).
+   agent resumption (A14).
 
 **Conclusion:** CP as a separate role is an artifact of the pre-plugin era
 when planning happened in a raw Claude session without orchestration. The
@@ -282,7 +302,7 @@ User → /tdd-plan (skill) → tdd-planner (agent) ← this is CP, mechanized
 ```
 
 Adding a cp-planner agent between the skill and tdd-planner would:
-- Violate A16 (no-nesting) — cp-planner couldn't spawn tdd-planner
+- Violate A18 (no-nesting) — cp-planner couldn't spawn tdd-planner
 - Duplicate orchestration logic already in the `/tdd-plan` skill
 - Add latency and token cost for zero functional benefit
 
@@ -332,7 +352,7 @@ Same fundamental problems as CA:
 - Multi-step workflow spanning multiple user interactions
 - Needs to invoke skills (`/tdd-implement`, `/tdd-release`)
 - Needs to spawn subagents (Agent tool)
-- Subagents can't do either (no Skill tool, A16 no-nesting)
+- Subagents can't do either (no Skill tool, A18 no-nesting)
 
 #### CI as `--agent` Main Thread? **MAYBE — strongest case of the three**
 
@@ -467,10 +487,22 @@ The roles define constraints ("CA never writes code", "CI never runs
 - Over-restriction prevents legitimate flexibility (what if CA needs to
   make a quick direct edit for testing?)
 
+**Empirical evidence (Issue 004/005):** The plugin's own experience with
+enforcement is instructive. Adding `agent_type`-based hook enforcement for
+6 existing agents required 7 implementation slices and 74 new tests (Issue
+004). The guard logic then introduced a subtle bug — blocking the main
+thread when `agent_type` was absent — requiring a follow-up fix (Issue 005,
+net -8 tests after removing dead frontmatter hooks). Total cost: ~80 tests,
+two releases, and a production bug, just to enforce constraints on agents
+that were *already designed with correct tool restrictions*. Enforcement for
+hypothetical role-agents (which have broader tool access and need
+path-based write guards) would be significantly more complex.
+
 **Assessment:** Mechanical enforcement is overkill for a single-developer
-workflow. It becomes valuable if the plugin is used by a team where
-different developers operate different roles, or in an automated pipeline
-where agents operate unsupervised.
+workflow, and the empirical cost from Issue 004/005 confirms this — the
+complexity-to-risk ratio is unfavorable. Enforcement becomes valuable if
+the plugin is used by a team where different developers operate different
+roles, or in an automated pipeline where agents operate unsupervised.
 
 ### 4.4 The Naming Collision Problem
 
@@ -491,7 +523,7 @@ Role agents (hypothetical):
 ```
 
 The role agents are *meta-agents* — they orchestrate the work agents. But
-Claude Code's subagent model doesn't support nesting (A16). A role-agent
+Claude Code's subagent model doesn't support nesting (A18). A role-agent
 can't spawn a work-agent. Only the main thread can spawn agents.
 
 This means role-agents can only work as `--agent` main thread sessions, not
@@ -535,7 +567,7 @@ the CI rule auto-activates.
 for review), rules don't enforce constraints (they inject context, not
 restrictions), consuming projects would need to adopt these files
 
-### Architecture C: Roles as `--agent` Sessions
+### Architecture C: Roles as `--agent` / `agent` Sessions
 
 **Convert CA and CI to `--agent` definitions. Retire CP.**
 
@@ -550,12 +582,18 @@ claude --agent tdd-workflow:ci-implementer
 /tdd-plan <feature>
 ```
 
+The `agent` setting (F13) persists across resumes, so role identity survives
+session interruptions. @-mention invocation (A24) lets users delegate to
+specific agents within a session.
+
 **Pros:** Mechanical enforcement, clear session identity, role is the
-session's DNA rather than a pasted prompt
+session's DNA rather than a pasted prompt, `agent` setting persists across
+resumes (F13)
 **Cons:** `--agent` replaces default system prompt (loses built-in
 behaviors), adds two new agent files that look like but are fundamentally
-different from the existing four work agents, `--agent` is designed for
-headless/SDK use
+different from the existing four work agents, plugin agent restrictions
+(A27/D27) mean frontmatter hooks don't work — enforcement must go through
+`hooks.json` with `agent_type` guards
 
 ### Architecture D: Roles as Inline Skills (Role Injection)
 
@@ -921,10 +959,10 @@ instructions from CA.
 **Why:** CP is entirely redundant with `/tdd-plan` + `tdd-planner`. Creating
 a cp-planner agent would either:
 - Duplicate the tdd-planner (pointless)
-- Wrap the tdd-planner (impossible — A16 no-nesting)
+- Wrap the tdd-planner (impossible — A18 no-nesting)
 - Replace the tdd-planner (breaking existing workflow)
 
-### 8.2 Do Not Create `--agent` Main Thread Definitions
+### 8.2 Do Not Create `--agent` Main Thread Definitions (reassessed v3.0)
 
 **Why:** The `--agent` flag replaces Claude's default system prompt, losing
 built-in behaviors (auto-memory, status line, etc.). The enforcement benefit
@@ -932,9 +970,14 @@ built-in behaviors (auto-memory, status line, etc.). The enforcement benefit
 accidentally running `/tdd-plan` in a CI session is near zero — they chose
 to use that session for implementation.
 
-Furthermore, `--agent` is primarily designed for headless/SDK use and
-automated pipelines, not interactive development sessions. Using it for
-role enforcement stretches the mechanism beyond its intended purpose.
+**v3.0 reassessment:** The `agent` setting (F13) now persists across session
+resumes, making `--agent` a first-class interactive feature rather than a
+headless/SDK-only pattern. This weakens the original objection but doesn't
+eliminate it — the system prompt replacement concern remains, and plugin
+agent restrictions (A27/D27) mean frontmatter hooks are silently ignored,
+so any constraint enforcement must go through `hooks.json` with `agent_type`
+guards. The recommendation remains "do not" for the current single-developer
+workflow, but this is closer to "not yet" than "never."
 
 ### 8.3 Do Not Create a `/tdd-full-cycle` Skill
 
@@ -961,6 +1004,17 @@ as tool restrictions or hook guards. The constraints that CAN be mechanized
 ("don't write code", "don't run /tdd-plan") address near-zero-risk
 scenarios. The complexity of hooks, guards, and permission rules outweighs
 the benefit.
+
+**Reinforced by Issue 004/005:** The plugin's experience adding enforcement
+for its own 6 work-agents demonstrates the true cost: 7 slices, 74 tests,
+a production bug (main-thread blocking from absent `agent_type`), and a
+follow-up hotfix. All for agents whose `tools` allowlists already provided
+correct restrictions. Role-agents would need *path-based* write guards
+(allow `issues/*.md` but block `agents/*.md`) — significantly more complex
+than the tool-name guards in Issue 004. The guard scripts would need to
+parse file paths from `tool_input`, handle edge cases (relative vs absolute
+paths, symlinks, new directories), and go through `hooks.json` with
+`agent_type` filtering (frontmatter hooks are dead code per A27/D27).
 
 Exception: if the plugin is used in a **multi-developer team** or
 **automated pipeline** where different people/systems operate different
@@ -1023,12 +1077,12 @@ The Available Commands table would gain:
 The Session Roles section of CLAUDE.md would need to reference the skills
 and note CP's retirement.
 
-### 9.6 Skill Budget Impact (B22)
+### 9.6 Skill Budget Impact (B23)
 
 Current skills: 6 (tdd-plan, tdd-implement, tdd-release, tdd-finalize-docs,
 tdd-update-context + 4 convention skills = 9 total descriptions in context).
 
-Adding 2-4 more skills keeps us well within the 2% budget (B22). Each skill
+Adding 2-4 more skills keeps us well within the 2% budget (B23). Each skill
 description is ~2-3 lines. Total description text would be ~400-500 chars,
 far under the 16k char default budget.
 
@@ -1095,12 +1149,27 @@ impact (deprecation of a non-plugin component).
 | Agent `tools` allowlist | A3 | Could enforce CA/CI constraints |
 | Agent `disallowedTools` | A4 | Could block specific tools per role |
 | Agent `permissionMode` | A6 | Could make CA read-only |
-| `--agent` main thread | A13, A19 | Could make roles into session identities |
-| No-nesting constraint | A16 | Prevents role-agents from spawning work-agents |
+| Subagent resumption | A14 | Planner iteration via feedback loop |
+| No-nesting constraint | A18 | Prevents role-agents from spawning work-agents |
+| @-mention invocation | A24 | Users can delegate to specific agents |
+| `--agent` / `agent` setting | A25, F13 | Could make roles into session identities. `agent` setting persists across resumes (v3.0) |
+| Plugin agent restrictions | A27 | **Resolved v1.14.0.** Frontmatter hooks silently ignored; enforcement must use hooks.json with `agent_type` guards |
 | Skill `disable-model-invocation` | B4 | Prevents Claude from auto-loading role skills |
 | Skill `context: fork` | B8 | Could isolate role context |
 | SessionStart hook | C1 | Mechanizes startup checklist |
-| PreToolUse hooks | C3 | Could enforce write restrictions |
+| PreToolUse hooks | C4 | Could enforce write restrictions |
+| Plugin `settings.json` | D26 | Could ship default `agent` setting (only `agent` field supported) |
+| Plugin agent restrictions | D27 | Same as A27 — hooks.json sole delivery path |
 | `permissions.deny` | F2 | Could block specific skills per role |
+| `agent` setting | F13 | Persists agent mode across resumes; makes `--agent` a first-class interactive feature |
 | Rules files with `paths:` | E3, E9 | Path-based role activation (rejected) |
 | Auto-memory | E7 | Role-specific memory scopes |
+
+---
+
+## Revision History
+
+| Date | Changes |
+|------|---------|
+| 2026-03-19 | **v2 — Updated to inventory v3.0 and plugin v1.14.1.** Feature IDs renumbered throughout (A12→A14, A13→A25, A16→A18, A17→A19, B22→B23, C3→C4). Substantive changes: (1) `agent` setting (F13) makes `--agent` a first-class interactive feature — strengthens Architecture C case, revised §3.1 and §8.2 assessments from "designed for headless/SDK" to "supported interactive pattern, but system prompt replacement concern remains." (2) A27/D27 plugin agent restrictions resolved in v1.14.0 — agent frontmatter hooks are dead code, all enforcement must use hooks.json with `agent_type` guards. Updated §3.1 CA agent spec to remove frontmatter hooks, added note about hooks.json requirement. (3) Issue 004/005 empirical evidence integrated into §2.1 (enforcement mechanisms table gains Plugin-safe? column + blockquote), §4.3 (enforcement cost data), and §8.5 (path-based guard complexity). The 7-slice, 74-test, one-bug cost of enforcing constraints on well-restricted agents strengthens the "enforcement is overkill" assessment. (4) Added A24, A27, D26, D27, F13 to appendix. Overall recommendation unchanged: Architecture E (Hybrid) remains correct. |
+| 2026-03-15 | v1 — Original analysis against inventory v2.1, plugin v1.13.0. |
