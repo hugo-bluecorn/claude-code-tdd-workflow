@@ -6,13 +6,13 @@
 REPO="hugo-bluecorn/tdd-workflow-conventions"
 CLONE_DIR=""
 
-# Clone once for all file-based tests
-setup() {
+# Clone once for all tests in this file
+set_up_before_script() {
   CLONE_DIR=$(mktemp -d)
   git clone --depth 1 "https://github.com/${REPO}.git" "$CLONE_DIR/repo" 2>/dev/null
 }
 
-teardown() {
+tear_down_after_script() {
   rm -rf "$CLONE_DIR"
 }
 
@@ -64,9 +64,8 @@ function test_reference_files_present_and_nonempty() {
   local conventions=("dart-flutter-conventions" "cpp-testing-conventions" "bash-testing-conventions" "c-conventions")
   for conv in "${conventions[@]}"; do
     local ref_dir="$CLONE_DIR/repo/$conv/reference"
-    assert_file_exists "$ref_dir"
 
-    # Check at least one .md file exists and is non-empty
+    # Check at least one non-empty .md file exists in reference/
     local md_count
     md_count=$(find "$ref_dir" -name "*.md" -size +0c 2>/dev/null | wc -l)
     assert_greater_or_equal_than 1 "$md_count"
