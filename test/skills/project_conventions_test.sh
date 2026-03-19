@@ -62,6 +62,6 @@ function test_no_unfilled_template_placeholders() {
   content=$(cat "$SKILL_FILE")
   # Match {placeholder} but not ${VARIABLE} (shell variables are intentional)
   local stripped
-  stripped=$(echo "$content" | sed 's/\${[^}]*}//g')
+  stripped=${content//\$\{*\}/}
   assert_not_matches '\{[a-zA-Z_]+\}' "$stripped"
 }
