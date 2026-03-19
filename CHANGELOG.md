@@ -6,6 +6,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
 
+## [2.0.0] - 2026-03-19
+
+### Changed
+- **BREAKING:** Convention externalization — language-specific convention skills
+  (`dart-flutter-conventions`, `cpp-testing-conventions`, `c-conventions`,
+  `bash-testing-conventions`) removed from plugin. Conventions are now loaded
+  dynamically via the `project-conventions` skill based on project configuration
+  in `.claude/tdd-conventions.json`
+- Plugin ships as a language-agnostic TDD framework; language conventions are
+  maintained externally and cached per-project
+- Agents no longer hardcode language convention skills in `skills:` frontmatter
+- `detect-project-context.sh` updated to support dynamic convention discovery
+- CLAUDE.md, README.md, and user-guide.md updated to reflect language-agnostic
+  architecture
+
+### Removed
+- `skills/dart-flutter-conventions/` — externalized
+- `skills/cpp-testing-conventions/` — externalized
+- `skills/c-conventions/` — externalized
+- `skills/bash-testing-conventions/` — externalized
+
+### Added
+- `skills/project-conventions/SKILL.md` — dynamic convention loading skill
+
+
 ## [1.14.1] - 2026-03-19
 
 ### Fixed

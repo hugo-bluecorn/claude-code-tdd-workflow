@@ -1,6 +1,6 @@
 # tdd-workflow
 
-A Claude Code plugin for Test-Driven Development with context-isolated agents. Enforces red-green-refactor discipline for Dart/Flutter, C++, C, and Bash/Shell projects.
+A Claude Code plugin for Test-Driven Development with context-isolated agents. Enforces red-green-refactor discipline with extensible, project-configured language conventions.
 
 ## Overview
 
@@ -96,10 +96,7 @@ Done
 | `/tdd-release` | Release entry point (forks context) |
 | `/tdd-finalize-docs` | Post-release documentation finalization (forks context) |
 | `/tdd-update-context` | Updates convention reference files to latest versions |
-| dart-flutter-conventions | Convention reference (auto-loaded by agents) |
-| cpp-testing-conventions | Convention reference (auto-loaded by agents) |
-| c-conventions | Convention reference (auto-loaded by agents) |
-| bash-testing-conventions | Convention reference (auto-loaded by agents) |
+| project-conventions | Dynamic convention loading based on project configuration |
 
 ### Hooks
 
@@ -166,33 +163,8 @@ tdd-workflow/
 │   │   └── SKILL.md
 │   ├── tdd-update-context/
 │   │   └── SKILL.md
-│   ├── dart-flutter-conventions/
-│   │   ├── SKILL.md
-│   │   └── reference/
-│   │       ├── test-patterns.md
-│   │       ├── test-recipes.md
-│   │       ├── mocking-guide.md
-│   │       ├── widget-testing.md
-│   │       ├── project-conventions.md
-│   │       └── riverpod-guide.md
-│   ├── cpp-testing-conventions/
-│   │   ├── SKILL.md
-│   │   └── reference/
-│   │       ├── googletest-patterns.md
-│   │       ├── cmake-integration.md
-│   │       ├── googlemock-guide.md
-│   │       └── clang-tooling.md
-│   ├── c-conventions/
-│   │   ├── SKILL.md
-│   │   └── reference/
-│   │       ├── c-testing-patterns.md
-│   │       ├── c-coding-standards.md
-│   │       └── c-static-analysis.md
-│   └── bash-testing-conventions/
-│       ├── SKILL.md
-│       └── reference/
-│           ├── bashunit-patterns.md
-│           └── shellcheck-guide.md
+│   └── project-conventions/
+│       └── SKILL.md
 ├── hooks/
 │   ├── hooks.json
 │   ├── validate-tdd-order.sh

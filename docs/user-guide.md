@@ -359,9 +359,9 @@ The planner runs in `permissionMode: plan` by default. The planner is read-only 
 
 ### Changing state management or architecture
 
-The planner follows whatever conventions are defined in
-`skills/dart-flutter-conventions/reference/project-conventions.md`. To switch
-from Riverpod to Bloc, Provider, or any other approach:
+The planner follows whatever conventions are loaded by the `project-conventions`
+skill from your project's cached convention files. To switch from Riverpod to
+Bloc, Provider, or any other approach:
 
 1. Edit `project-conventions.md`
 2. Update the **State Management** section with your preferred solution and code examples
@@ -472,10 +472,7 @@ This workflow only modifies reference content files and SKILL.md quick reference
 
 - `README.md` — Architecture overview and component listing
 - `skills/tdd-release/reference/version-control.md` — Git workflow and commit conventions
-- `skills/dart-flutter-conventions/` — Dart/Flutter testing patterns, project conventions, Riverpod guide, and test recipes
-- `skills/cpp-testing-conventions/` — C++ GoogleTest patterns, CMake integration, and Clang tooling
-- `skills/c-conventions/` — C testing patterns (Unity/CMock), coding standards (BARR-C/SEI CERT C), and static analysis
-- `skills/bash-testing-conventions/` — Bash testing with bashunit and shellcheck
+- `skills/project-conventions/` — Dynamic convention loading based on project configuration
 
 ---
 
