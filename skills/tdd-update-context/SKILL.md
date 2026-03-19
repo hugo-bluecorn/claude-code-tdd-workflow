@@ -23,10 +23,8 @@ workflow with mandatory user approval before any edits.
 ## Process
 
 0. **Load and follow convention references** (mandatory, do this first):
-   - Dart/Flutter projects: read every file in `skills/dart-flutter-conventions/reference/`
-   - C++ projects: read every file in `skills/cpp-testing-conventions/reference/`
-   - C projects: read every file in `skills/c-conventions/reference/`
-   - Bash projects: read every file in `skills/bash-testing-conventions/reference/`
+   - Read cached convention files from the conventions cache directory
+   - Use `project-conventions` skill to identify which conventions are relevant
    - Also read each convention `SKILL.md` for the quick-reference sections
    Note the framework versions, API patterns, and conventions currently documented.
    Do not proceed to step 1 until all reference files are loaded.
