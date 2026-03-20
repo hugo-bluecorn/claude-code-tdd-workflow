@@ -1,11 +1,13 @@
 # Claude Code Configuration — TDD Workflow Plugin
 
-> **PRIME DIRECTIVE:** The roles system (`/tdd-init-roles`, `/role-*`,
-> `/tdd-role-evolve`) is an OPTIONAL enhancement layer. The core TDD
-> workflow (plan → implement → verify → release) must NEVER depend on
-> role files existing. No agent, skill, hook, or script in the core
-> workflow may check for, reference, or require role files. This
-> constraint is absolute and applies to all future development.
+> **PRIME DIRECTIVE:** The roles system (`/role-init`, `/role-ca`,
+> `/role-cp`, `/role-ci`, `/role-evolve`) is an OPTIONAL enhancement
+> layer. The core TDD workflow (plan → implement → verify → release)
+> must NEVER depend on role files existing. No agent, skill, hook, or
+> script in the core workflow may check for, reference, or require role
+> files. This constraint is absolute and applies to all future
+> development. Role skills use the `role-` prefix; core workflow skills
+> use the `tdd-` prefix. The naming itself enforces the boundary.
 
 This project uses the **tdd-workflow** plugin for test-driven development.
 The plugin provides six specialized agents that collaborate through a

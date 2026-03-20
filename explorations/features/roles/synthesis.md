@@ -100,9 +100,16 @@ multi-session coordination, context management, and workflow encoding. They
 are never a prerequisite.
 
 No agent, skill, hook, or script in the core workflow may check for,
-reference, or depend on role files. The `/tdd-init-roles`, `/role-*`, and
-`/tdd-role-evolve` features are self-contained additions that compose with
-the core workflow but do not modify it.
+reference, or depend on role files. The `/role-init`, `/role-ca`,
+`/role-cp`, `/role-ci`, and `/role-evolve` features are self-contained
+additions that compose with the core workflow but do not modify it.
+
+**Naming convention enforces the boundary:**
+
+| Prefix | System | Optional? |
+|---|---|---|
+| `tdd-*` | Core workflow (plan, implement, release, verify, etc.) | No — this IS the plugin |
+| `role-*` | Role management (init, evolve, ca, cp, ci) | Yes — enhancement layer |
 
 ### 2.2 Roles should NOT become agents
 
@@ -124,7 +131,7 @@ write guards would be significantly more complex.
 
 The manual process of creating project-specific role files is repeated for
 every new project, requires significant context gathering, and produces
-inconsistent quality. `/tdd-init-roles` automates this as a skill + forked
+inconsistent quality. `/role-init` automates this as a skill + forked
 agent, matching the proven pattern of `/tdd-plan` + `tdd-planner`.
 
 ### 2.4 Three roles, two layers
@@ -134,7 +141,7 @@ Every role has two layers:
 | Layer | Provided by | Changes when |
 |---|---|---|
 | **Role definition** | The plugin (templates in `reference/`) | Plugin is updated |
-| **Role context** | `/tdd-init-roles` per project | Project evolves |
+| **Role context** | `/role-init` per project | Project evolves |
 
 The role definition is the job description — identical across projects.
 The role context is the project-specific knowledge — unique to each project,
@@ -147,8 +154,8 @@ triggers, mechanisms, and complexity:
 
 | Skill | Purpose | Trigger | Core input | Ships in |
 |---|---|---|---|---|
-| `/tdd-init-roles` | First-time generation | New project or fresh start | Codebase + CLAUDE.md + human input | v2.1 (next) |
-| `/tdd-role-evolve` | Memory-driven refinement | Project has grown, roles are stale | **Agent memory + MEMORY.md** + codebase delta | v2.2+ (future) |
+| `/role-init` | First-time generation | New project or fresh start | Codebase + CLAUDE.md + human input | v2.1 (next) |
+| `/role-evolve` | Memory-driven refinement | Project has grown, roles are stale | **Agent memory + MEMORY.md** + codebase delta | v2.2+ (future) |
 
 **Why two skills, not one:**
 - Different mental models: creation vs. refinement
@@ -161,15 +168,15 @@ triggers, mechanisms, and complexity:
 #### The lifecycle stages
 
 ```
-v1 (post-spec):  /tdd-init-roles  → generate from codebase + human input
-v2 (post-plan):  /tdd-role-evolve → enrich from planner memory + MEMORY.md
-v3 (post-impl):  /tdd-role-evolve → enrich from all agent memories + MEMORY.md
-vN (evolution):  /tdd-role-evolve → keep roles current as memory accumulates
+v1 (post-spec):  /role-init  → generate from codebase + human input
+v2 (post-plan):  /role-evolve → enrich from planner memory + MEMORY.md
+v3 (post-impl):  /role-evolve → enrich from all agent memories + MEMORY.md
+vN (evolution):  /role-evolve → keep roles current as memory accumulates
 ```
 
 #### Role evolution is memory-driven
 
-`/tdd-role-evolve` is NOT primarily about detecting codebase changes — it's
+`/role-evolve` is NOT primarily about detecting codebase changes — it's
 about **synthesizing what agents and CA learned into updated role context**.
 Each role's evolution has a clear memory source:
 
@@ -190,7 +197,7 @@ Evolve can't produce value until there IS meaningful memory — which is why
 it only becomes useful at v2+ lifecycle stages, and why init must exist
 separately for v1.
 
-For this implementation: **build `/tdd-init-roles` only.** `/tdd-role-evolve`
+For this implementation: **build `/role-init` only.** `/role-evolve`
 is a separate future issue, designed after learning from real init usage.
 
 ### 2.6 Memory is the coordination backbone
@@ -265,7 +272,7 @@ Human knowledge (role context)     Machine knowledge (agent memory)
    pastes into session              startup automatically
 ```
 
-- **Role context** (from `/tdd-init-roles`) provides what humans know:
+- **Role context** (from `/role-init`) provides what humans know:
   architecture intent, cross-repo relationships, decomposition strategy,
   stakeholder constraints. This is knowledge that research alone can't
   discover.
@@ -278,7 +285,7 @@ will plan mechanically well but miss strategic constraints. A planner with
 good role context but no memory will understand strategy but rediscover
 basic patterns every time.
 
-#### Memory Implications for `/tdd-init-roles`
+#### Memory Implications for `/role-init`
 
 The role-initializer agent can **read** agent memory files as a research
 input. At v3 (post-implementation), agent memory contains valuable
@@ -366,18 +373,18 @@ This works because external context skills use `user-invocable: false`
 conversation context matches their descriptions.
 
 **Prerequisite:** External context skills must be installed in `.claude/skills/`
-BEFORE invoking the role delivery skills. Without `/tdd-role-evolve` (future),
+BEFORE invoking the role delivery skills. Without `/role-evolve` (future),
 there is no mechanism to discover or recommend which skills to install —
-the developer manages this manually. A future `/tdd-role-evolve` could
+the developer manages this manually. A future `/role-evolve` could
 detect framework usage and recommend missing skills.
 
 **The three features compose into a complete workflow:**
 
 | Feature | What it does | When it runs |
 |---|---|---|
-| `/tdd-init-roles` | Generates project-specific role content | Once per project (or on major changes) |
+| `/role-init` | Generates project-specific role content | Once per project (or on major changes) |
 | `/role-ca`, `/role-cp`, `/role-ci` | Delivers role + conventions + startup into session | Every session start |
-| `/tdd-role-evolve` | Updates role content from accumulated memory | As project matures |
+| `/role-evolve` | Updates role content from accumulated memory | As project matures |
 
 `/role-ca`, `/role-cp`, and `/role-ci` are **not optional convenience
 wrappers** — they are the delivery mechanism that unifies role context and
@@ -422,7 +429,7 @@ strategy — decomposition patterns, slice ordering, test batching, historical
 failures, stakeholder constraints — is human knowledge the planner can't
 discover. This context makes `/tdd-plan` more effective for a specific project.
 
-**Resolution:** `/tdd-init-roles` generates three files:
+**Resolution:** `/role-init` generates three files:
 
 | File | Purpose | Content weight |
 |---|---|---|
@@ -517,13 +524,13 @@ is identical across projects — only content varies.
 
 ---
 
-## 5. `/tdd-init-roles` Specification
+## 5. `/role-init` Specification
 
 ### 5.1 Skill Definition
 
 ```yaml
 ---
-name: tdd-init-roles
+name: role-init
 description: >
   Generate project-specific role files (CA, CI, CP) for the TDD
   three-session workflow. Researches the codebase, detects tech stack
@@ -547,7 +554,7 @@ name: role-initializer
 description: >
   Researches a project and generates customized TDD session role files
   (CA architect, CI implementer, CP planner context). Spawned by
-  /tdd-init-roles. Interactive via AskUserQuestion.
+  /role-init. Interactive via AskUserQuestion.
 tools: Read, Write, Glob, Grep, Bash, AskUserQuestion
 model: opus
 color: blue
@@ -611,7 +618,7 @@ Phase 5: REVIEW
 ### 5.4 Plugin File Structure
 
 ```
-skills/tdd-init-roles/
+skills/role-init/
   SKILL.md
   reference/
     ca-template.md       # Fixed sections for CA
@@ -627,16 +634,16 @@ agents/
 
 ```bash
 # Basic — research current project
-/tdd-init-roles
+/role-init
 
 # With human domain context
-/tdd-init-roles This is a Rust project for ROS 2 applications
+/role-init This is a Rust project for ROS 2 applications
 
 # With related project paths
-/tdd-init-roles ../zenoh-counter-dart ../zenoh-counter-flutter
+/role-init ../zenoh-counter-dart ../zenoh-counter-flutter
 
 # Combined
-/tdd-init-roles Rust ROS 2 project, related to ../zenoh-counter-dart
+/role-init Rust ROS 2 project, related to ../zenoh-counter-dart
 ```
 
 ### 5.6 Idempotency (v1)
@@ -656,8 +663,8 @@ Full diff-based incremental update mode is deferred to v2.
 
 | Component | Type | Files | Conflict Risk |
 |---|---|---|---|
-| `/tdd-init-roles` | Skill | `skills/tdd-init-roles/SKILL.md` | None |
-| Role templates | Reference | `skills/tdd-init-roles/reference/` (4 files) | None |
+| `/role-init` | Skill | `skills/role-init/SKILL.md` | None |
+| Role templates | Reference | `skills/role-init/reference/` (4 files) | None |
 | `role-initializer` | Agent | `agents/role-initializer.md` | None |
 
 ### 6.2 Integration with Existing Components
@@ -704,11 +711,11 @@ Checked against the extensibility audit (v3.0 inventory, v2.0.0 assessment).
 | `memory` | None | A9 | Correct — one-time task, output is the generated files. Agent READS other agents' memory as research input but doesn't need its own persistent state. Reconsider for v2 incremental updates |
 | `hooks` | None | A11 | Correct — no enforcement needed. **Note:** would be silently ignored anyway (A27) |
 
-### 7.2 Skill Correctness (/tdd-init-roles)
+### 7.2 Skill Correctness (/role-init)
 
 | Field | Value | Audit Ref | Valid? |
 |---|---|---|---|
-| `name` | `tdd-init-roles` | B1 | Yes |
+| `name` | `role-init` | B1 | Yes |
 | `description` | Trigger phrases included | B2 | Yes |
 | `argument-hint` | `[optional human context or related project paths]` | B3 | Yes |
 | `disable-model-invocation` | `true` | B4 | Yes — user-only invocation |
@@ -752,13 +759,13 @@ Role-initializer does not need hooks. However, for completeness:
 
 | Item | Reason for deferral |
 |---|---|
-| `/tdd-role-evolve` skill | Separate feature — memory-driven role refinement. Needs design work on diffing, merge preservation, bidirectional output. Build after learning from `/tdd-init-roles` usage |
+| `/role-evolve` skill | Separate feature — memory-driven role refinement. Needs design work on diffing, merge preservation, bidirectional output. Build after learning from `/role-init` usage |
 | Idempotent update mode (within init) | Init does full regeneration; incremental updates belong to evolve |
 | Cross-repo analysis | v1 reads related CLAUDE.md files; deep cross-repo research is v2 |
 | `/tdd-status` skill | Separate feature from Architecture E analysis |
 | `/tdd-verify-feature` skill | Separate feature from Architecture E analysis |
 | SessionStart hook (N2) | Separate feature |
-| `/role-ca`, `/role-cp`, `/role-ci` delivery skills | **Moved to planned** — see §2.7. Companion feature to `/tdd-init-roles` |
+| `/role-ca`, `/role-cp`, `/role-ci` delivery skills | **Moved to planned** — see §2.7. Companion feature to `/role-init` |
 | Mechanical constraint enforcement | Overkill for single-developer workflow |
 | Phased planning (`/tdd-decompose`) | Blocked by `.tdd-progress.md` lifecycle changes |
 | `context/standards/` generation | Out of scope — standards are longer and more opinionated |
@@ -774,7 +781,7 @@ Role-initializer does not need hooks. However, for completeness:
 
 ### 8.3 Future considerations
 
-- **`/tdd-role-evolve`:** The primary follow-up feature. Synthesizes agent
+- **`/role-evolve`:** The primary follow-up feature. Synthesizes agent
   memory + MEMORY.md into role context updates. Design questions to resolve:
   how to detect generated vs. human-modified sections, how to produce
   meaningful diffs, how to handle the bidirectional output (updates down,
@@ -782,7 +789,7 @@ Role-initializer does not need hooks. However, for completeness:
   recommend missing external context skills ("Your project uses Serverpod
   but no Serverpod skills are installed"). Separate `role-evolver` agent
   (Edit-focused, diff-driven, preservation-aware) or shared agent with
-  mode flag. Create issue after real `/tdd-init-roles` usage provides
+  mode flag. Create issue after real `/role-init` usage provides
   design input.
 - **Agent teams:** When Anthropic stabilizes agent teams, they could replace
   the manual three-terminal pattern. The "team lead" maps to CA, teammates to
@@ -804,7 +811,7 @@ for "why" questions, but use this synthesis as the authoritative "what."
 | Document | Date | Key Contribution |
 |---|---|---|
 | `role-to-agent-analysis.md` | 2026-03-15 (rev. 2026-03-19) | Roles should not become agents; Architecture E recommended; draft specs for /tdd-status, /tdd-verify-feature |
-| `tdd-init-roles.md` | 2026-03-15 | `/tdd-init-roles` skill proposal; draft SKILL.md and agent definition; cross-repo support |
+| `tdd-init-roles.md` | 2026-03-15 | `/role-init` skill proposal; draft SKILL.md and agent definition; cross-repo support |
 | `tdd-init-roles-lifecycle.md` | 2026-03-15 | Iterative lifecycle (v1/v2/v3 stages); bidirectional output; stage detection |
 | `roles-vs-anthropic-framework.md` | 2026-03-19 | Anthropic primitive mapping; system prompt gotchas; divergence points |
 | `role-definition-spec.md` | 2026-03-19 | Formal role schema; CP reinstated as context; zenoh-counter evidence |
@@ -818,7 +825,7 @@ for "why" questions, but use this synthesis as the authoritative "what."
 - Agent definition with tools, model, maxTurns
 - Role schema (7 fixed sections + 14 dynamic sections)
 - Output structure (`context/roles/` with 4 files)
-- Template file locations (`skills/tdd-init-roles/reference/`)
+- Template file locations (`skills/role-init/reference/`)
 
 ### What needs TDD planning:
 - Template content (the actual fixed sections for CA, CI, CP)
