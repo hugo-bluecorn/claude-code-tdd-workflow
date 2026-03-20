@@ -28,10 +28,49 @@ repeats instructions like "read relevant memory, context files, and
 conventions before reviewing this plan" every time. With a role file, these
 workflow patterns are encoded once and followed automatically.
 
-**Why roles exist:** Context window pressure. Each TDD workflow session
-(architect, planner, implementer) stays focused on one concern, preventing
-autocompaction from discarding critical context. The developer runs three
-Claude Code terminals and pastes the appropriate role prompt into each.
+**Why roles exist:** Context window management. As conversations grow,
+earlier context receives diminishing model attention — role constraints and
+conventions drift, and the model may confabulate forgotten details rather
+than re-reading them. Each TDD workflow session (architect, planner,
+implementer) stays focused on one concern, keeping role instructions
+prominent and preventing autocompaction from discarding critical context.
+The developer runs three Claude Code terminals and activates the appropriate
+role in each.
+
+**The same principle operates at three levels:**
+
+| Level | Mechanism | Resets when | What it prevents |
+|---|---|---|---|
+| **Agent** | Fresh context per invocation | Every task (slice, verification, release) | Task-level drift within a feature |
+| **Session** | `/clear` + `/role-*` reactivation | Every new feature | Feature-level drift from stale plan/test context |
+| **Terminal** | Three separate sessions (CA, CP, CI) | Always isolated by concern | Cross-concern drift (architecture vs. implementation) |
+
+Each plugin agent starts with a clean, focused context — its system prompt,
+preloaded skills, the specific task, and injected context from hooks and
+memory. No prior conversation history, no accumulated drift. The agent is
+purpose-built for one mission from the first token.
+
+Between features, the developer clears CP and CI sessions (`/clear`) and
+reactivates the role (`/role-cp`, `/role-ci`). This discards stale context
+from the completed feature and loads fresh, relevant context for the next
+one. The role delivery skills make this a one-command operation rather than
+a manual re-setup.
+
+**Mid-session refresh.** The role delivery skills also serve as a drift
+correction mechanism. Invoking `/role-ca` without `/clear` injects role
+instructions near the END of the context window — where they receive the
+most model attention — re-anchoring the session to its identity without
+losing conversation history:
+
+| Pattern | When | Effect |
+|---|---|---|
+| `/clear` + `/role-ca` | New feature, stale context | Full reset — clean slate |
+| `/role-ca` alone | Mid-session, noticing drift | Refresh — re-anchor without losing history |
+
+The second pattern is valuable during long sessions (multi-step reviews,
+extended analysis) where the developer notices drift from role constraints.
+A quick `/role-ca` pulls the session back on track while preserving the
+conversation history needed for ongoing work.
 
 **Anthropic has no "role" concept.** Their primitives (`--agent`, `tools`,
 `skills`, hooks, CLAUDE.md) can compose into roles, but they don't name the
@@ -50,7 +89,22 @@ pattern. Our roles diverge from their model in three ways:
 These decisions were reached across the five exploration documents and are
 not open for revisitation unless new evidence emerges.
 
-### 2.1 Roles should NOT become agents
+### 2.1 Roles are optional — the core TDD workflow must NEVER depend on them
+
+**This is the foundational constraint for all roles work.** The plugin's
+core value is the TDD workflow: plan → implement → verify → release. This
+workflow must function identically whether or not role files exist, whether
+or not `/role-*` skills are used, and whether or not the developer uses the
+three-session model. Roles are an enhancement layer for developers who want
+multi-session coordination, context management, and workflow encoding. They
+are never a prerequisite.
+
+No agent, skill, hook, or script in the core workflow may check for,
+reference, or depend on role files. The `/tdd-init-roles`, `/role-*`, and
+`/tdd-role-evolve` features are self-contained additions that compose with
+the core workflow but do not modify it.
+
+### 2.2 Roles should NOT become agents
 
 Roles are conversational session identities. Subagents are fire-and-forget
 delegated tasks. The architectural mismatch is fundamental:
@@ -66,14 +120,14 @@ required 7 slices, 74 tests, and a production bug — for agents whose `tools`
 allowlists already provided correct restrictions. Role-agents with path-based
 write guards would be significantly more complex.
 
-### 2.2 Role GENERATION should become a skill
+### 2.3 Role GENERATION should become a skill
 
 The manual process of creating project-specific role files is repeated for
 every new project, requires significant context gathering, and produces
 inconsistent quality. `/tdd-init-roles` automates this as a skill + forked
 agent, matching the proven pattern of `/tdd-plan` + `tdd-planner`.
 
-### 2.3 Three roles, two layers
+### 2.4 Three roles, two layers
 
 Every role has two layers:
 
@@ -86,7 +140,7 @@ The role definition is the job description — identical across projects.
 The role context is the project-specific knowledge — unique to each project,
 generated from codebase research.
 
-### 2.4 Two skills, one lifecycle
+### 2.5 Two skills, one lifecycle
 
 The role lifecycle splits into two distinct operations with different
 triggers, mechanisms, and complexity:
@@ -139,7 +193,7 @@ separately for v1.
 For this implementation: **build `/tdd-init-roles` only.** `/tdd-role-evolve`
 is a separate future issue, designed after learning from real init usage.
 
-### 2.5 Memory is the coordination backbone
+### 2.6 Memory is the coordination backbone
 
 Without inter-session communication (Anthropic provides none outside
 experimental agent teams), memory is how the three roles stay in sync.
@@ -248,7 +302,7 @@ becomes an input source alongside source code, tests, and CLAUDE.md.
   between regenerations, what the user modified manually (don't overwrite),
   and cross-repo relationships discovered via AskUserQuestion.
 
-### 2.6 Mechanical constraint enforcement is overkill (for now)
+### 2.7 Mechanical constraint enforcement is overkill (for now)
 
 For a single-developer workflow, the risk of a session accidentally running
 the wrong command is near zero. The constraints that matter most ("don't make
@@ -258,21 +312,25 @@ restrictions. Convention-based trust via role prompts is sufficient.
 **Exception:** If the plugin is used by a multi-developer team or automated
 pipeline, enforcement becomes valuable. That's a future consideration.
 
-### 2.7 Role delivery skills are the composition layer
+### 2.8 Role delivery skills are the composition layer
 
-`/role-ca` and `/role-ci` are **inline skills** (not agents) that serve as
-the single entry point for session activation. They compose three context
+`/role-ca`, `/role-cp`, and `/role-ci` are **inline skills** (not agents)
+that serve as the single entry point for session activation. They compose three context
 sources via DCI:
 
 ```
-/role-ca
-  ├── Role content         (DCI: cat context/roles/ca-architect.md)
-  │     └── project-specific — generated by /tdd-init-roles
-  ├── Convention context   (DCI: load-conventions.sh)
-  │     └── framework-specific — loaded from tdd-conventions.json sources
-  │         (Dart, Flutter, Serverpod, Riverpod, C++, etc.)
-  └── Startup procedure
-        └── read MEMORY.md, .tdd-progress.md, report state
+/role-ca                                    /role-cp
+  ├── Role content (ca-architect.md)          ├── Planning context (cp-planner.md)
+  ├── Convention context (DCI)                ├── Convention context (DCI)
+  ├── External skills (auto-invoked)          ├── External skills (auto-invoked)
+  └── Startup: read memory, report state      └── Startup: read memory, check for
+                                                   existing plan, report state
+/role-ci
+  ├── Role content (ci-implementer.md)
+  ├── Convention context (DCI)
+  ├── External skills (auto-invoked)
+  └── Startup: read memory, check branch,
+       check .tdd-progress.md, report state
 ```
 
 **Why this matters:** The convention loading mechanism (`load-conventions.sh`
@@ -293,7 +351,7 @@ matching triggers relevant installed skills, loading additional framework
 context into the session automatically.
 
 ```
-/role-ca (user invokes)
+/role-ca or /role-cp or /role-ci (user invokes)
   → loads role content: "Flutter/Serverpod project with spy.yaml models..."
   → loads conventions: Dart/Flutter patterns (DCI)
   → Claude processes loaded content
@@ -302,30 +360,42 @@ context into the session automatically.
     → framework-specific context loads into session
 ```
 
+This works because external context skills use `user-invocable: false`
+(user can't type `/serverpod-models`) but do NOT set
+`disable-model-invocation: true` — so Claude CAN auto-invoke them when
+conversation context matches their descriptions.
+
 **Prerequisite:** External context skills must be installed in `.claude/skills/`
-BEFORE invoking `/role-ca`. Without `/tdd-role-evolve` (future), there is
-no mechanism to discover or recommend which skills to install — the developer
-manages this manually. A future `/tdd-role-evolve` could detect framework
-usage and recommend missing skills.
+BEFORE invoking the role delivery skills. Without `/tdd-role-evolve` (future),
+there is no mechanism to discover or recommend which skills to install —
+the developer manages this manually. A future `/tdd-role-evolve` could
+detect framework usage and recommend missing skills.
 
 **The three features compose into a complete workflow:**
 
 | Feature | What it does | When it runs |
 |---|---|---|
 | `/tdd-init-roles` | Generates project-specific role content | Once per project (or on major changes) |
-| `/role-ca`, `/role-ci` | Delivers role + conventions + startup into session | Every session start |
+| `/role-ca`, `/role-cp`, `/role-ci` | Delivers role + conventions + startup into session | Every session start |
 | `/tdd-role-evolve` | Updates role content from accumulated memory | As project matures |
 
-`/role-ca` and `/role-ci` are **not optional convenience wrappers** — they
-are the delivery mechanism that unifies role context and convention loading.
-Without them, the developer manually pastes role content and instructs
-Claude to load conventions every session.
+`/role-ca`, `/role-cp`, and `/role-ci` are **not optional convenience
+wrappers** — they are the delivery mechanism that unifies role context and
+convention loading. Without them, the developer manually pastes role
+content and instructs Claude to load conventions every session.
+
+**`/role-cp` and the CP question:** Even though CP's behavioral role is
+absorbed by the plugin (the planner agent handles planning mechanics),
+the CP session still exists as a separate terminal for planning iteration.
+`/role-cp` loads the planning context document + conventions, giving the
+developer the same knowledge the planner agent has — so they can evaluate
+and iterate on plan quality effectively.
 
 **Implementation note:** These are inline skills with `disable-model-invocation: true`.
 No `context: fork`, no agent spawn, no system prompt replacement. Content
 loads directly into the main thread's conversation context.
 
-### 2.8 Other proposed utility features
+### 2.9 Other proposed utility features
 
 The roles analysis also identified utility features that serve all sessions
 but are independent of the role system:
@@ -688,12 +758,21 @@ Role-initializer does not need hooks. However, for completeness:
 | `/tdd-status` skill | Separate feature from Architecture E analysis |
 | `/tdd-verify-feature` skill | Separate feature from Architecture E analysis |
 | SessionStart hook (N2) | Separate feature |
-| `/role-ca`, `/role-ci` delivery skills | **Moved to planned** — see §2.7. Companion feature to `/tdd-init-roles` |
+| `/role-ca`, `/role-cp`, `/role-ci` delivery skills | **Moved to planned** — see §2.7. Companion feature to `/tdd-init-roles` |
 | Mechanical constraint enforcement | Overkill for single-developer workflow |
 | Phased planning (`/tdd-decompose`) | Blocked by `.tdd-progress.md` lifecycle changes |
 | `context/standards/` generation | Out of scope — standards are longer and more opinionated |
 
-### 8.2 Future considerations
+### 8.2 Design notes for later revisitation
+
+- **Role files vs. CLAUDE.md separation.** Both contain project context.
+  CLAUDE.md is auto-loaded into every session (what everyone needs); role
+  files are loaded via `/role-*` (what that role specifically needs). The
+  role-initializer must be aware of CLAUDE.md to avoid restating what's
+  already there. Some users may want the core TDD workflow without roles
+  — they may have their own roles or use a single session. See §2.1.
+
+### 8.3 Future considerations
 
 - **`/tdd-role-evolve`:** The primary follow-up feature. Synthesizes agent
   memory + MEMORY.md into role context updates. Design questions to resolve:
