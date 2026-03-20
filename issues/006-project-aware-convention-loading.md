@@ -251,19 +251,21 @@ Store locally                        Reads cached files, detects
 3. `scripts/load-conventions.sh` — detects project type, reads cached content, outputs relevant conventions
 4. Agent frontmatter changes — `skills: [project-conventions]` replaces `skills: [dart-flutter-conventions, cpp-testing-conventions, bash-testing-conventions, c-conventions]`
 
-**What the plugin ships:** The framework only — agents, orchestration
-skills, hooks, scripts. Zero convention content. The plugin is
-language-agnostic.
+**What the plugin ships:** The framework (agents, orchestration skills,
+hooks, scripts) plus plugin-specific conventions (TDD cycle rules, commit
+patterns, version control, agent behavior contracts). Zero **language**
+convention content. The plugin is language-agnostic.
 
-**What lives externally:** All convention content (Dart, C++, C, Bash,
-Rust, Python, etc.) lives in separate GitHub repos. The existing 4
-convention skills move out of the plugin into their own repos as the
-"official" convention packages — maintained by us but not bundled.
+**What lives externally:** All language convention content (Dart, C++, C,
+Bash, Rust, Python, etc.) lives in
+`hugo-bluecorn/tdd-workflow-conventions`. The existing 4 language
+convention skills move from the plugin to this repo — maintained by us
+but not bundled.
 
-**What users configure:** Which convention repos to fetch, via a project
-or user setting. `/tdd-init-roles` can set this up during project
+**What users configure:** Which convention sources to fetch, via a project
+config file. `/tdd-init-roles` can set this up during project
 initialization. If no conventions are configured, agents run without
-convention context — they still work, they just don't have
+language convention context — they still work, they just don't have
 language-specific patterns preloaded.
 
 ## Design Decisions (2026-03-19)
@@ -271,16 +273,16 @@ language-specific patterns preloaded.
 1. **Version 2.0** — this is a breaking change. No migration path. Clean
    slate for convention loading.
 
-2. **Convention repo format** — move existing convention skills as-is to a
-   new GitHub repo. Keep the current structure (SKILL.md + reference/ dir).
-   Add a minimal index file listing available conventions. Format refinement
-   is future work.
+2. **Convention repo** — `hugo-bluecorn/tdd-workflow-conventions`. Move
+   existing 4 language convention skills as-is. Keep the current structure
+   (SKILL.md + reference/ dir). Add a minimal index file listing available
+   conventions. Format refinement is future work.
 
 3. **Config format** — KISS. `.claude/tdd-conventions.json`:
    ```json
    {
      "conventions": [
-       "https://github.com/tdd-workflow/conventions",
+       "https://github.com/hugo-bluecorn/tdd-workflow-conventions",
        "/home/user/my-conventions"
      ]
    }
@@ -302,8 +304,8 @@ language-specific patterns preloaded.
    no conventions and pay no context cost
 5. The solution works for both plugin installs (marketplace) and local
    development (`--plugin-dir`)
-6. Existing convention skill content and structure are preserved — this
-   is a loading mechanism change, not a content rewrite
+6. Existing language convention content is preserved in the external repo
+   — this is a loading mechanism change, not a content rewrite
 
 ## Impact Assessment
 
