@@ -1,8 +1,8 @@
-# Role File Format v2.0
+# Role File Format v2.1
 
-> Reference for the `role-initializer` agent. Every generated role file
-> must conform to this format. Templates and instances are both valid
-> role files — templates have placeholder markers, instances have content.
+> Reference for CR and the `role-initializer` agent. Every generated role
+> file must conform to this format. CR selects sections from the menu
+> below based on the developer's workflow and project needs.
 
 ---
 
@@ -14,17 +14,17 @@
 ├─────────────────────────────────┤
 │  Title + Rationale              │  ← first thing the session reads
 ├─────────────────────────────────┤
-│  FIXED sections                 │  ← from plugin templates, never project-specific
-│  (Identity, Responsibilities,   │
-│   Constraints, Memory)          │
+│  Core sections                  │  ← Identity, Responsibilities, Constraints
+│  (almost always needed)         │
 ├─────────────────────────────────┤
-│  HYBRID sections                │  ← fixed structure + dynamic content
-│  (Startup, Workflow)            │
+│  Optional sections              │  ← Memory, Startup, Workflow, Context, etc.
+│  (CR picks what fits)           │
 ├─────────────────────────────────┤
-│  DYNAMIC sections               │  ← entirely from research, project-specific
-│  (Context, role-specific)       │
+│  Custom sections                │  ← developer-defined, project-specific
+│  (anything the role needs)      │
 ├─────────────────────────────────┤
-│  FIXED section                  │  ← Coordination (last — references other roles)
+│  Coordination                   │  ← only when multiple roles exist
+│  (last section, if present)     │
 └─────────────────────────────────┘
 ```
 
@@ -34,9 +34,9 @@
 
 ```yaml
 ---
-role: XX                          # 2-letter code (CA, CI, CP, CR, etc.)
+role: XX                          # 2-letter code (unique per project)
 name: "Human-Readable Role Name"
-type: session                     # session (full role) | context (CP only)
+type: session                     # session (full role) | context (supplemental doc)
 version: 1                        # increments on /role-evolve updates
 project: "project-name"           # from codebase research
 stack: "language, framework"      # from detect-project-context.sh
@@ -49,13 +49,18 @@ generator: /role-init             # or "manual" for hand-authored
 **Required fields:** `role`, `name`, `type`
 **Generated fields:** `version`, `project`, `stack`, `stage`, `generated`, `generator`
 
+**Output convention:** Role files live in `context/roles/` at the project root.
+Filename: `{role-code}-{short-name}.md` (lowercase, e.g., `rv-reviewer.md`).
+This directory is project-owned, version-controlled, and outside `.claude/`
+to avoid namespace collisions with Claude Code internals.
+
 ---
 
 ## 2. Title Block
 
 Immediately after frontmatter. Sets the session's identity anchor.
 
-**For session roles (CA, CI, CR, etc.):**
+**For session roles:**
 
 ```markdown
 # {role} — {name}
@@ -64,44 +69,42 @@ Immediately after frontmatter. Sets the session's identity anchor.
 > **Project:** {project} | **Stack:** {stack} | **Stage:** {stage}
 ```
 
-**For context documents (CP):**
+**For context documents:**
 
 ```markdown
-# CP — Planning Context
+# {role} — {name}
 
-> This file provides project-specific planning context. The tdd-planner
-> agent handles the behavioral role. Load this into any planning session
-> to improve plan quality.
+> This file provides project-specific context for {purpose}.
+> Load this into any relevant session to improve quality.
 > **Project:** {project} | **Stack:** {stack} | **Stage:** {stage}
 ```
 
 ---
 
-## 3. Section Definitions
+## 3. Section Menu
 
-### Section types
+CR selects sections based on the developer's workflow. Not all sections
+are needed for every role. The only hard requirement is Identity.
 
-| Type | Source | /role-init writes | /role-evolve modifies |
-|---|---|---|---|
-| FIXED | Plugin template | Copies verbatim | Never |
-| HYBRID | Template structure + research content | Merges both | Dynamic content only |
-| DYNAMIC | Codebase research + human input | Generates freely | Freely |
+### Core Sections
 
-### FIXED: Identity
+These are almost always needed. Omit only with good reason.
+
+#### Identity
 
 ```markdown
 ## Identity
 
 You are the **{role} ({name})** session for the {project} project.
-{2-3 sentences: primary function, mode of operation, relationship to other roles}
+{2-3 sentences: primary function, mode of operation}
 ```
 
 **Rules:**
 - Must state the role code and name
-- Must describe HOW this session operates (conversational, command-driven, etc.)
-- Must reference at least one other role
+- Must describe HOW this session operates (conversational, command-driven, guided, etc.)
+- If other roles exist, reference them. If this is the only role, omit role references.
 
-### FIXED: Responsibilities
+#### Responsibilities
 
 ```markdown
 ## Responsibilities
@@ -116,7 +119,7 @@ You are the **{role} ({name})** session for the {project} project.
 - Each item is actionable: verb + object + output
 - Never "understand X" — always "read X and produce Y"
 
-### FIXED: Constraints
+#### Constraints
 
 ```markdown
 ## Constraints
@@ -130,7 +133,14 @@ You are the **{role} ({name})** session for the {project} project.
 - Each must explain WHY — the consequence of violation
 - Phrased as "Never X" or "Do not X", not "Try to avoid X"
 
-### FIXED: Memory
+### Optional Sections
+
+Include when relevant to the role's workflow.
+
+#### Memory
+
+Include when the role interacts with shared state (auto-memory, progress
+files, git). Omit for single-session setups with no persistence needs.
 
 ```markdown
 ## Memory
@@ -146,32 +156,32 @@ You are the **{role} ({name})** session for the {project} project.
 ```
 
 **Rules:**
-- Must cover all four layers
+- Only include layers the role actually uses
 - Access level must be explicit per layer
-- CA is the sole auto-memory writer (convention, not enforced)
 
-### HYBRID: Startup
+#### Startup
+
+Include when the role needs a defined recovery/orientation procedure.
 
 ```markdown
 ## Startup
 
 On fresh start or recovery after interruption:
 
-1. Read `MEMORY.md` for current project state
-2. Read `.tdd-progress.md` if it exists (active TDD session)
-3. Check `git log --oneline -10` and `git branch` for recent activity
-4. {project-specific: what to check next}
-5. {project-specific: state assessment}
-6. {project-specific: what to do or who to wait for}
+1. {first orientation step}
+2. {next step}
+3. {what to do next or who to wait for}
 ```
 
 **Rules:**
-- Steps 1-3 are always identical (FIXED)
-- Steps 4+ are project-specific (DYNAMIC)
 - Every step must be idempotent (safe to re-run)
-- Last step must say what to do next or who to wait for
+- Last step must say what to do next
+- Include only steps relevant to this role's responsibilities
 
-### HYBRID: Workflow
+#### Workflow
+
+Include when the role follows repeatable procedures that would otherwise
+need to be explained every time.
 
 ```markdown
 ## Workflow
@@ -184,13 +194,13 @@ Before {triggering event}:
 ```
 
 **Rules:**
-- Procedure names are fixed (from template)
-- Step content includes project-specific paths, commands, conventions
 - Each procedure is a checklist the session follows WITHOUT human prompting
 - Must encode patterns the developer would otherwise repeat manually
-- Convention paths must be DISCOVERED, not placeholder
+- Paths and commands must be verified against project configuration
 
-### DYNAMIC: Context
+#### Context
+
+Include when the role needs project-specific technical context.
 
 ```markdown
 ## Context
@@ -209,18 +219,9 @@ Before {triggering event}:
 - No placeholders — if unknown, omit the field
 - Commands must be verified against project configuration
 
-### DYNAMIC: Role-Specific Sections
+#### Coordination
 
-Each role has additional sections after Context. See §4 for the
-complete composition per role.
-
-**Rules for all DYNAMIC sections:**
-- Content sourced from: codebase, CLAUDE.md, agent memory, user input, conventions
-- File paths must exist on disk
-- Code examples must be extracted from actual source (CI only)
-- When sources conflict: user input > codebase > CLAUDE.md > agent memory > conventions
-
-### FIXED: Coordination
+Include only when multiple roles exist and need to hand off work.
 
 ```markdown
 ## Coordination
@@ -237,83 +238,41 @@ Expect: {what to receive and what to do with it}
 - Must define both directions for each relationship
 - Must specify the FORMAT of the handoff (file path, verbal, paste)
 
----
+### Custom Sections
 
-## 4. Role Compositions
+Developers may define sections not listed above. Custom sections:
 
-### CA — Architect / Reviewer (`type: session`)
-
-| # | Section | Type | Content focus |
-|---|---|---|---|
-| 1 | Identity | FIXED | Conversational, judgment-based, decision authority |
-| 2 | Responsibilities | FIXED | Decisions, issues, prompts, verification, memory |
-| 3 | Constraints | FIXED | Read-only for code, never merge, never implement |
-| 4 | Memory | FIXED | Sole auto-memory writer |
-| 5 | Startup | HYBRID | + cross-check memory vs progress state |
-| 6 | Workflow | HYBRID | Plan Review procedure, Verification procedure |
-| 7 | Context | DYNAMIC | Project overview |
-| 8 | Architecture | DYNAMIC | Patterns, boundaries, technical debt |
-| 9 | Cross-Repo | DYNAMIC | Related projects (optional) |
-| 10 | Decisions | DYNAMIC | Key decisions, open questions |
-| 11 | Verification Focus | DYNAMIC | What to check, common mistakes |
-| 12 | Conventions | DYNAMIC | Paths to convention docs, key patterns |
-| 13 | Coordination | FIXED | To/from CP, CI |
-
-### CI — Implementer (`type: session`)
-
-| # | Section | Type | Content focus |
-|---|---|---|---|
-| 1 | Identity | FIXED | Command-driven, executes plan |
-| 2 | Responsibilities | FIXED | Implement, release, docs, direct edits, PR merge |
-| 3 | Constraints | FIXED | Never plan, never decide architecture, follow plan |
-| 4 | Memory | FIXED | Reads only, never writes auto-memory |
-| 5 | Startup | HYBRID | + check git status for uncommitted changes |
-| 6 | Workflow | HYBRID | Implementation Prep procedure, Post-Impl Report |
-| 7 | Context | DYNAMIC | Project overview |
-| 8 | Build Commands | DYNAMIC | Build, test, analyze, format with flags |
-| 9 | Code Examples | DYNAMIC | 2-4 from actual source, cited |
-| 10 | Constraints (impl) | DYNAMIC | Naming, imports, error handling patterns |
-| 11 | Pitfalls | DYNAMIC | Things that look right but break |
-| 12 | Coordination | FIXED | To/from CA |
-
-### CP — Planning Context (`type: context`)
-
-| # | Section | Type | Content focus |
-|---|---|---|---|
-| 1 | Context | DYNAMIC | Project overview |
-| 2 | Decomposition | DYNAMIC | How to slice features for THIS project |
-| 3 | Slice Ordering | DYNAMIC | Dependency chains, what comes first |
-| 4 | Test Strategy | DYNAMIC | Granularity, environment, batching |
-| 5 | Learnings | DYNAMIC | Past underestimates, scope creep (v2+, optional) |
-| 6 | API Surface | DYNAMIC | Key public classes and functions |
-| 7 | Conventions | DYNAMIC | Paths to convention docs, key patterns |
+- Go after optional sections, before Coordination (if present)
+- Follow the same quality rules: no placeholders, no invented paths
+- Should have a clear heading and a brief description of purpose
+- CR validates them the same way as any other section
+- Examples: `## Level Design Patterns`, `## Pipeline Topology`, `## API Contracts`
 
 ---
 
-## 5. Validation
+## 4. Validation
 
 A generated role file is valid when:
 
-- [ ] YAML frontmatter has all required fields
+- [ ] YAML frontmatter has all required fields (`role`, `name`, `type`)
 - [ ] Title block matches the type (session vs context)
-- [ ] Sections appear in composition order (§4)
-- [ ] All required sections present
+- [ ] Identity section is present
+- [ ] Sections follow the general flow: Core → Optional → Custom → Coordination
 - [ ] No placeholders (`{...}`, `TODO`, `TBD`)
 - [ ] No invented file paths — every path exists on disk
 - [ ] No invented code — examples extracted from actual source
-- [ ] FIXED sections match plugin templates exactly
-- [ ] Constraints have reasons
+- [ ] Constraints have reasons (if Constraints section is present)
 - [ ] Under 400 lines (prefer under 300)
 
 ---
 
-## 6. Lifecycle
+## 5. Lifecycle
 
 | Event | What happens |
 |---|---|
-| `/role-init` | Generates fresh role files from templates + research |
-| `/role-evolve` | Updates DYNAMIC content from agent memory + MEMORY.md |
-| `/role-ca` (or cp, ci) | Loads role file + conventions via DCI into session |
-| `/role-ca` mid-session | Re-anchors session identity (drift correction) |
-| `/clear` + `/role-ca` | Full reset for new feature |
+| `/role-init` | CR researches the project and developer workflow, generates role files |
+| `/role-evolve` | Updates content from agent memory + MEMORY.md |
+| `/role-*` | Loads role file + conventions via DCI into session |
+| `/role-*` mid-session | Re-anchors session identity (drift correction) |
+| `/clear` + `/role-*` | Full reset for new feature |
 | Manual edit | Developer modifies role file directly (preserved by evolve) |
