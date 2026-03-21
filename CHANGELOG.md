@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.1.0] - 2026-03-21
+
+### Added
+- `scripts/validate-role-output.sh` — standalone validation script for role files;
+  enforces YAML frontmatter fields (`role`, `name`, `type`), Identity section presence,
+  400-line limit, placeholder detection (excluding code blocks), permission-phrased
+  constraint detection, constraint consequence enforcement, and file path existence
+  checks (with `--base-dir` support; URLs and glob patterns excluded)
+- `skills/role-cr/SKILL.md` — inline `/role-cr` skill that loads CR role content and
+  format spec via DCI, instructs the session to run `validate-role-output.sh` before
+  presenting output, enforces an Approve/Modify/Reject gate, sets `generator: /role-cr`
+  in role frontmatter, and writes approved role files to `context/roles/`
 
 ## [2.0.0] - 2026-03-19
 
