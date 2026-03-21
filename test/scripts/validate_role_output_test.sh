@@ -11,16 +11,16 @@ create_tmp_dir() {
 }
 
 # Helper: run validation script (suppress stderr)
+# Usage: run_validate [--base-dir <path>] <file_path>
 run_validate() {
-  local file_path="${1:-}"
-  bash "$SCRIPT" "$file_path" 2>/dev/null
+  bash "$SCRIPT" "$@" 2>/dev/null
 }
 
 # Helper: run validation script capturing stderr
+# Usage: run_validate_stderr [--base-dir <path>] <file_path>
 run_validate_stderr() {
-  local file_path="${1:-}"
   # shellcheck disable=SC2069
-  bash "$SCRIPT" "$file_path" 2>&1 >/dev/null
+  bash "$SCRIPT" "$@" 2>&1 >/dev/null
 }
 
 # Helper: write a valid role file with all required frontmatter fields
@@ -578,6 +578,164 @@ You are a test role with no constraints section at all.
 EOF
 
   run_validate "$tmp_dir/role.md"
+  assert_exit_code 0
+
+  rm -rf "$tmp_dir"
+}
+
+# ========== Slice 4: File Path Existence Check ==========
+
+# ---------- Test 21: Exits 0 when all referenced file paths exist on disk ----------
+
+function test_exits_0_when_all_referenced_paths_exist() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_dir)
+
+  # Create the referenced files
+  mkdir -p "$tmp_dir/src" "$tmp_dir/test"
+  touch "$tmp_dir/src/main.sh"
+  touch "$tmp_dir/test/main_test.sh"
+
+  cat > "$tmp_dir/role.md" <<'EOF'
+---
+role: test-role
+name: Test Role
+type: session
+---
+
+## Identity
+
+You are a test role. Key files include `src/main.sh` and `test/main_test.sh`.
+EOF
+
+  run_validate --base-dir "$tmp_dir" "$tmp_dir/role.md"
+  assert_exit_code 0
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- Test 22: Exits non-zero when a referenced file path does not exist ----------
+
+function test_exits_nonzero_when_referenced_path_does_not_exist() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_dir)
+
+  cat > "$tmp_dir/role.md" <<'EOF'
+---
+role: test-role
+name: Test Role
+type: session
+---
+
+## Identity
+
+You are a test role. See src/nonexistent.sh for details.
+EOF
+
+  run_validate --base-dir "$tmp_dir" "$tmp_dir/role.md"
+  assert_exit_code 1
+
+  local stderr_output
+  stderr_output=$(run_validate_stderr --base-dir "$tmp_dir" "$tmp_dir/role.md")
+  assert_contains "src/nonexistent.sh" "$stderr_output"
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- Test 23: Paths inside backtick literals are checked ----------
+
+function test_paths_inside_backtick_literals_are_checked() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_dir)
+
+  cat > "$tmp_dir/role.md" <<'EOF'
+---
+role: test-role
+name: Test Role
+type: session
+---
+
+## Identity
+
+You are a test role. Check `lib/some_file.dart` for implementation.
+EOF
+
+  run_validate --base-dir "$tmp_dir" "$tmp_dir/role.md"
+  assert_exit_code 1
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- Test 24: URLs are not treated as file paths ----------
+
+function test_urls_are_not_treated_as_file_paths() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_dir)
+
+  cat > "$tmp_dir/role.md" <<'EOF'
+---
+role: test-role
+name: Test Role
+type: session
+---
+
+## Identity
+
+You are a test role. See https://example.com/path/to/file.md for docs.
+EOF
+
+  run_validate --base-dir "$tmp_dir" "$tmp_dir/role.md"
+  assert_exit_code 0
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- Test 25: Glob patterns are not treated as file paths ----------
+
+function test_glob_patterns_are_not_treated_as_file_paths() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_dir)
+
+  cat > "$tmp_dir/role.md" <<'EOF'
+---
+role: test-role
+name: Test Role
+type: session
+---
+
+## Identity
+
+You are a test role. Check issues/*.md and planning/*.md for context.
+EOF
+
+  run_validate --base-dir "$tmp_dir" "$tmp_dir/role.md"
+  assert_exit_code 0
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- Test 26: Directory references with trailing slash checked as directories ----------
+
+function test_directory_references_with_trailing_slash_checked() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_dir)
+
+  # Create the referenced directory
+  mkdir -p "$tmp_dir/lib"
+
+  cat > "$tmp_dir/role.md" <<'EOF'
+---
+role: test-role
+name: Test Role
+type: session
+---
+
+## Identity
+
+You are a test role. Source code lives in lib/ directory.
+EOF
+
+  run_validate --base-dir "$tmp_dir" "$tmp_dir/role.md"
   assert_exit_code 0
 
   rm -rf "$tmp_dir"
