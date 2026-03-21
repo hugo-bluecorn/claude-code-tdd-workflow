@@ -43,4 +43,17 @@ if [ -n "$missing" ]; then
   exit 1
 fi
 
+# Check for Identity section (any heading level)
+if ! grep -qE '^#{1,6} Identity' "$FILE_PATH"; then
+  echo "Missing required section: Identity" >&2
+  exit 1
+fi
+
+# Check line count does not exceed 400
+line_count=$(wc -l < "$FILE_PATH")
+if [ "$line_count" -gt 400 ]; then
+  echo "File exceeds 400 lines (has $line_count lines)" >&2
+  exit 1
+fi
+
 exit 0
