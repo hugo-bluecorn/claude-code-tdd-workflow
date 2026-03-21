@@ -120,7 +120,8 @@ function test_write_instruction_after_approval() {
   assert_not_empty "$approve_line"
   assert_not_empty "$write_line"
   # The approval gate must appear before the write-to-disk instruction
-  assert_greater_or_equal_than "$write_line" "$approve_line"
+  # assert_greater_or_equal_than expected actual => checks actual >= expected
+  assert_greater_or_equal_than "$approve_line" "$write_line"
 }
 
 # ---------- Test 12: No template placeholders in skill file ----------
@@ -136,7 +137,11 @@ function test_no_template_placeholders() {
 # ---------- Test 13: No references to /role-init ----------
 
 function test_no_role_init_references() {
-  local content
-  content=$(cat "$SKILL_FILE")
-  assert_not_contains "/role-init" "$content"
+  local body
+  body=$(get_body)
+  # Strip file paths (skills/role-init/reference/ is a valid directory path)
+  # Check for /role-init as a standalone command reference
+  local stripped
+  stripped=$(echo "$body" | sed 's|skills/role-init/reference/[^ ]*||g')
+  assert_not_contains "/role-init" "$stripped"
 }
