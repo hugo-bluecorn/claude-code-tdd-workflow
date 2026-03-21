@@ -148,12 +148,16 @@ function test_changelog_v2_mentions_convention_externalization() {
   assert_matches "[Ee]xternali[sz]" "$v2_section"
 }
 
-# ---------- Test 8: Plugin version bumped to 2.0.0 ----------
+# ---------- Test 8: Plugin version is at least 2.0.0 ----------
 
 function test_plugin_json_version_is_2_0_0() {
   local version
   version=$(grep '"version"' "$PLUGIN_JSON" | sed 's/.*: *"\([^"]*\)".*/\1/')
-  assert_equals "2.0.0" "$version"
+  local major minor
+  major=$(echo "$version" | cut -d. -f1)
+  minor=$(echo "$version" | cut -d. -f2)
+  # Must be 2.x.x (major=2, minor>=0) — confirms v2.0.0 convention externalization landed
+  assert_equals "2" "$major"
 }
 
 # ---------- Test 9: CLAUDE.md still has pre-commit checklist entries ----------

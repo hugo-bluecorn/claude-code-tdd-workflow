@@ -26,7 +26,7 @@ After installation, verify it loaded:
 claude --debug
 ```
 
-Look for `loading plugin: tdd-workflow` in the output. The `/tdd-plan`, `/tdd-implement`, `/tdd-release`, and `/tdd-finalize-docs` commands should appear in your skill list.
+Look for `loading plugin: tdd-workflow` in the output. The `/tdd-plan`, `/tdd-implement`, `/tdd-release`, `/tdd-finalize-docs`, and `/role-cr` commands should appear in your skill list.
 
 ---
 
