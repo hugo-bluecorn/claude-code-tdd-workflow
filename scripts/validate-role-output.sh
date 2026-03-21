@@ -1,12 +1,20 @@
 #!/bin/bash
 # Validates role file structure and content.
-# Usage: validate-role-output.sh <role-file-path>
+# Usage: validate-role-output.sh [--base-dir <path>] <role-file-path>
+
+BASE_DIR="."
+
+# Parse optional --base-dir argument
+if [ "${1:-}" = "--base-dir" ]; then
+  BASE_DIR="${2:-}"
+  shift 2
+fi
 
 FILE_PATH="${1:-}"
 
 # Check argument provided
 if [ -z "$FILE_PATH" ]; then
-  echo "Usage: validate-role-output.sh <role-file-path>" >&2
+  echo "Usage: validate-role-output.sh [--base-dir <path>] <role-file-path>" >&2
   exit 1
 fi
 
@@ -135,6 +143,46 @@ if grep -qE '^#{1,6} Constraints' "$FILE_PATH"; then
       exit 1
     fi
   fi
+fi
+
+# File path existence check
+# Extract paths from body: strings with at least one / and a file extension (or trailing /)
+# Exclude URLs and glob patterns
+missing_paths=""
+# Extract potential path-like strings (include glob chars so they can be filtered)
+path_candidates=$(echo "$body" | grep -oE '[a-zA-Z0-9_.*?[/-]+/[a-zA-Z0-9_.*?[/-]*' | sort -u)
+
+while IFS= read -r candidate; do
+  [ -z "$candidate" ] && continue
+
+  # Skip URL fragments (start with //)
+  case "$candidate" in //*) continue ;; esac
+
+  # Skip glob patterns (contains *, ?, or [)
+  case "$candidate" in *[*?[]* ) continue ;; esac
+
+  # Must look like a file path: has extension or trailing /
+  if ! echo "$candidate" | grep -qE '\.[a-zA-Z0-9]+$|/$'; then
+    continue
+  fi
+
+  # Check existence
+  if echo "$candidate" | grep -qE '/$'; then
+    # Directory reference
+    if [ ! -d "$BASE_DIR/$candidate" ]; then
+      missing_paths="$missing_paths $candidate"
+    fi
+  else
+    # File reference
+    if [ ! -f "$BASE_DIR/$candidate" ]; then
+      missing_paths="$missing_paths $candidate"
+    fi
+  fi
+done <<< "$path_candidates"
+
+if [ -n "$missing_paths" ]; then
+  echo "Referenced paths not found:$missing_paths" >&2
+  exit 1
 fi
 
 exit 0
