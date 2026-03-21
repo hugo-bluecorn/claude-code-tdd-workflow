@@ -340,3 +340,245 @@ EOF
 
   rm -rf "$tmp_dir"
 }
+
+# ========== Slice 3: Placeholder and Constraint Validation ==========
+
+# ---------- Test 13: Exits non-zero when {placeholder} pattern found in body ----------
+
+function test_exits_nonzero_when_placeholder_found_in_body() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_dir)
+
+  cat > "$tmp_dir/role.md" <<'EOF'
+---
+role: test-role
+name: Test Role
+type: session
+---
+
+## Identity
+
+You are a {some_placeholder} for testing.
+EOF
+
+  run_validate "$tmp_dir/role.md"
+  assert_exit_code 1
+
+  local stderr_output
+  stderr_output=$(run_validate_stderr "$tmp_dir/role.md")
+  assert_contains "placeholder" "$stderr_output"
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- Test 14: Exits non-zero when TODO found in body ----------
+
+function test_exits_nonzero_when_todo_found_in_body() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_dir)
+
+  cat > "$tmp_dir/role.md" <<'EOF'
+---
+role: test-role
+name: Test Role
+type: session
+---
+
+## Identity
+
+You are a test role. TODO fill in details later.
+EOF
+
+  run_validate "$tmp_dir/role.md"
+  assert_exit_code 1
+
+  local stderr_output
+  stderr_output=$(run_validate_stderr "$tmp_dir/role.md")
+  assert_contains "TODO" "$stderr_output"
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- Test 15: Exits non-zero when TBD found in body ----------
+
+function test_exits_nonzero_when_tbd_found_in_body() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_dir)
+
+  cat > "$tmp_dir/role.md" <<'EOF'
+---
+role: test-role
+name: Test Role
+type: session
+---
+
+## Identity
+
+You are a test role. This section is TBD.
+EOF
+
+  run_validate "$tmp_dir/role.md"
+  assert_exit_code 1
+
+  local stderr_output
+  stderr_output=$(run_validate_stderr "$tmp_dir/role.md")
+  assert_contains "TBD" "$stderr_output"
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- Test 16: Exits non-zero when constraint uses permission phrasing ----------
+
+function test_exits_nonzero_when_constraint_uses_permission_phrasing() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_dir)
+
+  cat > "$tmp_dir/role.md" <<'EOF'
+---
+role: test-role
+name: Test Role
+type: session
+---
+
+## Identity
+
+You are a test role.
+
+## Constraints
+
+Do write to the database when needed.
+EOF
+
+  run_validate "$tmp_dir/role.md"
+  assert_exit_code 1
+
+  local stderr_output
+  stderr_output=$(run_validate_stderr "$tmp_dir/role.md")
+  # Should mention constraint or permission issue
+  assert_matches "constraint\|permission" "$stderr_output"
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- Test 17: Exits 0 when constraints use correct prohibition phrasing ----------
+
+function test_exits_0_when_constraints_use_prohibition_phrasing() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_dir)
+
+  cat > "$tmp_dir/role.md" <<'EOF'
+---
+role: test-role
+name: Test Role
+type: session
+---
+
+## Identity
+
+You are a test role.
+
+## Constraints
+
+**Never** modify source code. This breaks the build.
+**Do not** write to main. Deployment pipeline will fail.
+EOF
+
+  run_validate "$tmp_dir/role.md"
+  assert_exit_code 0
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- Test 18: Curly braces in code blocks do not trigger placeholder detection ----------
+
+function test_curly_braces_in_code_blocks_do_not_trigger_placeholder() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_dir)
+
+  cat > "$tmp_dir/role.md" <<'OUTER'
+---
+role: test-role
+name: Test Role
+type: session
+---
+
+## Identity
+
+You are a test role.
+
+Example code:
+
+```bash
+echo "${variable_name}"
+for item in "${array[@]}"; do
+  echo "{item}"
+done
+```
+OUTER
+
+  run_validate "$tmp_dir/role.md"
+  assert_exit_code 0
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- Test 19: Exits non-zero when constraint lacks a consequence ----------
+
+function test_exits_nonzero_when_constraint_lacks_consequence() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_dir)
+
+  cat > "$tmp_dir/role.md" <<'EOF'
+---
+role: test-role
+name: Test Role
+type: session
+---
+
+## Identity
+
+You are a test role.
+
+## Constraints
+
+**Never** modify tests.
+EOF
+
+  run_validate "$tmp_dir/role.md"
+  assert_exit_code 1
+
+  local stderr_output
+  stderr_output=$(run_validate_stderr "$tmp_dir/role.md")
+  assert_contains "consequence" "$stderr_output"
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- Test 20: File with no Constraints section passes constraint validation ----------
+
+function test_exits_0_when_no_constraints_section() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_dir)
+
+  cat > "$tmp_dir/role.md" <<'EOF'
+---
+role: test-role
+name: Test Role
+type: session
+---
+
+## Identity
+
+You are a test role with no constraints section at all.
+
+## Tools
+
+- Read files
+- Write files
+EOF
+
+  run_validate "$tmp_dir/role.md"
+  assert_exit_code 0
+
+  rm -rf "$tmp_dir"
+}
