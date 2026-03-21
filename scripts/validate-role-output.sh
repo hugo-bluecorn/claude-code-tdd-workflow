@@ -56,4 +56,85 @@ if [ "$line_count" -gt 400 ]; then
   exit 1
 fi
 
+# Extract body (everything after closing frontmatter delimiter)
+body=$(sed -n '/^---$/,$ p' "$FILE_PATH" | tail -n +2)
+
+# Strip fenced code blocks from body for placeholder scanning
+body_no_code=$(echo "$body" | awk '/^```/{skip=!skip; next} !skip{print}')
+
+# Check for {placeholder} patterns in body (outside code blocks)
+if echo "$body_no_code" | grep -qE '\{[a-zA-Z_][a-zA-Z0-9_]*\}'; then
+  echo "Unresolved placeholder found in body (e.g., {word} pattern)" >&2
+  exit 1
+fi
+
+# Check for TODO in body (outside code blocks)
+if echo "$body_no_code" | grep -q 'TODO'; then
+  echo "TODO found in body — all sections must be complete" >&2
+  exit 1
+fi
+
+# Check for TBD in body (outside code blocks)
+if echo "$body_no_code" | grep -q 'TBD'; then
+  echo "TBD found in body — all sections must be complete" >&2
+  exit 1
+fi
+
+# Constraint validation (only when Constraints section exists)
+if grep -qE '^#{1,6} Constraints' "$FILE_PATH"; then
+  # Extract constraints section: from Constraints heading to EOF,
+  # then remove everything from the next heading onward
+  constraints_section=$(sed -nE '/^#{1,6} Constraints/,$ p' "$FILE_PATH")
+  # Remove the Constraints heading itself, then stop at next heading
+  constraints_body=$(echo "$constraints_section" | tail -n +2 | sed -nE '/^#{1,6} /q; p')
+
+  # Check for permission-phrased constraints ("Do <verb>" but not "Do not")
+  if echo "$constraints_body" | grep -qE '^Do [^n]'; then
+    echo "Constraint uses permission phrasing (\"Do ...\") — use prohibition phrasing (\"Never\", \"Do not\", \"Only\")" >&2
+    exit 1
+  fi
+
+  # Check that constraint lines have consequences
+  # Constraint lines start with **Never**, **Do not**, or **Only**
+  constraint_lines=$(echo "$constraints_body" | grep -E '^\*\*(Never|Do not|Only)\*\*')
+  if [ -n "$constraint_lines" ]; then
+    # Process constraints body line by line, tracking constraint/consequence pairs
+    prev_constraint=""
+    while IFS= read -r line; do
+      if echo "$line" | grep -qE '^\*\*(Never|Do not|Only)\*\*'; then
+        # If there was a previous constraint without consequence, fail
+        if [ -n "$prev_constraint" ]; then
+          echo "Constraint lacks consequence: $prev_constraint" >&2
+          exit 1
+        fi
+        # Check for consequence on same line (text after first period)
+        after_period="${line#*.}"
+        trimmed=$(echo "$after_period" | tr -d '[:space:]')
+        if [ -n "$trimmed" ]; then
+          # Consequence on same line — clear
+          prev_constraint=""
+        else
+          # No consequence on same line — need it on next line
+          prev_constraint="$line"
+        fi
+      else
+        # Non-constraint line: if we're waiting for a consequence, check it
+        if [ -n "$prev_constraint" ]; then
+          strimmed=$(echo "$line" | tr -d '[:space:]')
+          if [ -n "$strimmed" ]; then
+            # Found consequence on next line
+            prev_constraint=""
+          fi
+        fi
+      fi
+    done <<< "$constraints_body"
+
+    # Check if last constraint had no consequence
+    if [ -n "$prev_constraint" ]; then
+      echo "Constraint lacks consequence: $prev_constraint" >&2
+      exit 1
+    fi
+  fi
+fi
+
 exit 0

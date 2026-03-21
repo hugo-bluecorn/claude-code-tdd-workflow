@@ -455,7 +455,7 @@ EOF
   local stderr_output
   stderr_output=$(run_validate_stderr "$tmp_dir/role.md")
   # Should mention constraint or permission issue
-  assert_matches "constraint\|permission" "$stderr_output"
+  assert_contains "permission" "$stderr_output"
 
   rm -rf "$tmp_dir"
 }
