@@ -15,14 +15,10 @@ disable-model-invocation: true
 ## Step 1: Load Reference Documents
 
 The following reference documents are injected into this session at load time.
+The script outputs `cr-role-creator.md` (CR role definition) followed by
+`role-format.md` (Role File Format specification), separated by `---`.
 
-### CR Role Definition
-
-!`cat ${CLAUDE_PLUGIN_ROOT}/skills/role-init/reference/cr-role-creator.md`
-
-### Role File Format Specification
-
-!`cat ${CLAUDE_PLUGIN_ROOT}/skills/role-init/reference/role-format.md`
+!`${CLAUDE_PLUGIN_ROOT}/scripts/load-role-references.sh`
 
 ## Step 2: Adopt CR Role
 

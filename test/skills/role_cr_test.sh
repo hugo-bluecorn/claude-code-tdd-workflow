@@ -48,22 +48,45 @@ function test_no_agent_field() {
   assert_not_contains "agent:" "$frontmatter"
 }
 
-# ---------- Test 5: Body loads CR role content via DCI ----------
+# ---------- Test 5: Body does NOT contain cat DCI commands ----------
 
-function test_body_loads_cr_role_via_dci() {
-  local content
-  content=$(cat "$SKILL_FILE")
-  assert_contains '!`' "$content"
-  assert_contains "cr-role-creator.md" "$content"
+function test_body_does_not_contain_cat_dci() {
+  local body
+  body=$(get_body)
+  assert_not_contains '!`cat ' "$body"
 }
 
-# ---------- Test 6: Body loads format spec via DCI ----------
+# ---------- Test 6: Body loads references via load-role-references.sh DCI ----------
 
-function test_body_loads_format_spec_via_dci() {
+function test_body_loads_references_via_script_dci() {
   local content
   content=$(cat "$SKILL_FILE")
   assert_contains '!`' "$content"
-  assert_contains "role-format.md" "$content"
+  assert_contains "load-role-references.sh" "$content"
+}
+
+# ---------- Test 6b: Body still references cr-role-creator.md in text ----------
+
+function test_body_references_cr_role_in_text() {
+  local body
+  body=$(get_body)
+  assert_contains "cr-role-creator.md" "$body"
+}
+
+# ---------- Test 6c: Body still references role-format.md in text ----------
+
+function test_body_references_format_spec_in_text() {
+  local body
+  body=$(get_body)
+  assert_contains "role-format.md" "$body"
+}
+
+# ---------- Test 6d: Exactly one DCI invocation for script loading ----------
+
+function test_exactly_one_script_dci_invocation() {
+  local count
+  count=$(grep -c 'load-role-references.sh' "$SKILL_FILE")
+  assert_equals "1" "$count"
 }
 
 # ---------- Test 7: Body contains Approve/Modify/Reject gate ----------
