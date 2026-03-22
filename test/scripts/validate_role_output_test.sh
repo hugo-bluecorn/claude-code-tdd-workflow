@@ -740,3 +740,170 @@ EOF
 
   rm -rf "$tmp_dir"
 }
+
+# ========== Slice 5: Skill Frontmatter Validation ==========
+
+# ---------- Test 27: Valid role file with skill frontmatter passes validation ----------
+
+function test_exits_0_for_valid_role_file_with_skill_frontmatter() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_dir)
+
+  cat > "$tmp_dir/role.md" <<'EOF'
+---
+role: CA
+name: role-ca
+type: session
+description: Code Architect session role
+disable-model-invocation: true
+---
+
+## Identity
+
+You are the Code Architect.
+EOF
+
+  run_validate "$tmp_dir/role.md"
+  assert_exit_code 0
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- Test 28: Role file with skill-style name but missing description fails ----------
+
+function test_exits_nonzero_when_skill_name_missing_description() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_dir)
+
+  cat > "$tmp_dir/role.md" <<'EOF'
+---
+role: CA
+name: role-ca
+type: session
+disable-model-invocation: true
+---
+
+## Identity
+
+You are the Code Architect.
+EOF
+
+  run_validate "$tmp_dir/role.md"
+  assert_exit_code 1
+
+  local stderr_output
+  stderr_output=$(run_validate_stderr "$tmp_dir/role.md")
+  assert_contains "description" "$stderr_output"
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- Test 29: Role file with skill-style name but missing disable-model-invocation fails ----------
+
+function test_exits_nonzero_when_skill_name_missing_disable_model_invocation() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_dir)
+
+  cat > "$tmp_dir/role.md" <<'EOF'
+---
+role: CA
+name: role-ca
+type: session
+description: Code Architect
+---
+
+## Identity
+
+You are the Code Architect.
+EOF
+
+  run_validate "$tmp_dir/role.md"
+  assert_exit_code 1
+
+  local stderr_output
+  stderr_output=$(run_validate_stderr "$tmp_dir/role.md")
+  assert_contains "disable-model-invocation" "$stderr_output"
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- Test 30: Role file with disable-model-invocation set to false fails ----------
+
+function test_exits_nonzero_when_disable_model_invocation_is_false() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_dir)
+
+  cat > "$tmp_dir/role.md" <<'EOF'
+---
+role: CA
+name: role-ca
+type: session
+description: Code Architect
+disable-model-invocation: false
+---
+
+## Identity
+
+You are the Code Architect.
+EOF
+
+  run_validate "$tmp_dir/role.md"
+  assert_exit_code 1
+
+  local stderr_output
+  stderr_output=$(run_validate_stderr "$tmp_dir/role.md")
+  assert_contains "disable-model-invocation" "$stderr_output"
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- Test 31: Traditional role file without skill-style name skips skill validation ----------
+
+function test_exits_0_for_traditional_name_skipping_skill_validation() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_dir)
+
+  cat > "$tmp_dir/role.md" <<'EOF'
+---
+role: test-role
+name: Test Role
+type: session
+---
+
+## Identity
+
+You are a test role.
+EOF
+
+  run_validate "$tmp_dir/role.md"
+  assert_exit_code 0
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- Test 32: Role file with skill-style name and multiline description passes ----------
+
+function test_exits_0_for_skill_name_with_multiline_description() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_dir)
+
+  cat > "$tmp_dir/role.md" <<'EOF'
+---
+role: CA
+name: role-ca
+type: session
+description:
+  Code Architect session role for the tdd-workflow plugin
+disable-model-invocation: true
+---
+
+## Identity
+
+You are the Code Architect.
+EOF
+
+  run_validate "$tmp_dir/role.md"
+  assert_exit_code 0
+
+  rm -rf "$tmp_dir"
+}

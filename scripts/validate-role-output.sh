@@ -51,6 +51,22 @@ if [ -n "$missing" ]; then
   exit 1
 fi
 
+# Skill frontmatter validation (when name starts with "role-")
+name_value=$(echo "$frontmatter" | grep -E '^name:' | sed 's/^name:[[:space:]]*//')
+
+if [[ "$name_value" == role-* ]]; then
+  # Check for description field
+  if ! echo "$frontmatter" | grep -qE '^description:'; then
+    echo "Skill frontmatter missing: description (required when name starts with role-)" >&2
+    exit 1
+  fi
+  # Check for disable-model-invocation: true
+  if ! echo "$frontmatter" | grep -qE '^disable-model-invocation:[[:space:]]*true'; then
+    echo "Skill frontmatter missing or invalid: disable-model-invocation must be true (required when name starts with role-)" >&2
+    exit 1
+  fi
+fi
+
 # Check for Identity section (any heading level)
 if ! grep -qE '^#{1,6} Identity' "$FILE_PATH"; then
   echo "Missing required section: Identity" >&2
