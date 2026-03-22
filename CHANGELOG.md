@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.2.0] - 2026-03-22
+
+### Changed
+- `/role-cr` skill now writes generated role files to `.claude/skills/role-{code}/SKILL.md`
+  (was `context/roles/`), making role files auto-discoverable as Claude Code skills
+- `skills/role-init/reference/role-format.md` documents `.claude/skills/role-{code}/SKILL.md`
+  as the output convention and adds skill frontmatter fields (`description`,
+  `disable-model-invocation: true`) to the format spec
+- `skills/role-init/reference/cr-role-creator.md` — all `context/roles/` references
+  replaced with `.claude/skills/role-{code}/` equivalent in Constraints, Startup,
+  and Workflow sections
+- `skills/role-cr/SKILL.md` Step 6 writes to `.claude/skills/role-{code}/SKILL.md`
+  with `mkdir -p` and skill frontmatter injection instructions
+- CLAUDE.md and README.md updated with new role output path
+
+### Added
+- `validate-role-output.sh` now validates skill frontmatter fields (`description` and
+  `disable-model-invocation: true`) when the `name` field starts with `role-`;
+  traditional role files (name not starting with `role-`) are unaffected
+
 ## [2.1.0] - 2026-03-21
 
 ### Added
