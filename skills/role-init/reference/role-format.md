@@ -49,10 +49,14 @@ generator: /role-init             # or "manual" for hand-authored
 **Required fields:** `role`, `name`, `type`
 **Generated fields:** `version`, `project`, `stack`, `stage`, `generated`, `generator`
 
-**Output convention:** Role files live in `context/roles/` at the project root.
-Filename: `{role-code}-{short-name}.md` (lowercase, e.g., `rv-reviewer.md`).
-This directory is project-owned, version-controlled, and outside `.claude/`
-to avoid namespace collisions with Claude Code internals.
+**Skill frontmatter fields (required when `name` starts with `role-`):**
+- `description`: one-line summary for skill auto-discovery
+- `disable-model-invocation: true`: prevents Claude from invoking the skill without user request
+
+**Output convention:** Role files live in `.claude/skills/role-{code}/SKILL.md`
+(e.g., `.claude/skills/role-ca/SKILL.md`). This follows Claude Code's skill
+discovery convention: any `SKILL.md` under `.claude/skills/` is auto-discovered.
+The `role-` prefix in the directory name keeps role skills visually grouped.
 
 ---
 
