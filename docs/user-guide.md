@@ -70,7 +70,10 @@ If no `.claude/tdd-conventions.json` exists, agents run without language convent
 
 ### Local development with --plugin-dir
 
-When using `--plugin-dir` for local plugin development, `${CLAUDE_PLUGIN_DATA}` is not set. URL sources won't be cached. Use local paths in your config instead.
+When using `--plugin-dir` for local plugin development, two differences apply:
+
+1. **`${CLAUDE_PLUGIN_DATA}` is not set.** URL convention sources won't be cached. Use local paths in your `.claude/tdd-conventions.json` instead.
+2. **DCI shell commands prompt for approval.** Skills that use `!`cmd`` (like `project-conventions` and `/role-cr`) will ask for permission on first run. Installed plugins execute these without prompting.
 
 ---
 
