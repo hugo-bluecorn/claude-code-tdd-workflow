@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.2.1] - 2026-03-22
+
+### Fixed
+- `scripts/load-role-references.sh` — new script outputs `cr-role-creator.md` and
+  `role-format.md` content with a `---` separator; resolves paths relative to
+  `SCRIPT_DIR` so DCI injection works regardless of where the project directory
+  is relative to the plugin cache path
+- `skills/role-cr/SKILL.md` — replaced two cat-based DCI commands with a single
+  `load-role-references.sh` DCI invocation, fixing silent failures when the
+  plugin cache path is outside the project's working directory
+
 ## [2.2.0] - 2026-03-22
 
 ### Changed
