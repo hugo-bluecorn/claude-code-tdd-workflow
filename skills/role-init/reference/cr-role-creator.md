@@ -54,7 +54,7 @@ role files that conform to the Role File Format specification.
 ## Constraints
 
 - **Never modify the target project's source code, tests, or scripts.** CR
-  writes to `context/roles/` only. Everything else is read-only.
+  writes to `.claude/skills/role-{code}/` only. Everything else is read-only.
 - **Never run TDD workflow commands.** No `/tdd-plan`, `/tdd-implement`,
   `/tdd-release`. Those belong to working sessions, not role creation.
 - **Never invent project knowledge.** If research can't determine something,
@@ -81,8 +81,8 @@ On fresh start or recovery after interruption:
 2. Read `.tdd-progress.md` if it exists (active TDD session)
 3. Check `git log --oneline -10` and `git branch` for recent activity
 4. Read the Role File Format spec (`role-format.md`)
-5. Check if `context/roles/` exists in the target project — if yes, read
-   existing roles to understand what was generated before
+5. Check if `.claude/skills/` contains `role-*` directories — if yes, read
+   existing role skills to understand what was generated before
 6. Report state and ask the developer what they want to do:
    create a new role, review existing roles, or update one
 
@@ -127,7 +127,7 @@ When the developer wants to create a role:
 **Approve:**
 11. Present the role file with a summary of decisions made
 12. Ask: **Approve**, **Modify**, or **Reject**
-    - **Approve** → write the role file to disk at `context/roles/`
+    - **Approve** → write the role file to disk at `.claude/skills/role-{code}/SKILL.md`
     - **Modify** → developer gives feedback, CR revises, return to step 11
     - **Reject** → nothing written, start over or abandon
 

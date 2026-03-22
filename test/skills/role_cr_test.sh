@@ -103,28 +103,62 @@ function test_body_contains_validation_script() {
   assert_contains "validate-role-output.sh" "$body"
 }
 
-# ---------- Test 10: Body contains context/roles/ directory creation ----------
+# ---------- Test 10: Body contains .claude/skills/ output path ----------
 
-function test_body_contains_roles_directory() {
+function test_body_contains_claude_skills_output_path() {
   local body
   body=$(get_body)
-  assert_contains "context/roles/" "$body"
+  assert_contains ".claude/skills/" "$body"
 }
 
-# ---------- Test 11: Body contains write-after-approve ordering ----------
+# ---------- Test 11: Body does NOT contain context/roles/ output path ----------
+
+function test_body_does_not_contain_context_roles() {
+  local body
+  body=$(get_body)
+  assert_not_contains "context/roles/" "$body"
+}
+
+# ---------- Test 12: Body instructs mkdir -p .claude/skills/ ----------
+
+function test_body_contains_mkdir_claude_skills() {
+  local body
+  body=$(get_body)
+  assert_contains "mkdir -p" "$body"
+  assert_contains ".claude/skills/" "$body"
+}
+
+# ---------- Test 13: Body instructs writing SKILL.md filename ----------
+
+function test_body_contains_skill_md_filename() {
+  local body
+  body=$(get_body)
+  assert_contains "SKILL.md" "$body"
+}
+
+# ---------- Test 14: Body instructs skill frontmatter injection ----------
+
+function test_body_contains_skill_frontmatter_instructions() {
+  local body
+  body=$(get_body)
+  assert_contains "name" "$body"
+  assert_contains "description" "$body"
+  assert_contains "disable-model-invocation" "$body"
+}
+
+# ---------- Test 15: Write instruction after approval (updated path) ----------
 
 function test_write_instruction_after_approval() {
   local approve_line write_line
   approve_line=$(grep -n "Approve" "$SKILL_FILE" | head -1 | cut -d: -f1)
-  write_line=$(grep -n "context/roles/" "$SKILL_FILE" | head -1 | cut -d: -f1)
+  write_line=$(grep -n ".claude/skills/" "$SKILL_FILE" | head -1 | cut -d: -f1)
   assert_not_empty "$approve_line"
   assert_not_empty "$write_line"
   # The approval gate must appear before the write-to-disk instruction
-  # assert_greater_or_equal_than expected actual => checks actual >= expected
   assert_greater_or_equal_than "$approve_line" "$write_line"
 }
 
-# ---------- Test 12: No template placeholders in skill file ----------
+# ---------- Test 16: No template placeholders in skill file ----------
 
 function test_no_template_placeholders() {
   local content stripped
@@ -134,7 +168,7 @@ function test_no_template_placeholders() {
   assert_not_matches '\{[a-zA-Z_]+\}' "$stripped"
 }
 
-# ---------- Test 13: No references to /role-init ----------
+# ---------- Test 17: No references to /role-init ----------
 
 function test_no_role_init_references() {
   local body

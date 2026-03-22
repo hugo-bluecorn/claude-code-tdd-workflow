@@ -65,8 +65,13 @@ Ask the user to choose one of:
 
 Only after the user selects **Approve**:
 
-1. Create the output directory: `mkdir -p context/roles/`
-2. Write the role file to `context/roles/<role-name>.md`
+1. Derive the role code from the `role:` frontmatter field (lowercase)
+2. Create the output directory: `mkdir -p .claude/skills/role-{code}`
+3. Add skill frontmatter to the generated role file:
+   - `name: role-{code}` (e.g., `role-ca`)
+   - `description:` one-line summary of the role's purpose
+   - `disable-model-invocation: true`
+4. Write the role file to `.claude/skills/role-{code}/SKILL.md`
 
 Do NOT write any files before getting explicit approval in Step 5.
 

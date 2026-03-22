@@ -96,7 +96,7 @@ Done
 | `/tdd-release` | Release entry point (forks context) |
 | `/tdd-finalize-docs` | Post-release documentation finalization (forks context) |
 | `/tdd-update-context` | Updates convention reference files to latest versions |
-| `/role-cr` | Inline skill that generates role files via the CR meta-role; loads format spec via DCI, validates output, and writes approved roles to `context/roles/` |
+| `/role-cr` | Inline skill that generates role files via the CR meta-role; loads format spec via DCI, validates output, and writes approved roles to `.claude/skills/role-{code}/SKILL.md` |
 | project-conventions | Dynamic convention loading based on project configuration |
 
 ### Hooks
