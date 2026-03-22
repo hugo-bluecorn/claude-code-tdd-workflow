@@ -33,7 +33,7 @@ structured RED -> GREEN -> REFACTOR cycle.
 - **`/tdd-release`** — Finalize and release a completed TDD feature
 - **`/tdd-finalize-docs`** — Post-release documentation updates across discovered project docs
 - **`/tdd-update-context`** — Update convention reference files to latest versions
-- **`/role-cr`** — Generate a role file using the CR meta-role; validates output and writes approved role to `context/roles/`
+- **`/role-cr`** — Generate a role file using the CR meta-role; validates output and writes approved role to `.claude/skills/role-{code}/SKILL.md`
 
 > **Important:** Do NOT manually invoke `tdd-workflow:tdd-planner` via the Task
 > tool. It is designed to run as a research subagent spawned by `/tdd-plan`.
