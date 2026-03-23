@@ -46,15 +46,35 @@ identity, responsibilities, constraints, and coordination protocols.
 Without role files, developers manually repeat these instructions at the
 start of every session.
 
-### 1.2 What Roles Are
+### 1.2 What Roles Are — The Meta-Definition
 
 A role encodes the repeated workflow patterns, knowledge references, and
 behavioral constraints that a developer would otherwise manually provide
-at the start of every session. Roles answer three questions:
+at the start of every session. This definition was derived from observing
+the manual setup of three concurrent Claude Code sessions (CA, CP, CI)
+for the tdd-workflow plugin project — the developer repeated the same
+identity, constraints, and coordination instructions each time.
+
+The definition was crystallized into three questions:
 
 1. **Who is this session?** — identity, responsibilities, constraints
 2. **What does this session know?** — project context, architecture notes
 3. **How does this session work?** — startup procedures, review checklists
+
+These three questions became the basis for the Role File Format
+specification (v2.1), which expresses the definition as a structural
+menu: Core sections (Identity, Responsibilities, Constraints), Optional
+sections (Memory, Startup, Workflow, Context, Coordination), and Custom
+sections. The format spec is, in effect, the meta-definition rendered as
+a data structure.
+
+**This definition matters because it shapes the agent's output.** When
+the role-creator agent reads "encode workflow patterns, knowledge
+references, and behavioral constraints," those three categories direct
+which tokens the agent generates. The definition is a seed — the agent
+grows it based on project research, but the seed determines the direction
+of growth. See §5.10 for how the Prompt C experiment revealed the
+definition's boundaries and the agent's capacity to expand beyond them.
 
 ### 1.3 What CR Does
 
@@ -862,7 +882,99 @@ framing words deliberately, understanding their effect on token generation.
 The technical constraint is preserved (no core workflow dependency on role
 files) while the semantic framing is corrected.
 
-### 5.10 Limitations
+### 5.10 The Meta-Definition: How the Role Definition Shapes Agent Output
+
+The role-creator agent reads the CR role definition (`cr-role-creator.md`)
+before generating any role files. The definition states: "encode workflow
+patterns, knowledge references, and behavioral constraints." These three
+categories — workflow patterns, knowledge references, behavioral constraints
+— are the seed that directs which tokens the agent generates.
+
+**Derivation chain:**
+
+```
+Developer observation (2026-03-20)
+  "I keep repeating the same instructions at the start of every session"
+    ↓
+Synthesis document
+  "A role encodes workflow patterns, knowledge references, and constraints"
+    ↓
+Format spec v2.1
+  Core: Identity, Responsibilities, Constraints
+  Optional: Memory, Startup, Workflow, Context, Coordination
+  Custom: developer-defined
+    ↓
+CR role definition (cr-role-creator.md)
+  "encode workflow patterns, knowledge references, and behavioral constraints"
+    ↓
+Role-creator agent reads this definition
+  → generates content fitting these three categories
+    ↓
+Generated role files
+  → contain Identity, Responsibilities, Constraints, Workflow, Context...
+```
+
+Each link in this chain is a token-generation directive. The format spec's
+section names tell the agent WHAT sections to create. The CR definition's
+three categories tell the agent WHAT content to prioritize. The words
+chosen at each link shape the output at every subsequent link — the same
+semantic framing principle documented in §5.9.
+
+**What the Prompt C experiment revealed:**
+
+The v2.3.0 Prompt C agent generated content that EXPANDED beyond the
+three-category definition:
+
+| Definition Category | What the definition covers | What the agent generated beyond it |
+|---|---|---|
+| Workflow patterns | Startup procedures, review checklists | **Domain-Aware Review** — solitaire-specific quality criteria for CP (game logic separated from rendering, provider scoping) |
+| Knowledge references | Project context, architecture notes | **Four-layer architecture model** — the source had three layers; the agent invented the Domain layer from RTFM research + source role enrichment |
+| Behavioral constraints | What is forbidden, consequences | **Architecture enforcement as a constraint** — not just "don't do X" but "verify Y in every review" (active enforcement, not passive prohibition) |
+| *(not in definition)* | — | **Cross-check logic** — crash-recovery heuristic recovered from source roles. Operational wisdom the definition doesn't mention. |
+| *(not in definition)* | — | **Domain-specific edge cases** — "empty stock, invalid moves, win condition, undo at stack boundary." Game expertise encoded as quality criteria. |
+
+The agent went beyond the stated definition because:
+1. The **source roles** contained patterns (like cross-check logic) that
+   the definition didn't name but the agent recognized as valuable
+2. The **RTFM research** revealed framework-specific patterns (Flame
+   component lifecycle, Riverpod provider scoping) that implied new
+   review criteria
+3. The **project context** (a card game) provided domain concepts that
+   the definition's generic categories couldn't anticipate
+
+**The definition is a seed, not a ceiling.** The agent's research
+expands it. But the seed determines the DIRECTION of expansion. A
+definition that said "encode workflow patterns and knowledge references"
+(omitting constraints) would produce roles without Constraints sections.
+A definition that explicitly included "architecture enforcement" would
+produce roles that prioritize boundary checking in every section.
+
+**Emergent categories not yet in the definition:**
+
+Based on what the agent generated beyond the three stated categories,
+at least two additional dimensions emerged:
+
+1. **Architecture enforcement** — active checking for structural violations,
+   not just passive constraints. The agent generated "never approve a plan
+   that violates the Flame/Riverpod boundary" and CP's "Domain-Aware Review"
+   — both are enforcement mechanisms, not just knowledge or constraints.
+
+2. **Domain-specific quality criteria** — project-specific edge cases and
+   review checks that encode expertise about the problem domain (card games,
+   pile states, move validation boundaries). These transcend generic
+   "workflow patterns" — they are domain knowledge crystallized as
+   actionable checklists.
+
+**Design question for future work:** Should these emergent categories be
+added to the meta-definition to guide all future role generation? Or
+should the definition stay minimal and let the agent discover them per
+project? The semantic framing principle (§5.9) suggests the answer
+matters: adding "architecture enforcement" to the definition would direct
+all future agents to prioritize boundary checking. Omitting it means
+some agents will discover it (as in Prompt C) and some won't (as in
+Tests 2-4). This is an open question for `/role-evolve` design.
+
+### 5.11 Limitations
 
 1. All experiments used a single target project (Flutter solitaire with
    Flame + Riverpod). Results may differ for other stacks.
