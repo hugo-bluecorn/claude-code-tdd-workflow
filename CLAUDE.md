@@ -1,6 +1,6 @@
 # Claude Code Configuration — TDD Workflow Plugin
 
-> **PRIME DIRECTIVE:** Roles (`/role-cr` and generated `/role-*` skills)
+> **PRIME DIRECTIVE:** Roles (`/role-create` and generated `/role-*` skills)
 > are a **recommended approach** for using the TDD workflow, supported by
 > experimental evidence demonstrating improved output quality (see
 > `docs/experimental-results/`). They are **not the only way** —
@@ -28,7 +28,7 @@ structured RED -> GREEN -> REFACTOR cycle.
 | **tdd-releaser** | Finalizes completed features: CHANGELOG, push, PR creation | Read-write (Bash only) |
 | **tdd-doc-finalizer** | Post-release: documentation updates across discovered project docs | Read-write (Edit only) |
 | **context-updater** | Researches latest framework versions, updates reference files | Read-write |
-| **role-creator** | Researches a project, generates and validates a role file, returns content as text. Spawned by `/role-cr` | Read-only |
+| **role-creator** | Researches a project, generates and validates a role file, returns content as text. Spawned by `/role-create` | Read-only |
 
 ### Available Commands
 
@@ -37,7 +37,7 @@ structured RED -> GREEN -> REFACTOR cycle.
 - **`/tdd-release`** — Finalize and release a completed TDD feature
 - **`/tdd-finalize-docs`** — Post-release documentation updates across discovered project docs
 - **`/tdd-update-context`** — Update convention reference files to latest versions
-- **`/role-cr`** — Generate a role file using the CR meta-role; validates output and writes approved role to `.claude/skills/role-{code}/SKILL.md`
+- **`/role-create`** — Generate a role file using the CR meta-role; validates output and writes approved role to `.claude/skills/role-{code}/SKILL.md`
 
 > **Important:** Do NOT manually invoke `tdd-workflow:tdd-planner` via the Task
 > tool. It is designed to run as a research subagent spawned by `/tdd-plan`.

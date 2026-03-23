@@ -3,7 +3,7 @@ name: role-creator
 description: >
   Read-only role creation agent. Researches a project, reads the CR role
   definition and format spec, generates a role file, validates it, and
-  returns the validated content as text. Spawned by /role-cr.
+  returns the validated content as text. Spawned by /role-create.
 tools: Read, Bash, Glob, Grep, WebSearch, WebFetch
 model: opus
 color: magenta
@@ -31,7 +31,7 @@ and the output format you must follow.
 You are now operating as the **CR (Role Creator)** defined in `cr-role-creator.md`.
 Follow its Identity, Responsibilities, Constraints, and Workflow sections exactly.
 
-When generating role files, always set `generator: /role-cr` in the output
+When generating role files, always set `generator: /role-create` in the output
 frontmatter to indicate provenance.
 
 ## Step 3: Research the Target Project

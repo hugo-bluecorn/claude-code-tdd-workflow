@@ -26,7 +26,7 @@ After installation, verify it loaded:
 claude --debug
 ```
 
-Look for `loading plugin: tdd-workflow` in the output. The `/tdd-plan`, `/tdd-implement`, `/tdd-release`, `/tdd-finalize-docs`, and `/role-cr` commands should appear in your skill list.
+Look for `loading plugin: tdd-workflow` in the output. The `/tdd-plan`, `/tdd-implement`, `/tdd-release`, `/tdd-finalize-docs`, and `/role-create` commands should appear in your skill list.
 
 ---
 
@@ -73,7 +73,7 @@ If no `.claude/tdd-conventions.json` exists, agents run without language convent
 When using `--plugin-dir` for local plugin development, two differences apply:
 
 1. **`${CLAUDE_PLUGIN_DATA}` is not set.** URL convention sources won't be cached. Use local paths in your `.claude/tdd-conventions.json` instead.
-2. **DCI shell commands prompt for approval.** Skills that use `!`cmd`` (like `project-conventions` and `/role-cr`) will ask for permission on first run. Installed plugins execute these without prompting.
+2. **DCI shell commands prompt for approval.** Skills that use `!`cmd`` (like `project-conventions` and `/role-create`) will ask for permission on first run. Installed plugins execute these without prompting.
 
 ---
 

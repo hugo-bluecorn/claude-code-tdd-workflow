@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+
+## [2.4.0] - 2026-03-23
+
+### Changed
+- `/role-cr` skill renamed to `/role-create` to follow the `prefix-verb` naming
+  convention; directory moved from `skills/role-cr/` to `skills/role-create/`
+- CR role definition (`cr-role-creator.md`) updated to v3: reordered
+  responsibilities (Research → Interview → Generation → QA), removed Format
+  Evolution section, added placeholder constraint with behavioral explanation,
+  removed "optional" framing from Constraints
+- `agents/role-creator.md` and `scripts/load-role-references.sh` updated to
+  reference `/role-create`
+- CLAUDE.md, README.md, and `docs/user-guide.md` updated with new skill name
+
 ## [2.3.0] - 2026-03-23
 
 ### Added

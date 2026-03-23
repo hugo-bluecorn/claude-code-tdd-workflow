@@ -1,6 +1,6 @@
 #!/bin/bash
-# Outputs CR role definition and Role File Format spec for DCI injection.
-# Called via !`cmd` DCI in /role-cr SKILL.md.
+# Outputs CR role definition and Role File Format spec.
+# Used by the role-creator agent for reference loading.
 #
 # Output: cr-role-creator.md content, then ---, then role-format.md content
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Tests for load-role-references.sh: outputs CR role and format spec content
-# for DCI injection into /role-cr SKILL.md.
+# for the role-creator agent.
 
 SCRIPT="$(pwd)/scripts/load-role-references.sh"
 

@@ -11,25 +11,41 @@ get_section() {
   sed -n "/^## ${heading}$/,/^## /p" "$CR_FILE" | sed '$d'
 }
 
-# ---------- Test 1: CR Constraints section references .claude/skills/ path ----------
-
-function test_constraints_references_claude_skills_path() {
-  local constraints
-  constraints=$(get_section "Constraints")
-
-  assert_contains ".claude/skills/" "$constraints"
+# Helper: extract YAML frontmatter (between --- delimiters)
+get_frontmatter() {
+  sed -n '/^---$/,/^---$/p' "$CR_FILE" | sed '1d;$d'
 }
 
-# ---------- Test 2: CR Constraints section does NOT reference context/roles/ ----------
+# ---------- Test 1: CR file has version 3 in frontmatter ----------
 
-function test_constraints_does_not_reference_context_roles() {
-  local constraints
-  constraints=$(get_section "Constraints")
-
-  assert_not_contains "context/roles/" "$constraints"
+function test_frontmatter_version_3() {
+  local frontmatter
+  frontmatter=$(get_frontmatter)
+  assert_contains "version: 3" "$frontmatter"
 }
 
-# ---------- Test 3: CR Startup section references .claude/skills/ for existing role check ----------
+# ---------- Test 2: CR file does not contain "optional" in Constraints ----------
+
+function test_constraints_no_optional_framing() {
+  local constraints
+  constraints=$(get_section "Constraints")
+  # v3 removed "Roles are optional context" wording
+  assert_not_contains "optional" "$constraints"
+}
+
+# ---------- Test 3: CR file references .claude/skills/ path ----------
+
+function test_file_references_claude_skills_path() {
+  assert_file_contains "$CR_FILE" ".claude/skills/"
+}
+
+# ---------- Test 4: No context/roles/ references remain ----------
+
+function test_no_remaining_context_roles_references() {
+  assert_file_not_contains "$CR_FILE" "context/roles/"
+}
+
+# ---------- Test 5: Startup section references .claude/skills/ path ----------
 
 function test_startup_references_claude_skills_path() {
   local startup
@@ -38,17 +54,25 @@ function test_startup_references_claude_skills_path() {
   assert_contains ".claude/skills/" "$startup"
 }
 
-# ---------- Test 4: CR Workflow Approve step references .claude/skills/ ----------
+# ---------- Test 6: Identity section exists ----------
 
-function test_workflow_approve_references_claude_skills_path() {
-  local workflow
-  workflow=$(get_section "Workflow")
-
-  assert_contains ".claude/skills/" "$workflow"
+function test_identity_section_exists() {
+  assert_file_contains "$CR_FILE" "## Identity"
 }
 
-# ---------- Test 5: CR file has no remaining references to context/roles/ ----------
+# ---------- Test 7: No skill frontmatter fields in CR file ----------
 
-function test_no_remaining_context_roles_references() {
-  assert_file_not_contains "$CR_FILE" "context/roles/"
+function test_no_skill_frontmatter_fields() {
+  local frontmatter
+  frontmatter=$(get_frontmatter)
+  assert_not_contains "description:" "$frontmatter"
+  assert_not_contains "disable-model-invocation:" "$frontmatter"
+}
+
+# ---------- Test 8: Generator field shows /role-create ----------
+
+function test_generator_field_role_create() {
+  local frontmatter
+  frontmatter=$(get_frontmatter)
+  assert_contains "generator: /role-create" "$frontmatter"
 }
