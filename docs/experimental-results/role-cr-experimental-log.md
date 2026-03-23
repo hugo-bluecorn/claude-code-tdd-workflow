@@ -580,3 +580,77 @@ Loaded `/role-ca` in new session. CA ran startup checklist, proposed file struct
 **Verdict:** Full chain works without bypass. Skill+agent architecture eliminates the
 DCI interruption problem. The approval gate is mechanical — agent cannot write files.
 v2.3.0 is production-ready.
+
+---
+
+### E2E Test: v2.3.0 Prompt C (adapted from source, clean slate)
+
+**Setup:** v2.3.0 from marketplace. Fresh `/tmp/solitaire` (flutter create + /init +
+git init). Auto-memory explicitly cleared (`rm -rf ~/.claude/projects/-tmp-solitaire/memory/`)
+per §3.7. `/role-cr` skill with Prompt C (three-role adaptation with source file paths).
+Default permissions (no bypass).
+
+**Purpose:** Test whether the agent's mechanical critique phase fixes the deferential
+copying observed in Tests 2-4 when adapting from source roles. This is the controlled
+comparison for §5.5 (A Priori vs Adapted Generation).
+
+**Clean-slate verification:** `/init` produced a CLAUDE.md saying "Flutter solitaire card
+game app" with no Flame/Riverpod/flame_riverpod mentions — confirming auto-memory was
+not influencing the session.
+
+**Observations:**
+1. `/role-cr` loaded without DCI prompt (no DCI in skill)
+2. Skill read all three source role files from the plugin project
+3. Skill spawned 3 role-creator agents in parallel
+4. Each agent independently:
+   - Read cr-role-creator.md + role-format.md via Bash cat
+   - Read source role file for its specific role (CA, CP, or CI)
+   - Read target project (CLAUDE.md, pubspec.yaml, lib/)
+   - Ran web searches for Flame/Riverpod (RTFM)
+   - Generated role file with skill frontmatter
+   - Wrote draft to /tmp/ for validation
+   - Ran validate-role-output.sh, fixed issues, re-validated
+   - Returned validated content as text
+5. Skill presented summary with Approve/Modify/Reject gate
+6. After Approve: wrote to `.claude/skills/role-{code}/SKILL.md`
+
+**Output quality (CA role — 160 lines, richest across all experiments):**
+- `generator: /role-cr`, `name: role-ca`, `description`, `disable-model-invocation: true`
+- **Four-layer architecture** (new): Flame (rendering/sprites/drag-and-drop), Riverpod
+  (deck/tableau/foundation/stock-waste/move-history/win-detection), Flutter (app shell/
+  menus/HUD), Domain (cards with suit/rank, piles, moves, validity rules)
+- **Cross-check logic preserved** (lines 100-102) — crash-recovery heuristic from the
+  hand-authored source that was lost in ALL previous generated versions
+- All constraints with consequences
+- Verification Summary includes `flutter analyze` status
+- No "Do write" non-constraint
+- No verbatim copying despite having source files
+
+**Output quality (CP role — 126 lines):**
+- **"Domain-Aware Review"** — entirely new section not in source or any previous version:
+  ensures game logic slices separated from rendering, providers scoped narrowly, card
+  interaction specs define both logic effect and visual feedback separately
+- **Quality Checklist** with solitaire-specific edge cases: "empty stock, invalid moves,
+  win condition, undo at stack boundary"
+- "Game logic slices contain no Flame or widget imports" + "Rendering slices do not
+  duplicate game rule logic" as checklist items
+
+**Output quality (CI role — 157 lines):**
+- Flutter-specific testing conventions: unit for pure game logic, widget for UI, Flame
+  component tests for rendering
+- Riverpod conventions: no codegen, manual provider declarations
+- Error handling includes flutter analyze and dependency resolution failures
+
+**Key finding:** The agent-adapted version produced RICHER output than:
+- The agent-from-scratch version (v2.3.0 Prompt D: 130 lines, three layers)
+- All previous adapted versions (Tests 2-5: one or two layers, verbatim copying)
+
+Source roles provided structural scaffolding that the agent enriched with project-specific
+content. The "copy and substitute" behavior from Tests 2-4 was replaced by "scaffold and
+enrich" — the same Prompt C that produced near-verbatim copies in inline skills produced
+the richest output yet when processed by the agent.
+
+**Implication for `/role-evolve`:** This "scaffold + enrich" pattern is the hypothetical
+premise for role evolution. Take existing role (v1) as scaffold, enrich with accumulated
+agent memory + MEMORY.md, produce v2. The mechanism is validated — only the enrichment
+source changes (machine-learned wisdom instead of developer-provided source roles).

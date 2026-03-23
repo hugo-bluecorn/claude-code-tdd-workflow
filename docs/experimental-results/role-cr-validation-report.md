@@ -657,22 +657,55 @@ experiments:
 | Adapted + Critique (Test 3) | "Flame handles rendering + Riverpod manages game state. flame_riverpod bridges." |
 | A priori + Agent (v2.3.0) | "Three-layer separation — Flame (rendering only), Riverpod (game state only), flame_riverpod (bridge via RiverpodAwareGameWidget and RiverpodComponentMixin). addToGameWidgetBuild before onMount." |
 
-**Interpretation:** When CR has source roles to adapt, it anchors to the
-source text and makes minimal changes. When generating from scratch, CR
-has creative freedom to research the stack and produce project-specific
-content. The adapted condition triggers a "copy and substitute" behavior;
-the a priori condition triggers a "research and compose" behavior.
+**Initial interpretation (before v2.3.0 Prompt C test):** When CR has
+source roles to adapt, it anchors to the source text and makes minimal
+changes. The adapted condition triggers "copy and substitute"; the a priori
+condition triggers "research and compose."
 
-This finding informed the v2.3.0 final test, which deliberately used
-Prompt D (from scratch) rather than Prompt C (with source files).
+**Revised interpretation (after v2.3.0 Prompt C test):** The deferential
+copying was a property of the inline skill delivery, not of adaptation
+itself. When the same Prompt C (adapted from source files) was tested with
+the v2.3.0 agent architecture on a clean-slate project (auto-memory
+explicitly cleared per §3.7), the results were:
 
-**Note:** This does not mean adapted generation is always worse. A
-well-crafted source role from a similar project may provide useful
-structure that a priori generation would miss. The finding is that CR
-needs explicit critique instructions to avoid deferential copying when
-adapting, and even then the behavior is non-deterministic in inline skills.
-The agent architecture (v2.3.0) mitigates this by executing the critique
-step mechanically.
+| Condition | Context Section Content |
+|---|---|
+| Adapted + Inline Skill (Test 2) | "Flame components for rendering + Riverpod providers for game state" (one line) |
+| Adapted + Agent (v2.3.0 Prompt C) | **Four-layer architecture:** Flame (rendering, sprites, drag-and-drop), Riverpod (deck, tableau, foundation, stock/waste, move history, win detection), Flutter (app shell, menus, HUD), Domain (cards with suit/rank, piles, moves, validity rules). 160 lines total — richest CA output across all experiments. |
+
+The agent-adapted version produced **richer** output than both the
+agent-from-scratch version (v2.3.0 Prompt D, three layers) and all
+previous adapted versions (Tests 2-5, one or two layers). New content
+not in any previous version:
+
+- **Four layers** — added Domain model as an explicit separation layer
+  (cards, piles, moves, validity rules live in the domain, not UI code)
+- **CP "Domain-Aware Review"** — entirely new section ensuring game logic
+  slices are separated from rendering, providers scoped narrowly, card
+  interaction specs define both logic effect and visual feedback separately
+- **CP Quality Checklist** with solitaire-specific edge cases: "empty stock,
+  invalid moves, win condition, undo at stack boundary"
+- **CA cross-check logic preserved** (lines 100-102) — crash-recovery
+  heuristic from the hand-authored source that was lost in all previous
+  generated versions
+- **Verification Summary** includes `flutter analyze` status
+
+**Conclusion:** With the agent architecture, adapted generation produces
+richer output than a priori generation because the source roles provide
+structural scaffolding that the agent enriches with project-specific
+content rather than copying verbatim. The deferential copying observed
+in Tests 2-4 was a prompt-level inline skill problem — the agent's
+mechanical critique phase fixes it.
+
+**Implication for `/role-evolve`:** This finding provides a hypothetical
+premise for the planned role evolution feature. If adapted generation
+(source role + agent enrichment) produces richer output than from-scratch
+generation, then evolve follows the same pattern: take the existing role
+(v1) as structural scaffolding, enrich it with accumulated agent memory
+and MEMORY.md insights, and produce a higher-quality v2. The "scaffold +
+enrich" mechanism validated here is the same mechanism that `/role-evolve`
+would use — the difference is that evolve's enrichment source is machine-
+learned operational wisdom rather than developer-provided source roles.
 
 ### 5.6 Architecture Decision Timeline
 
