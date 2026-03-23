@@ -194,10 +194,28 @@ LLM behavior (see §5.9).
 
 ### 2.2 Claude Code Plugin Architecture
 
-The tdd-workflow plugin provides six agents and multiple skills. The
+The tdd-workflow plugin provides seven agents and multiple skills. The
 established pattern for complex operations is inline skill + forked agent
 (e.g., `/tdd-plan` + `tdd-planner`). Skills handle user interaction;
 agents handle mechanical execution in isolated contexts.
+
+**Naming convention:**
+
+| Component | Convention | Pattern | Examples |
+|---|---|---|---|
+| Skills (action) | `prefix-verb` | What the user invokes | `tdd-plan`, `tdd-implement`, `tdd-release` |
+| Skills (context) | `prefix-noun` | What gets injected | `project-conventions` |
+| Agents | `prefix-noun` (actor) | Who does the work | `tdd-planner`, `tdd-implementer`, `role-creator` |
+
+Skills are actions or context. Agents are actors. The pairing is verb/noun:
+`/tdd-plan` (skill, verb) spawns `tdd-planner` (agent, noun). This
+convention makes the relationship between skill and agent immediately
+clear from the name.
+
+**Known deviation:** `/role-cr` was named after the CR role code (Role
+Creator abbreviation), not as a verb. The convention predicts `role-create`
+(skill) + `role-creator` (agent). This deviation is scheduled for
+correction (Issue 011).
 
 ### 2.3 Relevant Platform Behaviors
 
