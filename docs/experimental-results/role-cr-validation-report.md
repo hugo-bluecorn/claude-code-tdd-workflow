@@ -1218,7 +1218,14 @@ See `role-format-redesign.md` in this directory.
 
 See `role-cr-experimental-log.md` in this directory.
 
-## Appendix D: CR Role Definition (v2, as read by the role-creator agent)
+## Appendix D: Self-Compilation Experiment
+
+See `role-cr-self-compilation.md` in this directory. Separate experiment
+applying CR to the plugin project itself, comparing agent-generated roles
+against the hand-authored proto-roles. Includes full proto-role text as
+Appendix E and references to the generated roles as Appendix F.
+
+## Appendix E: CR Role Definition (v2, as read by the role-creator agent)
 
 The following is the complete CR role definition that the role-creator
 agent reads via `Bash cat` before generating any role files. This is the
