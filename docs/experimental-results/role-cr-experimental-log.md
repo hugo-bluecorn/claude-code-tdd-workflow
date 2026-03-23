@@ -300,7 +300,7 @@ researched APIs (RiverpodAwareGameWidget, RiverpodGameMixin, etc.).
 **Error observed:**
 ```
 Shell command permission check failed for pattern
-"!/home/hugo-bluecorn/.claude/plugins/cache/local-plugins/tdd-workflow/2.2.0/
+"!.../.claude/plugins/cache/local-plugins/tdd-workflow/2.2.0/
 scripts/load-role-references.sh": This command requires approval
 ```
 
@@ -328,7 +328,7 @@ Replaced `cat` DCI with `load-role-references.sh` script. 726 tests, 1058 assert
 **Error observed:**
 ```
 Shell command permission check failed for pattern
-"!/home/hugo-bluecorn/.claude/plugins/cache/local-plugins/tdd-workflow/2.2.1/
+"!.../.claude/plugins/cache/local-plugins/tdd-workflow/2.2.1/
 scripts/load-role-references.sh": This command requires approval
 ```
 

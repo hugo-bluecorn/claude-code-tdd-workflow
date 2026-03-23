@@ -173,7 +173,7 @@ slice list with live status tracking.
 - `test/hooks/validate_plan_output_test.sh` — existing validation tests
 
 ### Documentation
-- Original plan: `/home/hugo-bluecorn/.claude/plans/misty-giggling-dawn.md`
+- Original plan: `~/.claude/plans/misty-giggling-dawn.md`
 
 ### Issues / PRs
 - None (internal fix)

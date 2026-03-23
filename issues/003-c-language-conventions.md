@@ -20,7 +20,7 @@ prescriptive about code and test quality, while remaining build-system-agnostic.
 
 ## Anchor Project
 
-`/home/hugo-bluecorn/bluecorn/CSR/git/zenoh_dart` — C FFI shim for zenoh pub/sub protocol.
+`zenoh_dart` (external project) — C FFI shim for zenoh pub/sub protocol.
 This is a Dart FFI plugin — inherently a monorepo (C shim + Dart package in one repo)
 because the FFI architecture demands it.
 

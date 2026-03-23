@@ -108,7 +108,7 @@ agents handle mechanical execution in isolated contexts.
   recreated from scratch before each experiment
 - **Stack:** Dart SDK ^3.11.1, Flutter, Flame 1.36+, Riverpod 3.x (no
   codegen), flame_riverpod 5.5+
-- **Plugin source:** `/home/hugo-bluecorn/bluecorn/CLAUDE/claude-code-tdd-workflow`
+- **Plugin source:** `claude-code-tdd-workflow` (this repository)
 - **Plugin delivery:** Local marketplace install (`local-plugins`)
 
 ### 3.2 Measurement Criteria

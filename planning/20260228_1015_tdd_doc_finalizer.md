@@ -134,7 +134,7 @@ The feature is broken into independently testable slices, each following the RED
 ### Key Decisions
 - **Model: sonnet**: Documentation updates don't require opus-level reasoning; matches releaser pattern
 - **maxTurns: 30**: Same as releaser; sufficient for the read-edit-test-push cycle (~25 operations expected)
-- **Prompt source**: Full agent prompt from `/home/hugo-bluecorn/.claude/projects/-home-hugo-bluecorn-bluecorn-CSR-git-zenoh-old/memory/doc-finalizer-prompt.md`
+- **Prompt source**: Full agent prompt from the zenoh_dart project's auto-memory (`doc-finalizer-prompt.md`)
 
 ### Future Improvements
 - Add dynamic file discovery so the agent can find new documentation files without prompt updates
@@ -157,7 +157,7 @@ The feature is broken into independently testable slices, each following the RED
 - `hooks/check-release-complete.sh` — reused stop hook
 
 ### Documentation
-- Doc-finalizer prompt specification: `/home/hugo-bluecorn/.claude/projects/-home-hugo-bluecorn-bluecorn-CSR-git-zenoh-old/memory/doc-finalizer-prompt.md`
+- Doc-finalizer prompt specification: zenoh_dart project auto-memory (`doc-finalizer-prompt.md`)
 
 ### Issues / PRs
 - None — new feature
