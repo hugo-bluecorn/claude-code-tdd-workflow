@@ -269,10 +269,10 @@ function test_existing_agent_rows_preserved() {
   assert_file_contains "$CLAUDE_FILE" "tdd-doc-finalizer"
 }
 
-# ---------- Test 5: Available Commands section includes /role-cr ----------
+# ---------- Test 5: Available Commands section includes /role-create ----------
 
-function test_available_commands_has_role_cr() {
-  assert_file_contains "$CLAUDE_FILE" "/role-cr"
+function test_available_commands_has_role_create() {
+  assert_file_contains "$CLAUDE_FILE" "/role-create"
 }
 
 # ---------- Test 6: No duplicate role-creator entries in table ----------
