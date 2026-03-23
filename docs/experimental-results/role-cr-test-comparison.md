@@ -131,3 +131,11 @@ boundary specificity, constraint consequences, workflow procedures, and format c
 5. **RTFM (research unfamiliar tech) produces dramatically better output** — real API names
    vs plausible-sounding guesses. The difference matters for downstream consumers (CI using
    the role to write code).
+6. **Adapted generation with agents enriches rather than copies.** Source roles serve as
+   structural scaffolding. The agent adds project-specific content, recovering lost elements
+   and inventing new sections. This "scaffold + enrich" pattern validates the premise for
+   `/role-evolve`.
+7. **Adjectives in system prompts are directives, not descriptions.** "Optional" caused the
+   LLM to deprioritize roles throughout the study. "Recommended, not the only way" corrects
+   the framing while preserving developer autonomy. All plugin text processed by LLMs should
+   be audited for unintended framing effects.

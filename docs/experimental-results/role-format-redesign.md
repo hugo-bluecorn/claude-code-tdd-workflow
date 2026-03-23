@@ -44,10 +44,13 @@ on their workflow description or existing prompts. This was validated against th
 Same pattern as `/tdd-plan`. CR presents the generated role, developer approves, modifies,
 or rejects before anything is written to disk.
 
-### Output convention: `context/roles/`
-Role files live at `context/roles/{role-code}-{short-name}.md` — project-owned, versioned,
-outside `.claude/` to avoid namespace collisions with Claude Code internals. Developer can
-use a different path if they prefer (e.g., `ai/roles/`).
+### Output convention: `context/roles/` *(superseded by Issue 008)*
+> Later changed to `.claude/skills/role-{code}/SKILL.md` — see Issue 008
+> and "Output Path Research" section below.
+
+Original decision: role files at `context/roles/{role-code}-{short-name}.md` — project-owned,
+versioned, outside `.claude/` to avoid namespace collisions. Developer can use a different
+path if they prefer.
 
 ### Role import workflow
 Developer copies role file from project A to project B, tells CR to adapt it. CR researches
@@ -175,9 +178,12 @@ These are skill/agent implementation concerns, not role file refinements.
 5 tests across 3 workflow revisions. CR + format spec v2.1 validated. Design is sound.
 Remaining gaps are implementation concerns for the skill/agent layer.
 
-## Architecture Decision: Skill-only, no agent (2026-03-21)
+## Architecture Decision: Skill-only, no agent (2026-03-21) *(reversed 2026-03-22)*
 
-`/role-cr` is an inline skill (like `/tdd-implement`), NOT a skill + forked agent.
+> This decision was reversed after E2E testing revealed DCI permission
+> interruptions. See "Architecture Reversal" section below.
+
+Original decision: `/role-cr` as inline skill only, no forked agent.
 
 **Why no agent:**
 - Role creation is conversational — agents are fire-and-forget, can't do multi-turn

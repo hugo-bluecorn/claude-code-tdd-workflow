@@ -11,17 +11,26 @@
 
 This report documents the iterative design, implementation, and validation
 of the Role Creator (CR) feature for the tdd-workflow Claude Code plugin.
-Over three days and 10+ experiments, we evolved CR from a pasted prompt
-through an inline skill to a skill+agent architecture. Key findings:
-(1) prompt-level procedural instructions are non-deterministically followed
-by LLMs, (2) DCI shell commands in Claude Code skills create permission
-interruptions that corrupt procedural chains, (3) forked agents with
-restricted tool access provide mechanical enforcement that inline skills
-cannot, (4) requiring LLMs to research external documentation (RTFM)
-rather than relying on training data produces dramatically higher-quality
-output with verified API references. The final v2.3.0 architecture
-generates validated, auto-discoverable role skill files without requiring
-permission bypass.
+Over three days and 12+ experiments, we evolved CR from a pasted prompt
+through an inline skill to a skill+agent architecture, shipping four
+plugin versions (v2.1.0–v2.3.0). Key findings: (1) prompt-level procedural
+instructions are non-deterministically followed by LLMs — identical prompts
+produce different quality across runs; (2) DCI shell commands in Claude Code
+skills create permission interruptions that corrupt procedural chains;
+(3) forked agents with restricted tool access provide mechanical enforcement
+that inline skills cannot; (4) requiring LLMs to research external
+documentation (RTFM) rather than relying on training data produces
+dramatically higher-quality output with verified API references;
+(5) when adapting existing roles through an agent, the source material
+serves as structural scaffolding that gets enriched rather than copied —
+this "scaffold + enrich" pattern validates the premise for future role
+evolution; (6) the word "optional" in system prompts directs LLMs to
+deprioritize the described concept, affecting all subsequent token
+generation — adjectives in system prompts are directives, not descriptions.
+The final v2.3.0 architecture generates validated, auto-discoverable role
+skill files without requiring permission bypass. Roles are a recommended
+approach for using the TDD workflow, complementary to the mechanical
+discipline the agents provide.
 
 ---
 
@@ -62,6 +71,9 @@ the Role File Format specification.
    deterministic output quality?
 3. What workflow refinements (critique phase, RTFM, mechanical validation)
    have the highest impact on output quality?
+4. (Meta-question, emerged during study) Do roles combined with agent-based
+   workflows provide a workable approach that constrains and structures the
+   development process to produce good quality code?
 
 ---
 
@@ -75,9 +87,11 @@ for CA/CI/CP/CR roles, and validation rules. The CR meta-role file was
 manually authored as the first format-conforming instance.
 
 Prior explorations documented in `explorations/features/roles/synthesis.md`
-established the prime directive (roles are optional, core TDD workflow
-never depends on them), the three-session coordination model, and the
-planned skill architecture.
+established the technical independence constraint (core TDD workflow
+functions without role files), the three-session coordination model,
+and the planned skill architecture. The original phrasing described
+roles as "optional" — a framing later found to negatively influence
+LLM behavior (see §5.9).
 
 ### 2.2 Claude Code Plugin Architecture
 
@@ -948,12 +962,20 @@ that shape how the model treats the concept in all subsequent output.
 
 ### 6.4 Future Work
 
-- **`/role-evolve`** — memory-driven role refinement. After usage
-  accumulates operational wisdom in agent memory and MEMORY.md, evolve
-  synthesizes it back into role files. Separate future feature.
+- **`/role-evolve`** — memory-driven role refinement. The "scaffold +
+  enrich" pattern validated by the Prompt C experiment (§5.5) provides the
+  hypothetical premise: take existing role (v1) as scaffold, enrich with
+  accumulated agent memory + MEMORY.md, produce v2. The mechanism is the
+  same — only the enrichment source changes (machine-learned operational
+  wisdom instead of developer-provided source roles).
 - **Validator refinement** — skip illustrative paths in "e.g." contexts.
 - **Agent memory** — add `memory: project` to role-creator agent when
   `/role-evolve` is implemented, enabling cross-session learning.
+- **Semantic framing audit** — review all agent definitions, skill bodies,
+  and CLAUDE.md entries for unintended framing effects per the principle
+  established in §5.9.
+- **Cross-stack validation** — replicate the study on a non-Flutter project
+  (e.g., Rust, Python, Go) to verify findings generalize beyond one stack.
 
 ---
 
