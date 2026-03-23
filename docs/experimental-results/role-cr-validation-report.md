@@ -721,7 +721,80 @@ learned operational wisdom rather than developer-provided source roles.
 Each decision was made based on experimental evidence, not assumption.
 Reversals were driven by findings that contradicted the prior basis.
 
-### 5.7 Limitations
+### 5.8 Downstream Impact: Role Quality Determines Output Quality
+
+Each CA functional test used the same prompt: "propose the file structure
+for this project" (Prompt E). The file structure proposals varied directly
+with the quality of the CA role loaded into the session.
+
+**File structure evolution across role versions:**
+
+| Role Version | Layers | Key Structural Decisions |
+|---|---|---|
+| Test 1 (prompt, RTFM) | 3 (`models/`, `logic/`, `game/`) | Pure Dart separation, per-domain providers, Flame Behavior pattern |
+| Test 5 (prompt, RTFM) | 3 (`state/rules/`, `state/providers/`, `game/`) | Pure Dart functions in rules/, specific APIs (RiverpodAwareGameWidget), `drag_stack.dart` as rendering concern |
+| v2.3.0 Prompt D (agent, from scratch) | 3 (`state/rules/`, `providers/`, `game/`) | Provider-per-domain, specific API references |
+| v2.3.0 Prompt C (agent, adapted) | **4** (`domain/`, `providers/`, `flame/`, `ui/`) | **Explicit domain layer** (zero deps), `bridge.dart` for state sync, `shuffle.dart` (Fisher-Yates, seedable), overlays vs screens separation |
+
+**Observations:**
+
+1. **The domain layer emerged from the role.** The Prompt C CA role defined
+   a four-layer architecture with an explicit Domain model. The file
+   structure proposal created `domain/` as a zero-dependency pure Dart
+   directory — this layer didn't exist in any three-layer proposal.
+
+2. **The bridge pattern emerged from the role.** The Prompt C role specified
+   "Flame components must not import Riverpod directly; they receive state
+   through a bridge." The file structure created `flame/bridge.dart` — no
+   previous version had this file.
+
+3. **Algorithm specificity increased.** The Prompt C proposal included
+   `shuffle.dart` with "Fisher-Yates shuffle (testable, seedable)" — a
+   concrete, correct algorithm. Previous versions said "deck shuffle."
+
+4. **Dependency direction was explicit.** The proposal stated: "providers/
+   imports only domain/", "flame/ imports domain/ but not providers/
+   directly." No previous version made the import graph this explicit.
+
+5. **Scope discipline was present.** "What's NOT here (intentionally)" —
+   no models/, no services/, no assets/. Each omission was justified.
+   This mirrors the "never over-engineer" constraint in the role.
+
+**The causal chain:** CR researches stack → CR generates role with
+architecture boundaries → CA loads role → CA proposes file structure
+following those boundaries → CI would implement following that structure.
+Each link amplifies or degrades quality. A vague role produces a vague
+structure. A specific role with researched APIs produces a specific
+structure with correct patterns.
+
+**Meta-question: Do roles combined with agent-based workflows provide a
+workable Claude Code usage approach that constrains and structures the
+development process to produce good quality code?**
+
+Based on the evidence from this study: **yes, with caveats.**
+
+The evidence shows:
+- Roles encode architecture boundaries that directly shape downstream output
+- The quality of the role determines the quality of all subsequent work
+- Agent-based role generation (RTFM + mechanical validation) produces
+  deterministic, high-quality roles
+- Sessions loaded with high-quality roles produce architecturally sound
+  proposals with specific, correct API references
+- The three-session model (CA/CP/CI) keeps concerns separated and prevents
+  context drift — verified by the 1M token session that still has 70%+ free
+
+The caveats:
+- Roles are only as good as the research that informs them (garbage in,
+  garbage out — but RTFM mitigates this)
+- Roles cannot encode operational wisdom that hasn't been accumulated yet
+  (the `/role-evolve` gap)
+- The role creation process itself requires a specific architecture
+  (skill+agent) to produce reliable output — simpler approaches failed
+- Roles are a convention, not enforcement — a session CAN ignore its
+  role constraints. Mechanical enforcement (tool restrictions on agents)
+  is more reliable than convention-based trust (role prompts on sessions)
+
+### 5.9 Limitations
 
 1. All experiments used a single target project (Flutter solitaire with
    Flame + Riverpod). Results may differ for other stacks.
@@ -745,9 +818,10 @@ Reversals were driven by findings that contradicted the prior basis.
 **RQ1: Can CR generate functionally useful roles?**
 Yes. Generated CA roles consistently guided sessions to produce
 architecturally sound file structure proposals that respected encoded
-boundaries and referenced correct APIs. The v2.3.0 output is the most
-complete, with 3 concrete workflow procedures, specific API checks in
-implementation review, and action → output format in responsibilities.
+boundaries and referenced correct APIs. The v2.3.0 Prompt C output is
+the strongest: a four-layer architecture with explicit domain separation,
+bridge pattern, and specific algorithm choices — all traceable to the
+role's architecture boundaries. See §5.8 for the full downstream analysis.
 
 **RQ2: What delivery mechanism produces reliable output?**
 Skill + forked agent (v2.3.0). Prompt-only (Tests 1-5) is non-deterministic.
@@ -764,6 +838,18 @@ Ranked by measured impact:
    execution is non-deterministic in inline skills.
 4. **Approve/Modify/Reject gate** — critical for preventing write-before-approve,
    but only reliable when mechanically enforced (agent can't write).
+
+**RQ4 (meta-question): Do roles combined with agent-based workflows
+produce good quality code?**
+Yes, with caveats. The evidence shows a direct causal chain: role quality
+determines downstream output quality. Sessions loaded with high-quality,
+researched roles produce architecturally sound proposals with correct API
+references, proper separation of concerns, and explicit dependency
+direction. The role system works because it encodes architecture boundaries
+that persist across the session — but roles are conventions, not
+enforcement. Mechanical enforcement (agent tool restrictions) is more
+reliable than convention-based trust (role prompts). See §5.8 for the
+full analysis and caveats.
 
 ### 6.2 Final Architecture
 
