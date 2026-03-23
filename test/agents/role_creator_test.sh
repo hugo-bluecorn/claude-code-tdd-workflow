@@ -31,13 +31,13 @@ function test_frontmatter_name_field() {
   assert_contains "name: role-creator" "$frontmatter"
 }
 
-# ---------- Test 3: Frontmatter description mentions role creation ----------
+# ---------- Test 3: Frontmatter description mentions /role-create ----------
 
-function test_frontmatter_description_mentions_role() {
+function test_frontmatter_description_mentions_role_create() {
   local frontmatter
   frontmatter=$(get_frontmatter)
   assert_contains "description:" "$frontmatter"
-  assert_contains "role" "$frontmatter"
+  assert_contains "/role-create" "$frontmatter"
 }
 
 # ---------- Test 4: Tools field includes Read, Bash, Glob, Grep, WebSearch, WebFetch ----------
@@ -195,13 +195,23 @@ function test_body_contains_critique() {
   assert_contains "critique" "$lower_body"
 }
 
-# ---------- Test 9: Body instructs setting generator field to /role-cr ----------
+# ---------- Test 9: Body instructs setting generator field to /role-create ----------
 
 function test_body_sets_generator_field() {
   local body
   body=$(get_body)
   assert_contains "generator" "$body"
-  assert_contains "/role-cr" "$body"
+  assert_contains "/role-create" "$body"
+}
+
+# ---------- Test 9b: No /role-cr references remain in agent file ----------
+
+function test_no_role_cr_references_in_agent() {
+  local content stripped
+  content=$(cat "$AGENT_FILE")
+  # Strip /role-create occurrences first, then check for /role-cr
+  stripped=$(echo "$content" | sed 's|/role-create||g')
+  assert_not_contains "/role-cr" "$stripped"
 }
 
 # ---------- Test 10: Body does NOT contain approval gate ----------
