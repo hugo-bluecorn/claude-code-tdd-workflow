@@ -794,7 +794,61 @@ The caveats:
   role constraints. Mechanical enforcement (tool restrictions on agents)
   is more reliable than convention-based trust (role prompts on sessions)
 
-### 5.9 Limitations
+### 5.9 Semantic Framing: How Word Choice Shapes LLM Behavior
+
+A late-stage finding that affected the entire study: the PRIME DIRECTIVE
+in CLAUDE.md originally stated "roles are an OPTIONAL enhancement layer."
+This word choice had measurable effects on the LLM's behavior throughout
+the project.
+
+**The problem with "optional":**
+
+The word "optional" is not neutral in an LLM's context window. When the
+system prompt contains "X is optional," the model learns to deprioritize X
+in its token generation. Throughout this study, the CA session (this
+session) repeatedly framed roles as "enhancement layer," "nice-to-have,"
+and "not required" — language directly traceable to the PRIME DIRECTIVE's
+use of "optional." This framing contradicted the experimental evidence
+showing that roles produce measurably better output.
+
+**Three framings tested (implicitly):**
+
+| Framing | What the LLM processes | Effect on generation | Developer autonomy |
+|---|---|---|---|
+| "Optional" | Deprioritize this concept | Treats roles as secondary, suggests they can be skipped | Preserved but devalued |
+| "Complementary" | This is integral to quality | Prioritizes roles, may imply they're required | May feel mandated |
+| "Recommended, not the only way" | Value this but respect alternatives | Suggests roles when appropriate, doesn't gate functionality | Fully preserved |
+
+**The correct framing:**
+
+Roles are a **recommended approach** for using the TDD workflow, supported
+by experimental evidence. They are **not the only way** — developers may
+use session prompts, manual context management, or other approaches at
+their discretion. This framing:
+
+1. **Matches the evidence.** Our experiments show roles produce measurably
+   better output. But we proved this through comparison, not by making
+   alternatives impossible.
+2. **Respects developer autonomy.** Some developers prefer minimal tooling.
+   Some are just trying the plugin for the first time. The framework
+   supports both role-based and prompt-based usage.
+3. **Gives the LLM balanced framing.** "Recommended" tells the model to
+   value roles and suggest them. "Not the only way" prevents the model
+   from refusing to work without them.
+
+**The general principle:** In LLM system prompts, the adjectives used to
+describe a concept shape how the model values and generates content about
+that concept. "Optional" is not descriptive — it's a directive to
+deprioritize. "Required" is a directive to mandate. "Recommended" is a
+directive to value while preserving choice. Prompt authors should choose
+framing words deliberately, understanding their effect on token generation.
+
+**Action taken:** The PRIME DIRECTIVE in CLAUDE.md was revised from
+"OPTIONAL enhancement layer" to "recommended approach... not the only way."
+The technical constraint is preserved (no core workflow dependency on role
+files) while the semantic framing is corrected.
+
+### 5.10 Limitations
 
 1. All experiments used a single target project (Flutter solitaire with
    Flame + Riverpod). Results may differ for other stacks.
@@ -841,15 +895,36 @@ Ranked by measured impact:
 
 **RQ4 (meta-question): Do roles combined with agent-based workflows
 produce good quality code?**
-Yes, with caveats. The evidence shows a direct causal chain: role quality
-determines downstream output quality. Sessions loaded with high-quality,
-researched roles produce architecturally sound proposals with correct API
-references, proper separation of concerns, and explicit dependency
-direction. The role system works because it encodes architecture boundaries
-that persist across the session — but roles are conventions, not
-enforcement. Mechanical enforcement (agent tool restrictions) is more
-reliable than convention-based trust (role prompts). See §5.8 for the
-full analysis and caveats.
+Yes. The evidence shows a direct causal chain: role quality determines
+downstream output quality. Sessions loaded with high-quality, researched
+roles produce architecturally sound proposals with correct API references,
+proper separation of concerns, and explicit dependency direction. See §5.8
+for the full downstream analysis.
+
+Roles are a **recommended approach**, not the only approach. Developers
+may achieve similar results through carefully crafted session prompts.
+However, roles provide three advantages over ad-hoc prompts:
+1. **Persistence** — role files survive session restarts; prompts must be
+   re-entered
+2. **Validation** — role files are mechanically validated against the format
+   spec; prompts have no quality gate
+3. **Shareability** — role files are version-controlled and team-shareable;
+   prompts are individual knowledge
+
+The role system works because it encodes architecture boundaries that
+persist across the session. Roles are conventions, not enforcement —
+a session CAN ignore its constraints. Mechanical enforcement (agent tool
+restrictions) is more reliable than convention-based trust (role prompts).
+The ideal architecture combines both: roles for context quality, agents
+for procedural reliability.
+
+**Critical finding on framing (§5.9):** The word "optional" in the original
+PRIME DIRECTIVE caused this session to systematically deprioritize roles
+in its token generation. Replacing "optional enhancement" with "recommended
+approach, not the only way" preserves developer autonomy while correcting
+the LLM's valuation of the concept. Prompt authors should understand that
+adjectives in system prompts are not descriptive — they are directives
+that shape how the model treats the concept in all subsequent output.
 
 ### 6.2 Final Architecture
 
