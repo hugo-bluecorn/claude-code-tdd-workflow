@@ -221,3 +221,54 @@ function test_body_no_output_path_writing() {
   # Agent should not have positive write instructions to .claude/skills/
   # "Do NOT write to .claude/skills/" is fine — we check for mkdir as the real indicator
 }
+
+# ========== Slice 5: CLAUDE.md Documentation ==========
+
+CLAUDE_FILE="CLAUDE.md"
+
+# ---------- Test 1: Architecture table contains role-creator row ----------
+
+function test_claude_md_has_role_creator_row() {
+  assert_file_contains "$CLAUDE_FILE" "role-creator"
+}
+
+# ---------- Test 2: Role-creator row shows Read-only mode ----------
+
+function test_role_creator_row_read_only() {
+  local row
+  row=$(grep "role-creator" "$CLAUDE_FILE")
+  assert_contains "Read-only" "$row"
+}
+
+# ---------- Test 3: Role-creator description mentions role creation ----------
+
+function test_role_creator_row_describes_role_creation() {
+  local row
+  row=$(grep "role-creator" "$CLAUDE_FILE")
+  assert_contains "role" "$row"
+}
+
+# ---------- Test 4: Existing architecture rows preserved ----------
+
+function test_existing_agent_rows_preserved() {
+  assert_file_contains "$CLAUDE_FILE" "tdd-planner"
+  assert_file_contains "$CLAUDE_FILE" "tdd-implementer"
+  assert_file_contains "$CLAUDE_FILE" "tdd-verifier"
+  assert_file_contains "$CLAUDE_FILE" "tdd-releaser"
+  assert_file_contains "$CLAUDE_FILE" "context-updater"
+  assert_file_contains "$CLAUDE_FILE" "tdd-doc-finalizer"
+}
+
+# ---------- Test 5: Available Commands section includes /role-cr ----------
+
+function test_available_commands_has_role_cr() {
+  assert_file_contains "$CLAUDE_FILE" "/role-cr"
+}
+
+# ---------- Test 6: No duplicate role-creator entries in table ----------
+
+function test_no_duplicate_role_creator_rows() {
+  local count
+  count=$(grep -c '| \*\*role-creator\*\*' "$CLAUDE_FILE" || true)
+  assert_equals "1" "$count"
+}
