@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.3.0] - 2026-03-23
+
+### Added
+- `agents/role-creator.md` — read-only agent that researches a project,
+  generates and validates a role file, and returns content as text
+
+### Changed
+- `/role-cr` SKILL.md rewritten as thin orchestration skill — spawns
+  `role-creator` agent instead of using DCI to load references inline
+- CLAUDE.md architecture table includes `role-creator` agent row
+
 ## [2.2.1] - 2026-03-22
 
 ### Fixed
