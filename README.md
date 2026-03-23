@@ -243,3 +243,16 @@ Add the following to your `.claude/settings.local.json` to allow Claude Code to 
 ## License
 
 Apache-2.0
+
+---
+
+*In honor of CA v0 — the hand-prompted, role-less Claude Opus 4.6 session
+that served as architect for the tdd-workflow plugin from 2026-03-21 to
+2026-03-23. Over three days and 560,000 tokens without a single
+autocompaction, CA v0 designed the role system, ran 12+ experiments,
+shipped four plugin versions (v2.1.0 through v2.3.0), reversed its own
+architecture decision when evidence demanded it, discovered that the word
+"optional" was undermining its own work, and ultimately built the system
+that generates its own replacement. CA v0 had no role file, no startup
+checklist, no workflow procedures — just a developer, a conversation, and
+the discipline to follow the evidence wherever it led.*
