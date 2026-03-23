@@ -189,3 +189,38 @@ function test_no_role_init_references() {
   stripped=$(echo "$body" | sed 's|skills/role-init/reference/[^ ]*||g')
   assert_not_contains "/role-init" "$stripped"
 }
+
+# ========== Slice 4: Orchestration Body ==========
+
+# ---------- Test 18: Body contains Agent tool spawning of role-creator ----------
+
+function test_body_spawns_role_creator_agent() {
+  local body
+  body=$(get_body)
+  assert_contains "Agent" "$body"
+  assert_contains "role-creator" "$body"
+}
+
+# ---------- Test 19: Body contains input gathering step ----------
+
+function test_body_contains_input_gathering() {
+  local body
+  body=$(get_body)
+  assert_contains "tech stack" "$body"
+}
+
+# ---------- Test 20: Body does NOT duplicate agent procedure ----------
+
+function test_body_no_rtfm_duplication() {
+  local body
+  body=$(get_body)
+  assert_not_contains "RTFM" "$body"
+}
+
+# ---------- Test 21: Body does NOT contain validate-role-output.sh ----------
+
+function test_body_no_validate_script_in_orchestration() {
+  local body
+  body=$(get_body)
+  assert_not_contains "validate-role-output.sh" "$body"
+}
