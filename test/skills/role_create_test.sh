@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# Test suite for role-cr SKILL.md — inline skill definition
+# Test suite for role-create SKILL.md — inline skill definition
 # Verifies the skill file structure, frontmatter, DCI loading,
 # approval gate, and validation script invocation.
 
-SKILL_FILE="skills/role-cr/SKILL.md"
+SKILL_FILE="skills/role-create/SKILL.md"
 
 # Helper: extract YAML frontmatter (between --- delimiters)
 get_frontmatter() {
@@ -22,10 +22,27 @@ function test_skill_file_exists() {
   assert_file_exists "$SKILL_FILE"
 }
 
-# ---------- Test 2: Frontmatter name field is "role-cr" ----------
+# ---------- Test 1b: Old skill directory does not exist ----------
+
+function test_old_directory_does_not_exist() {
+  assert_directory_not_exists "skills/role-cr"
+}
+
+# ---------- Test 1c: No /role-cr references remain in skill file ----------
+
+function test_no_role_cr_references_in_skill_file() {
+  local content
+  content=$(cat "$SKILL_FILE")
+  # Strip /role-create occurrences first, then check for /role-cr
+  local stripped
+  stripped=$(echo "$content" | sed 's|/role-create||g')
+  assert_not_contains "/role-cr" "$stripped"
+}
+
+# ---------- Test 2: Frontmatter name field is "role-create" ----------
 
 function test_frontmatter_name_field() {
-  assert_file_contains "$SKILL_FILE" "name: role-cr"
+  assert_file_contains "$SKILL_FILE" "name: role-create"
 }
 
 # ---------- Test 3: Frontmatter has disable-model-invocation: true ----------
@@ -100,7 +117,7 @@ function test_body_contains_generator_field() {
   local body
   body=$(get_body)
   assert_contains "generator" "$body"
-  assert_contains "/role-cr" "$body"
+  assert_contains "/role-create" "$body"
 }
 
 # ---------- Test 9: Body does NOT contain validate-role-output.sh ----------

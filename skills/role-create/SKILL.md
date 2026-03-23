@@ -1,5 +1,5 @@
 ---
-name: role-cr
+name: role-create
 description: >
   Create a project-specific role file. Spawns the role-creator agent to
   research the project, generate, and validate a role file, then presents
@@ -53,7 +53,7 @@ Only after the developer selects **Approve**:
    - `disable-model-invocation: true`
 4. Write the role file to `.claude/skills/role-{code}/SKILL.md`
 
-Ensure `generator: /role-cr` is present in the role's YAML frontmatter.
+Ensure `generator: /role-create` is present in the role's YAML frontmatter.
 
 Do NOT write any files before getting explicit approval in Step 3.
 
