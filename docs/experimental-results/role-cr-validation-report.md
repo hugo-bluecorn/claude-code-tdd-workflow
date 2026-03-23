@@ -1,9 +1,14 @@
 # Role Creator (CR) Validation Report
 
-**Authors:** Hugo (developer), Claude Opus 4.6 (CA session)
+**Authors:** Hugo (developer), Claude Opus 4.6 (CA v0 session)
 **Date:** 2026-03-21 to 2026-03-23
 **Plugin:** tdd-workflow v2.0.0 → v2.3.0
 **Target project:** Klondike solitaire (Flutter/Dart, Flame, Riverpod 3.x)
+**CA session:** A single CA v0 session (hand-prompted, no role file) conducted
+all architectural decisions, experiment design, verification, and documentation
+across the full three-day study. Context usage: ~560k/1000k tokens (56%) with
+no autocompaction. CA v0 is the proto-CA — the hand-assembled session that
+designed, tested, and shipped the system that will generate its own replacement.
 
 ---
 
