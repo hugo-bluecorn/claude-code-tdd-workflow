@@ -1,8 +1,7 @@
----
-name: Role format v2.1 redesign decisions
-description: Key design decisions from 2026-03-21 CR validation session — templates eliminated, format spec simplified, CR made role-agnostic
-type: project
----
+# Appendix B: Design Decisions Log
+
+> Supplementary material to the Role CR Validation Report.
+> Chronological record of design decisions with rationale.
 
 ## Decisions (2026-03-21)
 

@@ -1,8 +1,7 @@
----
-name: Role CR test comparison across all versions
-description: Comparison of CA role output quality across 6+ test iterations from hand-authored to v2.3.0 agent-generated, documenting what improved and why
-type: project
----
+# Appendix A: Output Quality Comparison
+
+> Supplementary material to the Role CR Validation Report.
+> Comparison of CA role output quality across all test iterations.
 
 ## Role CR Test Comparison (2026-03-21 to 2026-03-23)
 

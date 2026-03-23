@@ -1,10 +1,7 @@
----
-name: Role CR experimental log — full chronological record
-description: Chronological log of all CR experiments, findings, and actions taken from 2026-03-21 to 2026-03-23. For auditors and reviewers.
-type: project
----
+# Appendix C: Chronological Experiment Log
 
-# Role CR Experimental Log
+> Supplementary material to the Role CR Validation Report.
+> Detailed record of every experiment with setup, observations, and actions.
 
 Chronological record of experiments, findings, and actions. Each entry
 documents what was tested, what was observed, what was concluded, and
