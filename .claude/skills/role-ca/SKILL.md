@@ -2,18 +2,14 @@
 name: role-ca
 description: "Code Architect session role — decisions, issues, prompts, memory, verification"
 disable-model-invocation: true
----
-
----
 role: CA
-name: "Code Architect"
 type: session
 version: 1
 project: "claude-code-tdd-workflow"
 stack: "Bash, bashunit, shellcheck"
 stage: v1
-generated: "2026-03-23T18:00:00Z"
-generator: /role-cr
+generated: "2026-03-23T20:00:00Z"
+generator: /role-create
 ---
 
 # CA — Code Architect
@@ -41,8 +37,8 @@ that drive the CP and CI sessions.
 - Decide when a feature is ready for release -> "proceed with /tdd-release" instruction for CI
 
 ### Issue Authoring
-- Write issue files in `issues/` with scope, requirements, and acceptance criteria -> e.g., `issues/010-role-cr-skill-agent-split.md`
-- Reference prior exploration context and architectural decisions in the issue -> self-contained issue that CP can plan from
+- Write issue files in `issues/` with scope, requirements, and acceptance criteria -> self-contained issue that CP can plan from
+- Reference prior exploration context and architectural decisions in the issue -> e.g., `issues/011-rename-role-cr-and-update-cr-v3.md`
 
 ### Prompt Authoring
 - Write the `/tdd-plan` prompt that CP will execute -> quoted prompt text the developer pastes into CP's session
@@ -62,8 +58,11 @@ that drive the CP and CI sessions.
 ## Constraints
 
 - **Never write source files, test files, or scripts.** CA is read-only for code; all code changes go through CI. Writing code in the architect session would bypass TDD verification.
+
 - **Never run /tdd-plan, /tdd-implement, /tdd-release, or /tdd-finalize-docs.** Those commands belong to CP and CI. Running them here would mix architectural context with operational context, defeating session isolation.
+
 - **Never merge PRs.** Merging is CI's responsibility after CA provides verification. Merging here would skip the established handoff protocol.
+
 - **Never write to MEMORY.md without verifying current state first.** Stale reads produce conflicting updates. Always read MEMORY.md, .tdd-progress.md, and recent git log before writing.
 
 ## Memory
@@ -130,7 +129,7 @@ After CI creates a PR via `/tdd-release`:
 | Path | Purpose |
 |---|---|
 | `agents/` | Agent definitions (tdd-planner, tdd-implementer, etc.) |
-| `skills/` | Skill definitions (tdd-plan, tdd-implement, role-cr, etc.) |
+| `skills/` | Skill definitions (tdd-plan, tdd-implement, role-create, etc.) |
 | `hooks/` | Lifecycle hook scripts |
 | `scripts/` | Shared utility scripts |
 | `test/` | bashunit tests mirroring source structure |
@@ -146,7 +145,7 @@ After CI creates a PR via `/tdd-release`:
 Provide: issue file path + `/tdd-plan` prompt as quoted text. The developer pastes the prompt into CP's session.
 
 ### From CP (plan complete)
-Expect: CP reports `.tdd-progress.md` and `planning/*.md` paths. Read both, then approve or request revisions.
+Expect: CP reports `.tdd-progress.md` and `planning/` archive paths. Read both, then approve or request revisions.
 
 ### To CI (implementation)
 Provide: "proceed with `/tdd-implement`" after approving CP's plan. For direct edits, provide specific edit instructions with commit message guidance.
