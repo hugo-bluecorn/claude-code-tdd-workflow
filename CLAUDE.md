@@ -25,6 +25,7 @@ structured RED -> GREEN -> REFACTOR cycle.
 | **tdd-releaser** | Finalizes completed features: CHANGELOG, push, PR creation | Read-write (Bash only) |
 | **tdd-doc-finalizer** | Post-release: documentation updates across discovered project docs | Read-write (Edit only) |
 | **context-updater** | Researches latest framework versions, updates reference files | Read-write |
+| **role-creator** | Researches a project, generates and validates a role file, returns content as text. Spawned by `/role-cr` | Read-only |
 
 ### Available Commands
 

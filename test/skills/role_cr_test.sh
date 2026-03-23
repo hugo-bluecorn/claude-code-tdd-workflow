@@ -48,45 +48,30 @@ function test_no_agent_field() {
   assert_not_contains "agent:" "$frontmatter"
 }
 
-# ---------- Test 5: Body does NOT contain cat DCI commands ----------
+# ---------- Test 5: Body does NOT contain any DCI commands ----------
 
-function test_body_does_not_contain_cat_dci() {
-  local body
-  body=$(get_body)
-  assert_not_contains '!`cat ' "$body"
-}
-
-# ---------- Test 6: Body loads references via load-role-references.sh DCI ----------
-
-function test_body_loads_references_via_script_dci() {
+function test_body_no_dci_commands() {
   local content
   content=$(cat "$SKILL_FILE")
-  assert_contains '!`' "$content"
-  assert_contains "load-role-references.sh" "$content"
+  assert_not_contains '!`' "$content"
 }
 
-# ---------- Test 6b: Body still references cr-role-creator.md in text ----------
+# ---------- Test 6: Body does NOT reference load-role-references.sh ----------
 
-function test_body_references_cr_role_in_text() {
+function test_body_no_load_references_script() {
   local body
   body=$(get_body)
-  assert_contains "cr-role-creator.md" "$body"
+  assert_not_contains "load-role-references.sh" "$body"
 }
 
-# ---------- Test 6c: Body still references role-format.md in text ----------
+# ---------- Test 6b: Skill description reflects orchestration pattern ----------
 
-function test_body_references_format_spec_in_text() {
-  local body
-  body=$(get_body)
-  assert_contains "role-format.md" "$body"
-}
-
-# ---------- Test 6d: Exactly one DCI invocation for script loading ----------
-
-function test_exactly_one_script_dci_invocation() {
-  local count
-  count=$(grep -c 'load-role-references.sh' "$SKILL_FILE")
-  assert_equals "1" "$count"
+function test_description_reflects_orchestration() {
+  local frontmatter
+  frontmatter=$(get_frontmatter)
+  local description
+  description=$(echo "$frontmatter" | sed -n '/^description:/,/^[a-z]/p' | sed '$d')
+  assert_contains "role-creator" "$description"
 }
 
 # ---------- Test 7: Body contains Approve/Modify/Reject gate ----------
@@ -118,12 +103,12 @@ function test_body_contains_generator_field() {
   assert_contains "/role-cr" "$body"
 }
 
-# ---------- Test 9: Body contains validate-role-output.sh invocation ----------
+# ---------- Test 9: Body does NOT contain validate-role-output.sh ----------
 
-function test_body_contains_validation_script() {
+function test_body_no_validation_script() {
   local body
   body=$(get_body)
-  assert_contains "validate-role-output.sh" "$body"
+  assert_not_contains "validate-role-output.sh" "$body"
 }
 
 # ---------- Test 10: Body contains .claude/skills/ output path ----------
@@ -186,8 +171,10 @@ function test_write_instruction_after_approval() {
 function test_no_template_placeholders() {
   local content stripped
   content=$(cat "$SKILL_FILE")
-  # Strip ${VARIABLE} patterns (shell variables are intentional in DCI)
+  # Strip ${VARIABLE} patterns (shell variables are intentional)
   stripped=${content//\$\{*\}/}
+  # Strip documented convention patterns like role-{code}
+  stripped=$(echo "$stripped" | sed 's/role-{code}//g')
   assert_not_matches '\{[a-zA-Z_]+\}' "$stripped"
 }
 
@@ -201,4 +188,39 @@ function test_no_role_init_references() {
   local stripped
   stripped=$(echo "$body" | sed 's|skills/role-init/reference/[^ ]*||g')
   assert_not_contains "/role-init" "$stripped"
+}
+
+# ========== Slice 4: Orchestration Body ==========
+
+# ---------- Test 18: Body contains Agent tool spawning of role-creator ----------
+
+function test_body_spawns_role_creator_agent() {
+  local body
+  body=$(get_body)
+  assert_contains "Agent" "$body"
+  assert_contains "role-creator" "$body"
+}
+
+# ---------- Test 19: Body contains input gathering step ----------
+
+function test_body_contains_input_gathering() {
+  local body
+  body=$(get_body)
+  assert_contains "tech stack" "$body"
+}
+
+# ---------- Test 20: Body does NOT duplicate agent procedure ----------
+
+function test_body_no_rtfm_duplication() {
+  local body
+  body=$(get_body)
+  assert_not_contains "RTFM" "$body"
+}
+
+# ---------- Test 21: Body does NOT contain validate-role-output.sh ----------
+
+function test_body_no_validate_script_in_orchestration() {
+  local body
+  body=$(get_body)
+  assert_not_contains "validate-role-output.sh" "$body"
 }
