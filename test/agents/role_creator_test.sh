@@ -115,3 +115,109 @@ function test_no_agent_field() {
   frontmatter=$(get_frontmatter)
   assert_not_contains "agent:" "$frontmatter"
 }
+
+# ========== Slice 2: Agent Body Content ==========
+
+# ---------- Test 1: Body instructs reading cr-role-creator.md via Bash cat ----------
+
+function test_body_reads_cr_role_via_bash_cat() {
+  local body
+  body=$(get_body)
+  assert_contains "cat" "$body"
+  assert_contains "CLAUDE_PLUGIN_ROOT" "$body"
+  assert_contains "cr-role-creator.md" "$body"
+}
+
+# ---------- Test 2: Body instructs reading role-format.md via Bash cat ----------
+
+function test_body_reads_format_spec_via_bash_cat() {
+  local body
+  body=$(get_body)
+  assert_contains "cat" "$body"
+  assert_contains "role-format.md" "$body"
+}
+
+# ---------- Test 3: CLAUDE_PLUGIN_ROOT used in Bash context not Read tool ----------
+
+function test_plugin_root_in_bash_context() {
+  local body
+  body=$(get_body)
+  # Should have CLAUDE_PLUGIN_ROOT in body
+  assert_contains "CLAUDE_PLUGIN_ROOT" "$body"
+  # Should NOT instruct Read tool with CLAUDE_PLUGIN_ROOT
+  assert_not_contains 'Read("${CLAUDE_PLUGIN_ROOT}' "$body"
+  assert_not_contains "Use the Read tool" "$body"
+}
+
+# ---------- Test 4: Body instructs running validate-role-output.sh via Bash ----------
+
+function test_body_runs_validate_script() {
+  local body
+  body=$(get_body)
+  assert_contains "validate-role-output.sh" "$body"
+}
+
+# ---------- Test 5: Body does NOT contain DCI commands ----------
+
+function test_body_no_dci_commands() {
+  local body
+  body=$(get_body)
+  assert_not_contains '!`' "$body"
+}
+
+# ---------- Test 6: Body does NOT instruct using Write or Edit tools ----------
+
+function test_body_no_write_edit_instructions() {
+  local body
+  body=$(get_body)
+  # Agent should not instruct USING Write/Edit — "Do NOT use" is fine
+  assert_not_contains "Use the Write tool" "$body"
+  assert_not_contains "Use the Edit tool" "$body"
+}
+
+# ---------- Test 7: Body contains research instructions ----------
+
+function test_body_contains_research_instructions() {
+  local body
+  body=$(get_body)
+  assert_contains "CLAUDE.md" "$body"
+  assert_contains "research" "$body"
+}
+
+# ---------- Test 8: Body contains critique step ----------
+
+function test_body_contains_critique() {
+  local body
+  body=$(get_body)
+  # Case-insensitive check
+  local lower_body
+  lower_body=$(echo "$body" | tr '[:upper:]' '[:lower:]')
+  assert_contains "critique" "$lower_body"
+}
+
+# ---------- Test 9: Body instructs setting generator field to /role-cr ----------
+
+function test_body_sets_generator_field() {
+  local body
+  body=$(get_body)
+  assert_contains "generator" "$body"
+  assert_contains "/role-cr" "$body"
+}
+
+# ---------- Test 10: Body does NOT contain approval gate ----------
+
+function test_body_no_approval_gate() {
+  local body
+  body=$(get_body)
+  assert_not_contains "AskUserQuestion" "$body"
+}
+
+# ---------- Test 11: Body does NOT instruct creating .claude/skills/ directories ----------
+
+function test_body_no_output_path_writing() {
+  local body
+  body=$(get_body)
+  assert_not_contains "mkdir" "$body"
+  # Agent should not have positive write instructions to .claude/skills/
+  # "Do NOT write to .claude/skills/" is fine — we check for mkdir as the real indicator
+}
