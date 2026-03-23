@@ -141,7 +141,24 @@ file structure proposal was evaluated for:
 - Test strategy alignment with the architecture
 - Scope discipline (not over-engineering)
 
-### 3.4 Experimental Controls
+### 3.4 Standardized Prompts
+
+Five standardized prompts were used across experiments. Full text is
+documented in Appendix C (Chronological Experiment Log, "Prompts Used"
+section). Summary:
+
+| Prompt | Purpose | Used in |
+|---|---|---|
+| A | Load CR via pasted files | Tests 1-5 (pre-skill) |
+| B | Single-role request | Test 1 |
+| C | Three-role adaptation (with source files) | Tests 2-5, E2E v2.1.0-v2.2.1 |
+| D | Three-role from scratch (no source files) | E2E v2.3.0 |
+| E | CA functional test ("propose file structure") | Tests 1, 5, all E2E |
+
+Prompts C and D differ only in whether source role file paths are provided.
+This isolates the effect of source material on CR's output quality.
+
+### 3.5 Experimental Controls
 
 - Each experiment used a freshly recreated `/tmp/solitaire` project
 - The same base prompt was used across comparable experiments

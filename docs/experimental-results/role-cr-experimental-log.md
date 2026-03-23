@@ -9,6 +9,95 @@ what action was taken.
 
 ---
 
+## Prompts Used
+
+The following prompts were used across experiments. Each experiment
+references which prompt(s) it used.
+
+### Prompt A: CR Loading (pasted, Tests 1-5)
+
+Used to load CR into a session before the plugin skill existed:
+
+```
+Read these two files and assume the CR role defined in the first one.
+Use the second as your format specification.
+
+1. <plugin-root>/skills/role-init/reference/cr-role-creator.md
+2. <plugin-root>/skills/role-init/reference/role-format.md
+```
+
+### Prompt B: Single-Role Request (Test 1)
+
+```
+I want to create a role for this solitaire project.
+```
+
+Followed by answering CR's questions:
+- Purely architectural role
+- Klondike variant
+- Riverpod 3.x with no code generation
+- Using Flame at https://github.com/flame-engine/flame
+
+### Prompt C: Three-Role Adaptation (Tests 2-5, E2E with source)
+
+```
+I want to create 3 roles for this project. I use the tdd-workflow
+plugin with three concurrent sessions:
+- CA (Architect) — makes decisions, writes issues, reviews plans
+  and implementations, owns memory
+- CP (Planner) — runs /tdd-plan, iterates on plan quality
+- CI (Implementer) — runs /tdd-implement, /tdd-release,
+  /tdd-finalize-docs, makes direct edits
+
+Adapt these roles from my other project's role files:
+- <plugin-root>/docs/dev-roles/ca-architect.md
+- <plugin-root>/docs/dev-roles/cp-planner.md
+- <plugin-root>/docs/dev-roles/ci-implementer.md
+
+This is a Klondike solitaire game using Flame for rendering and
+Riverpod 3.x (no codegen) for state.
+```
+
+### Prompt D: Three-Role From Scratch (E2E without source)
+
+```
+I want to create 3 roles for this project. I use the tdd-workflow
+plugin with three concurrent sessions:
+- CA (Architect) — makes decisions, writes issues, reviews plans
+  and implementations, owns memory
+- CP (Planner) — runs /tdd-plan, iterates on plan quality
+- CI (Implementer) — runs /tdd-implement, /tdd-release,
+  /tdd-finalize-docs, makes direct edits
+
+This is a Klondike solitaire game using Flame for rendering and
+Riverpod 3.x (no codegen) for state.
+```
+
+### Prompt E: CA Functional Test
+
+Used to validate generated CA role by testing its downstream output:
+
+```
+Become CA now and then propose the file structure for this project
+```
+
+### Prompt-to-Experiment Mapping
+
+| Experiment | CR Loading | Role Request | Functional Test |
+|---|---|---|---|
+| Test 1 | Prompt A | Prompt B | Prompt E |
+| Test 2 | Prompt A | Prompt C | — |
+| Test 3 | Prompt A | Prompt C | — |
+| Test 4 | Prompt A | Prompt C | — |
+| Test 5 | Prompt A | Prompt C | Prompt E |
+| E2E v2.1.0 (bypass on) | `/role-cr` skill | Prompt C | Prompt E |
+| E2E v2.2.0 (bypass on) | `/role-cr` skill | Prompt C | Prompt E |
+| E2E v2.2.0 (bypass off) | `/role-cr` skill | Prompt C | — |
+| E2E v2.2.1 (bypass off) | `/role-cr` skill | Prompt C | — |
+| E2E v2.3.0 (bypass off) | `/role-cr` skill | Prompt D | Prompt E |
+
+---
+
 ## 2026-03-21 — CR Validation Session
 
 ### Experiment 0: CR format validation (pre-test)
@@ -27,9 +116,9 @@ what action was taken.
 
 ### Experiment 1: Single-role generation (no source files)
 
-**Setup:** Fresh `/tmp/solitaire` (flutter create + /init). Pasted CR role + format spec
-into session. Prompt: "I want to create a role for this solitaire project." Provided
-Flame GitHub URL + "Riverpod 3.x (no codegen)." No source roles given.
+**Setup:** Fresh `/tmp/solitaire` (flutter create + /init). Used Prompt A (CR loading)
+then Prompt B (single-role request). No source roles given. Provided Flame GitHub URL
+in the answers to CR's questions.
 
 **CR behavior observed:**
 1. Ran startup correctly — checked MEMORY.md, .tdd-progress.md, git, existing roles
@@ -65,8 +154,8 @@ a session to produce architecturally sound output.
 
 ### Experiment 2: Three-role adaptation (source files provided)
 
-**Setup:** Fresh `/tmp/solitaire`. Same prompt + provided paths to all three dev-roles
-from the plugin project (ca-architect.md, cp-planner.md, ci-implementer.md).
+**Setup:** Fresh `/tmp/solitaire`. Used Prompt A (CR loading) then Prompt C (three-role
+adaptation with source file paths).
 
 **CR behavior observed:**
 - Went straight to mapping and generating — minimal adaptation
@@ -88,7 +177,8 @@ from the plugin project (ca-architect.md, cp-planner.md, ci-implementer.md).
 
 ### Experiment 3: Critique phase validation
 
-**Setup:** Fresh `/tmp/solitaire`. Same prompt as Experiment 2. CR now has Critique phase.
+**Setup:** Fresh `/tmp/solitaire`. Prompt A + Prompt C (identical to Experiment 2).
+CR workflow now includes the Critique phase added after Experiment 2.
 
 **Findings (what improved vs Experiment 2):**
 1. "Do write" — dropped (CR flagged it as permission, not constraint)
@@ -105,7 +195,8 @@ from the plugin project (ca-architect.md, cp-planner.md, ci-implementer.md).
 
 ### Experiment 4: Repeat with critique (non-determinism test)
 
-**Setup:** Same as Experiment 3 — identical prompt, fresh project.
+**Setup:** Fresh `/tmp/solitaire`. Prompt A + Prompt C (identical to Experiments 2-3).
+Same CR workflow as Experiment 3. No variables changed — this tests reproducibility.
 
 **Findings:**
 - `generator: manual` regressed (was `/role-init` in one test, `manual` in this one)
@@ -120,9 +211,9 @@ mechanical enforcement, not more words in the role file.
 
 ### Experiment 5: RTFM principle
 
-**Setup:** Fresh `/tmp/solitaire`. Added step 4 to Research: "RTFM — do not rely on
-internal knowledge. If information is not present in session context, memory, or project
-docs, spawn research agents."
+**Setup:** Fresh `/tmp/solitaire`. Prompt A + Prompt C. CR workflow now includes RTFM
+step (added after Experiment 4): "do not rely on internal knowledge. If information is
+not present in session context, memory, or project docs, spawn research agents."
 
 **Finding:** CR did NOT auto-trigger research despite explicit instruction. Had to be
 prompted: "did you spawn research agents for the technology stacks?"
@@ -184,8 +275,8 @@ Anthropic might adopt unrelated "roles" concept in `.claude/`.
 
 ### E2E Test: v2.1.0 Plugin Install
 
-**Setup:** Installed from local marketplace, fresh `/tmp/solitaire`, same prompt as
-Experiment 5 (three-role adaptation with Flame/Riverpod).
+**Setup:** Installed from local marketplace, fresh `/tmp/solitaire`. Used `/role-cr`
+skill (not pasted prompt) with Prompt C (three-role adaptation). Bypass permissions on.
 
 **Observations:**
 - DCI loaded references (CR had to search — DCI may have failed silently)
@@ -275,7 +366,8 @@ Generated roles become auto-discoverable skills. Eliminates need for separate `/
 
 ### E2E Test: v2.2.0 (bypass ON)
 
-**Setup:** Installed v2.2.0, fresh solitaire, bypass permissions on.
+**Setup:** Installed v2.2.0, fresh `/tmp/solitaire`. `/role-cr` skill with Prompt C.
+Bypass permissions on.
 
 **Observations:**
 - `/role-cr` loaded cleanly (DCI worked with bypass)
@@ -295,7 +387,8 @@ researched APIs (RiverpodAwareGameWidget, RiverpodGameMixin, etc.).
 
 ### Experiment: v2.2.0 (bypass OFF)
 
-**Setup:** Same as above but with default permissions (no bypass).
+**Setup:** Fresh `/tmp/solitaire`. `/role-cr` skill with Prompt C. Default permissions
+(no bypass).
 
 **Error observed:**
 ```
@@ -323,7 +416,8 @@ Replaced `cat` DCI with `load-role-references.sh` script. 726 tests, 1058 assert
 
 ### Experiment: v2.2.1 (bypass OFF)
 
-**Setup:** Installed v2.2.1, fresh solitaire, default permissions.
+**Setup:** Installed v2.2.1, fresh `/tmp/solitaire`. `/role-cr` skill with Prompt C.
+Default permissions (no bypass).
 
 **Error observed:**
 ```
@@ -398,7 +492,8 @@ New `role-creator` agent + rewritten `/role-cr` skill. 757 tests, 1109 assertion
 ### E2E Test: v2.3.0 (bypass OFF — final validation)
 
 **Setup:** Installed v2.3.0 from marketplace, fresh `/tmp/solitaire` (flutter create +
-/init + git init), default permissions (no bypass).
+/init + git init). `/role-cr` skill with Prompt D (three-role from scratch, no source
+files). Default permissions (no bypass). Functional test with Prompt E.
 
 **Observations:**
 1. `/role-cr` loaded — NO DCI, NO permission prompt from the skill
