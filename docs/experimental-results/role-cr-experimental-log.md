@@ -9,6 +9,46 @@ what action was taken.
 
 ---
 
+## Note on Auto-Memory Contamination
+
+Claude Code persists auto-memory at `~/.claude/projects/<path>/memory/`.
+This path is derived from the project's absolute directory path and
+survives project deletion — `rm -rf /tmp/solitaire` does not clear
+`~/.claude/projects/-tmp-solitaire/memory/`.
+
+**Impact on experiments:**
+
+| Experiment | Auto-Memory State | Contamination Risk |
+|---|---|---|
+| Tests 1-5 (2026-03-21) | None existed | Clean — first sessions in this project path |
+| E2E v2.1.0 (2026-03-21) | Created during this session | Clean at start; CR wrote `user_workflow.md`, `project_stack.md` |
+| All E2E tests after v2.1.0 | Present from prior sessions | **Uncontrolled variable** — `/init` read memory and injected Flame/Riverpod stack into CLAUDE.md without developer input |
+| E2E v2.3.0 Prompt C (2026-03-23) | Explicitly cleared before test | Clean — `rm -rf ~/.claude/projects/-tmp-solitaire/memory/` |
+
+**Why Tests 1-5 were not contaminated:**
+1. No auto-memory existed for `/tmp/solitaire` — each test was the first
+   session in a freshly created project at that path
+2. The session was never autocompacted (verified: 257k/1000k at 26%)
+3. The developer never asked Claude to create memories in the solitaire session
+4. CR was pasted as a prompt, not a plugin — no hooks ran that might create memory
+
+**Why E2E tests after v2.1.0 were contaminated:**
+CZ (the solitaire session) wrote memory files during the v2.1.0 E2E test:
+- `user_workflow.md` — three-session TDD workflow description
+- `project_stack.md` — Flame + Riverpod 3.x stack decisions
+- `MEMORY.md` — index pointing to both files
+
+Subsequent `/init` runs read these memory files and injected the tech stack
+into CLAUDE.md automatically, without the developer providing this
+information. This gave CR additional project context that was not present
+in Tests 1-5.
+
+**Corrective action:** The v2.3.0 Prompt C experiment (this test) explicitly
+clears auto-memory before running, restoring the same clean-slate conditions
+as Tests 1-5.
+
+---
+
 ## Prompts Used
 
 The following prompts were used across experiments. Each experiment

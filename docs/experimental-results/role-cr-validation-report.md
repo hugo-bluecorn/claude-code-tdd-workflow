@@ -187,6 +187,29 @@ a priori generation (Prompt D) informed by this finding.
 - Only one variable changed between sequential experiments
 - All experiments were conducted by the same CA session (this session)
 
+### 3.7 Auto-Memory Contamination (Discovered Variable)
+
+Claude Code persists auto-memory at `~/.claude/projects/<path>/memory/`,
+derived from the project's absolute path. Deleting the project directory
+(`rm -rf /tmp/solitaire`) does NOT clear the memory — it persists in
+`~/.claude/`.
+
+**Tests 1-5 (prompt-based):** Clean. No auto-memory existed because these
+were the first sessions at that path. No autocompaction occurred. The
+developer never asked Claude to create memories. CR was pasted, not a
+plugin — no hooks created memory.
+
+**E2E tests v2.1.0 onward:** Contaminated. The v2.1.0 session created
+memory files (`user_workflow.md`, `project_stack.md`). Subsequent `/init`
+runs read these and injected Flame/Riverpod stack info into CLAUDE.md
+without developer input — an uncontrolled variable not present in Tests 1-5.
+
+**Corrective action for v2.3.0 Prompt C test:** Auto-memory explicitly
+cleared before the experiment (`rm -rf ~/.claude/projects/-tmp-solitaire/memory/`),
+restoring clean-slate conditions matching Tests 1-5.
+
+See Appendix C "Note on Auto-Memory Contamination" for the full analysis.
+
 ---
 
 ## 4. Experiments and Results
