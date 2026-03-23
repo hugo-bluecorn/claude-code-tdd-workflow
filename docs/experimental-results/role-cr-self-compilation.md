@@ -598,6 +598,146 @@ The complete agent-generated roles are committed to this repository at:
 - `.claude/skills/role-ca/SKILL.md` (155 lines)
 - `.claude/skills/role-cp/SKILL.md` (137 lines)
 - `.claude/skills/role-ci/SKILL.md` (141 lines)
+- `.claude/skills/role-cr/SKILL.md` (148 lines) — see §6 below
 
 These files are version-controlled and can be viewed in the repository.
 They are not reproduced here to avoid duplication with the live files.
+
+---
+
+## 6. CR Self-Regeneration Experiment
+
+### 6.1 Motivation
+
+The ultimate bootstrap test: can CR generate an improved version of
+itself? The current CR definition (`skills/role-init/reference/cr-role-creator.md`,
+v2) was hand-refined through 5 prompt-based test iterations. This
+experiment tests whether the agent-based system can improve on that
+hand-refined artifact.
+
+### 6.2 Setup
+
+**Session:** Same session that generated the CA/CP/CI cohort (warm context).
+
+**Prompt:**
+```
+I want to create one more role: the CR (Role Creator) meta-role.
+This role generates project-specific roles for any project that
+uses the tdd-workflow plugin. It is project-agnostic — it works
+for any target project, not just this one.
+
+Adapt from the existing definition:
+- skills/role-init/reference/cr-role-creator.md
+```
+
+**Permission mode:** Bypass on (same as cohort generation).
+
+### 6.3 Results
+
+| Aspect | CR v2 (hand-refined, 158 lines) | CR Regenerated (agent, 148 lines) |
+|---|---|---|
+| Frontmatter | No skill frontmatter | Skill + role, `project: "any"`, `stack: "project-agnostic"` |
+| Identity | "You help developers create..." (passive) | "You research, interview, and produce... You operate conversationally" (active, describes mode) |
+| Project-agnostic | Implicit | **Explicit**: "You are project-agnostic. You generate roles FOR projects but do not belong to any specific project." |
+| Responsibilities | Role Generation, QA, Project Research, Format Evolution | **Project Research, Developer Interview, Role Generation, QA** (reordered to match workflow) |
+| Format Evolution | Present | **Dropped** — meta-concern, not runtime |
+| RTFM | "RTFM — do not rely on internal knowledge" (label) | "Search official documentation... do not rely on internal knowledge alone" (same intent) |
+| Critique phase | Steps 6-7, 4 checks | Steps 6-7, 4 checks (same structure) |
+| "Optional" in text | Line 63: "Roles are optional context" | **Gone** — no "optional" anywhere |
+| Placeholder constraint | Not present | **New**: explains why placeholders cause "confused behavior" |
+| Tech stack detection | Generic | **Specific examples**: package.json, pubspec.yaml, CMakeLists.txt, Cargo.toml |
+| Startup order | MEMORY.md first | **Format spec first** — rules before state |
+
+### 6.4 Key Findings
+
+**Finding 1: "Optional" removed without instruction.**
+
+The current CR definition says "Roles are optional context" (line 63).
+The regenerated version contains no instance of "optional" anywhere. The
+agent was not instructed to remove this word. The critique phase or natural
+generation eliminated it — consistent with the semantic framing principle
+(§5.9 of the main validation report) which predicts that when the system
+generating roles understands the framing problem (via the revised PRIME
+DIRECTIVE and format spec), it self-corrects.
+
+This is significant: the semantic framing principle is not just a
+documentation concern — it propagates through the generation system and
+affects the artifacts the system produces.
+
+**Finding 2: Responsibilities reordered to match execution.**
+
+Current: Role Generation, Quality Assurance, Project Research, Format Evolution.
+Regenerated: Project Research, Developer Interview, Role Generation, Quality Assurance.
+
+The regenerated order matches the actual workflow: research first, then
+interview, then generate, then validate. The current order places the
+output (Role Generation) before the inputs (Project Research). The agent
+corrected this without being told to.
+
+**Finding 3: New placeholder constraint with behavioral explanation.**
+
+The agent added: "Never leave placeholders in output. Patterns like
+curly-brace tokens, incomplete markers... cause the session loading that
+role to treat them as literal instructions, producing confused behavior."
+
+This constraint didn't exist in the current CR. The agent derived it from
+the format spec's validation rules (which check for placeholders) and
+explained WHY it matters in terms of LLM behavior — a session that loads
+a role with `{placeholder}` will try to interpret it as a literal
+instruction. This is an emergent operational insight.
+
+**Finding 4: Format Evolution dropped as a responsibility.**
+
+The agent decided that maintaining the format spec is a meta-concern — it
+belongs to the plugin developers, not to CR at runtime. This is a valid
+judgment: CR follows the format spec, it doesn't maintain the format spec.
+
+**Finding 5: Startup reordered — rules before state.**
+
+Current CR reads MEMORY.md first. Regenerated reads the format spec first.
+For a project-agnostic role, knowing the rules before knowing the state
+makes more sense — the format spec is constant across all projects, while
+MEMORY.md is project-specific and might not exist.
+
+### 6.5 Assessment: Is the Regenerated CR "Better"?
+
+By the measurement criteria established in this study:
+
+| Criterion | CR v2 | CR Regenerated | Winner |
+|---|---|---|---|
+| Format compliance | No skill frontmatter | Full skill + role frontmatter | Regenerated |
+| "Optional" framing | Present | Absent | Regenerated |
+| Responsibility ordering | Output before input | Input before output (matches workflow) | Regenerated |
+| Placeholder constraint | Missing | Present with behavioral explanation | Regenerated |
+| RTFM instruction | Present ("RTFM" label) | Present (rephrased, no label) | Tie |
+| Critique phase | Present | Present (identical structure) | Tie |
+| Format Evolution | Present (useful for maintainers) | Dropped (valid for runtime) | Context-dependent |
+| Project-agnostic explicitness | Implicit | Explicit statement in Identity | Regenerated |
+| Tech stack examples | Generic | Specific (4 file types named) | Regenerated |
+
+**Verdict:** The regenerated CR is measurably better on 6 criteria, tied
+on 2, and context-dependent on 1. The most significant improvement is
+the removal of "optional" — a self-correction that validates the semantic
+framing principle as a systemic property, not just a documentation fix.
+
+### 6.6 Implication for Experiment B
+
+The regenerated CR is different enough from the current CR to warrant
+Experiment B (regenerating the cohort with the new CR). Specifically:
+- The reordered Responsibilities may produce differently-structured roles
+- The placeholder constraint may produce roles that are more explicit
+  about output quality
+- The "rules before state" Startup may produce roles with different
+  startup procedures
+- The absence of "optional" may affect how strongly generated roles
+  frame their own recommendations
+
+**Recommendation:** Proceed with Experiment B — replace
+`cr-role-creator.md` temporarily with the regenerated content and
+regenerate the CA/CP/CI cohort to measure the downstream effect.
+
+### 6.7 Structural Issue: Double Frontmatter (same as §3.6)
+
+Same pattern as the cohort roles — two consecutive YAML frontmatter
+blocks. Functional but could be cleaner. The agent looked at the existing
+role skills, saw the pattern, and replicated it.
