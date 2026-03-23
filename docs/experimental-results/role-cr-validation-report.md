@@ -38,13 +38,27 @@ discipline the agents provide.
 
 ### 1.1 Problem Statement
 
-Developers using the tdd-workflow plugin across multiple projects need
-project-specific role files that encode workflow patterns, knowledge
-references, and behavioral constraints into reusable session documents.
-The three-session model (CA/CP/CI) requires each session to know its
-identity, responsibilities, constraints, and coordination protocols.
-Without role files, developers manually repeat these instructions at the
-start of every session.
+When using Claude Code for software development, developers often run
+multiple concurrent sessions — each focused on a different concern
+(architecture decisions, planning, implementation). Each session needs to
+know its identity, responsibilities, constraints, and how it coordinates
+with other sessions. Without role files, developers manually repeat
+these instructions at the start of every session and when context drifts.
+
+The specific pain that motivated this work: the developer had been using
+manually-authored "proto-roles" — text descriptions pasted into each
+session at startup — across multiple projects (zenoh-dart, foobar,
+tdd-workflow plugin). When starting a new project, the process was:
+
+1. Copy the proto-role files from a previous project
+2. Open a new Claude Code session
+3. Paste the proto-role and say "adapt this for the new project"
+4. Claude would modify the role with varying quality and consistency
+5. Repeat for each role in the cohort
+
+This manual copy-and-modify process was the direct motivation for CR:
+automate the adaptation, enforce quality through validation, and produce
+role files that are structured, reusable, and discoverable as skills.
 
 ### 1.2 What Roles Are — The Meta-Definition
 
@@ -83,7 +97,61 @@ projects. It researches a target project's codebase, asks the developer
 about their workflow, and produces structured role files conforming to
 the Role File Format specification.
 
-### 1.4 Research Questions
+### 1.4 The CA/CP/CI Cohort: A Working Example
+
+The three-session model used in this study (CA/CP/CI) is not prescriptive
+— it is one working example of multi-session, multi-role cooperation that
+emerged from practice with the tdd-workflow plugin. Other cohorts are
+equally valid (a solo developer with one role, a data team with DE/DA/DR,
+a game team with GD/GP/QA).
+
+The CA/CP/CI cohort works for TDD workflow projects because it maps
+directly to the plugin's agent architecture:
+
+| Role | Session Focus | Plugin Commands | Coordinates With |
+|---|---|---|---|
+| CA (Architect) | Decisions, issues, reviews, memory | None — read-only for code | CP (sends plans), CI (reviews implementations) |
+| CP (Planner) | Feature decomposition into TDD slices | `/tdd-plan` | CA (receives prompts, returns plans for review) |
+| CI (Implementer) | Red-green-refactor execution, release | `/tdd-implement`, `/tdd-release`, `/tdd-finalize-docs` | CA (receives approval, returns implementations for review) |
+
+**Interaction flow:**
+
+```
+CA writes issue → CA writes /tdd-plan prompt → CP runs /tdd-plan →
+CA reviews plan → (iterate until approved) → CI runs /tdd-implement →
+CA reviews implementation → CI runs /tdd-release → CA reviews PR →
+CI merges
+```
+
+**Why this cohort works:**
+
+1. **Separation of concerns.** Each session focuses on one cognitive mode:
+   CA thinks strategically (architecture, scope), CP thinks analytically
+   (decomposition, test design), CI thinks mechanically (code, tests, commits).
+   Mixing these modes in one session leads to context drift.
+
+2. **Context purity.** Each session's context window contains only
+   information relevant to its concern. CA doesn't have implementation
+   details crowding out architecture decisions. CI doesn't have planning
+   iterations crowding out test results.
+
+3. **Human-mediated coordination.** The developer carries context between
+   terminals — copying plan summaries, relaying approval, pasting issue
+   URLs. This is intentional: the developer is the quality gate between
+   sessions, preventing one session's assumptions from propagating
+   unchecked to another.
+
+4. **Alignment with TDD discipline.** The separation mirrors TDD's own
+   discipline: plan what to test (CP), implement the test then the code
+   (CI), verify the result (CA). The roles make the TDD workflow's implicit
+   phases explicit.
+
+**This cohort is an example, not a requirement.** CR generates whatever
+roles the developer describes. The experiments in this study used the
+CA/CP/CI cohort because it was the developer's established practice and
+provided a controlled baseline across experiments.
+
+### 1.5 Research Questions
 
 1. Can CR generate role files that are functionally useful — i.e., that
    guide a session to produce architecturally sound output?
@@ -101,12 +169,23 @@ the Role File Format specification.
 
 ### 2.1 Prior Work
 
-The Role File Format v2.0 was authored 2026-03-20. It defined YAML
-frontmatter, section types (FIXED/HYBRID/DYNAMIC), composition tables
-for CA/CI/CP/CR roles, and validation rules. The CR meta-role file was
-manually authored as the first format-conforming instance.
+**Proto-roles (pre-2026-03-21):** Before any formal role system existed,
+the developer used hand-authored text files (`docs/dev-roles/ca-architect.md`,
+`ci-implementer.md`, `cp-planner.md`) as proto-roles. These were pasted
+into Claude Code sessions at startup to establish identity and constraints.
+They evolved organically across projects — each new project got a
+manually-adapted copy. The proto-roles had no formal structure (no
+frontmatter, no validation), but they encoded real operational wisdom
+accumulated through weeks of use (crash-recovery cross-check logic,
+verification summary templates, coordination protocols).
 
-Prior explorations documented in `explorations/features/roles/synthesis.md`
+**Role File Format v2.0 (2026-03-20):** Formalized the proto-role pattern
+into a specification with YAML frontmatter, section types
+(FIXED/HYBRID/DYNAMIC), composition tables for CA/CI/CP/CR roles, and
+validation rules. The CR meta-role file was manually authored as the
+first format-conforming instance.
+
+**Synthesis document:** `explorations/features/roles/synthesis.md`
 established the technical independence constraint (core TDD workflow
 functions without role files), the three-session coordination model,
 and the planned skill architecture. The original phrasing described
