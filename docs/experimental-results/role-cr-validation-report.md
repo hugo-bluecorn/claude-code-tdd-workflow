@@ -158,7 +158,29 @@ section). Summary:
 Prompts C and D differ only in whether source role file paths are provided.
 This isolates the effect of source material on CR's output quality.
 
-### 3.5 Experimental Controls
+### 3.5 Source Input Matrix
+
+A key experimental variable was the source input provided to CR for role
+generation. Two conditions were tested:
+
+| Condition | Description | Prompt | Experiments |
+|---|---|---|---|
+| **A priori** | Generate from scratch — CR researches the target project and developer's workflow description, no prior role files provided | D (also B for single-role) | Test 1, E2E v2.3.0 |
+| **Adapted** | Adapt from existing roles — CR receives paths to hand-authored role files from another project and maps them to the target | C | Tests 2-5, E2E v2.1.0-v2.2.1 |
+
+This matrix was not designed in advance. Test 1 used a priori generation
+naturally (the developer didn't mention source files). Test 2 introduced
+source files to test adaptation. The quality difference between conditions
+was an emergent finding that informed later experiments.
+
+**Observed difference:** A priori generation (Test 1) produced richer
+architecture boundaries, more creative section composition, and
+project-specific adaptations. Adapted generation (Tests 2-4) was
+deferential to source material — near-verbatim copying with minimal
+project-specific enrichment. The final v2.3.0 test deliberately used
+a priori generation (Prompt D) informed by this finding.
+
+### 3.6 Experimental Controls
 
 - Each experiment used a freshly recreated `/tmp/solitaire` project
 - The same base prompt was used across comparable experiments
@@ -582,7 +604,54 @@ testing utilities. The developer can implement from this output directly.
 With training-data roles, the developer must research the frameworks
 separately — the role provides direction but not actionable specifics.
 
-### 5.5 Architecture Decision Timeline
+### 5.5 A Priori vs Adapted Generation
+
+The source input matrix (§3.5) revealed a consistent pattern across
+experiments:
+
+**A priori generation** (no source roles provided):
+- Test 1: 4-layer architecture boundary (Flame/Riverpod/Flutter/pure Dart),
+  creative section composition (combined Issue+Prompt into "Feature Scoping"),
+  dropped Coordination for single-developer, domain-specific constraints
+- E2E v2.3.0: 3 concrete workflow procedures, specific API names in
+  implementation review checks, action → output format in responsibilities
+
+**Adapted generation** (source role files provided):
+- Test 2: Near-verbatim copy with project name substitution, thin Context
+  section (one-line architecture), "Do write" carried verbatim, constraints
+  lacked consequences
+- Tests 3-4: Improved with Critique phase but non-deterministic — some
+  improvements regressed between identical runs
+- E2E v2.1.0-v2.2.1: Better than Tests 2-4 (validator enforced structural
+  quality) but still anchored to source material structure
+
+**Direct comparison on the same criterion — Architecture boundaries:**
+
+| Condition | Context Section Content |
+|---|---|
+| A priori (Test 1) | "Flame = rendering, Riverpod = state, Flutter = UI chrome, pure Dart = game logic. flame_riverpod bridges via RiverpodAwareGameWidget and RiverpodComponentMixin" |
+| Adapted (Test 2) | "Flame components for rendering + Riverpod providers for game state" |
+| Adapted + Critique (Test 3) | "Flame handles rendering + Riverpod manages game state. flame_riverpod bridges." |
+| A priori + Agent (v2.3.0) | "Three-layer separation — Flame (rendering only), Riverpod (game state only), flame_riverpod (bridge via RiverpodAwareGameWidget and RiverpodComponentMixin). addToGameWidgetBuild before onMount." |
+
+**Interpretation:** When CR has source roles to adapt, it anchors to the
+source text and makes minimal changes. When generating from scratch, CR
+has creative freedom to research the stack and produce project-specific
+content. The adapted condition triggers a "copy and substitute" behavior;
+the a priori condition triggers a "research and compose" behavior.
+
+This finding informed the v2.3.0 final test, which deliberately used
+Prompt D (from scratch) rather than Prompt C (with source files).
+
+**Note:** This does not mean adapted generation is always worse. A
+well-crafted source role from a similar project may provide useful
+structure that a priori generation would miss. The finding is that CR
+needs explicit critique instructions to avoid deferential copying when
+adapting, and even then the behavior is non-deterministic in inline skills.
+The agent architecture (v2.3.0) mitigates this by executing the critique
+step mechanically.
+
+### 5.6 Architecture Decision Timeline
 
 | Date | Decision | Basis |
 |---|---|---|
@@ -596,7 +665,7 @@ separately — the role provides direction but not actionable specifics.
 Each decision was made based on experimental evidence, not assumption.
 Reversals were driven by findings that contradicted the prior basis.
 
-### 5.6 Limitations
+### 5.7 Limitations
 
 1. All experiments used a single target project (Flutter solitaire with
    Flame + Riverpod). Results may differ for other stacks.
