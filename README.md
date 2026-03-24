@@ -168,9 +168,32 @@ their target agent, passing through silently for others.
 
 ### Install
 
+1. Clone the repository:
+
 ```bash
-claude plugin install <path-to-tdd-workflow>
+git clone https://github.com/hugo-bluecorn/claude-code-tdd-workflow.git
 ```
+
+2. In a Claude Code session, add it as a local marketplace:
+
+```
+/plugin marketplace add ./claude-code-tdd-workflow
+```
+
+3. Install the plugin (via the interactive UI or directly):
+
+```
+/plugin install tdd-workflow
+```
+
+4. Start a new Claude Code session in your target project. The plugin
+   loads at session startup — verify with `/tdd-plan` appearing in your
+   available skills.
+
+To update after pulling new changes: `/plugin marketplace update`, then
+`/plugin update tdd-workflow`, then restart the session.
+
+For development without installing, use `claude --plugin-dir ./claude-code-tdd-workflow`.
 
 ### Plan
 
