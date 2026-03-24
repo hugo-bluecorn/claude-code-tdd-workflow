@@ -26,7 +26,7 @@ After installation, verify it loaded:
 claude --debug
 ```
 
-Look for `loading plugin: tdd-workflow` in the output. The `/tdd-plan`, `/tdd-implement`, `/tdd-release`, `/tdd-finalize-docs`, and `/role-create` commands should appear in your skill list.
+Look for `loading plugin: tdd-workflow` in the output. The `/tdd-plan`, `/tdd-implement`, `/tdd-release`, `/tdd-finalize-docs`, `/tdd-update-context`, and `/role-create` commands should appear in your skill list.
 
 ---
 
@@ -123,7 +123,7 @@ The plugin system uses the `version` field in `.claude-plugin/plugin.json` to de
 
 ```json
 {
-  "version": "1.11.0"
+  "version": "2.4.0"
 }
 ```
 
@@ -221,7 +221,7 @@ The implementer looks for opportunities to improve code quality:
 After the implementer finishes, the **tdd-verifier** agent runs. It has no knowledge of what was just implemented — it only sees the code on disk. It:
 
 1. Runs the **complete** test suite (not just new tests)
-2. Runs static analysis (`dart analyze`, `flutter analyze`, or clang-tidy)
+2. Runs static analysis (e.g., `shellcheck`, `dart analyze`, `clang-tidy` — depends on project type)
 3. Checks coverage if tooling is available
 4. Verifies each criterion from the plan slice
 5. Reports a structured **PASS** or **FAIL** verdict
@@ -408,16 +408,16 @@ The planner runs in `permissionMode: plan` by default. The planner is read-only 
 ### Changing state management or architecture
 
 The planner follows whatever conventions are loaded by the `project-conventions`
-skill from your project's cached convention files. To switch from Riverpod to
-Bloc, Provider, or any other approach:
+skill from your external convention files (configured in `.claude/tdd-conventions.json`).
+To switch from one approach to another (e.g., Riverpod to Bloc, or Provider to Redux):
 
-1. Edit `project-conventions.md`
+1. Edit the relevant convention file in your external conventions repo
 2. Update the **State Management** section with your preferred solution and code examples
-3. Update the **ViewModel Example** and **View Example** to match
+3. Update example code to match
 4. Update the **Official References** table
 
 The plugin itself has no opinion about state management — it reads the conventions
-doc and follows it. You never need to edit SKILL.md or agent files to change
+and follows them. You never need to edit SKILL.md or agent files to change
 architecture choices.
 
 ### Changing the test specification format
@@ -520,7 +520,7 @@ The Stop hook prevents Claude from ending the session while `.tdd-progress.md` h
 
 ### How the agents learn
 
-Three of the plugin's work agents have persistent memory (`memory: project`):
+Four of the plugin's agents have persistent memory (`memory: project`):
 
 | Agent | Memory location | What it learns |
 |---|---|---|

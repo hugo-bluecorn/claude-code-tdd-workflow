@@ -4,7 +4,7 @@ A Claude Code plugin for Test-Driven Development with context-isolated agents. E
 
 ## Overview
 
-This plugin decomposes TDD into six context-isolated agents that prevent the common failure modes of single-context TDD: training distribution bias toward implementation-first code, context rot under token accumulation, and absence of epistemic boundaries between test and implementation reasoning.
+This plugin decomposes TDD into seven context-isolated agents that prevent the common failure modes of single-context TDD: training distribution bias toward implementation-first code, context rot under token accumulation, and absence of epistemic boundaries between test and implementation reasoning.
 
 ## Requirements
 
@@ -84,8 +84,9 @@ Done
 | tdd-implementer | opus | Red-green-refactor per slice (full tools) |
 | tdd-verifier | haiku | Blackbox validation (read-only) |
 | tdd-releaser | sonnet | Release workflow (CHANGELOG, version propagation, PR) |
-| tdd-doc-finalizer | sonnet | Post-release documentation updates across discovered project docs |
-| context-updater | opus | Updates convention reference files to latest versions |
+| tdd-doc-finalizer | sonnet | Post-release documentation updates across discovered project docs (**not recommended** — see user guide) |
+| context-updater | opus | Updates convention reference files to latest versions (**not recommended** — see user guide) |
+| role-creator | opus | Read-only project research and role file generation; spawned by `/role-create` |
 
 ### Skills
 
@@ -116,7 +117,7 @@ Done
 | SubagentStop (context-updater) | prompt | Validates framework version changes require user approval |
 | fetch-conventions.sh | SessionStart (command) | Clones/refreshes convention repos to `${CLAUDE_PLUGIN_DATA}/conventions/` |
 
-> **Dual delivery:** Hook scripts are registered in both agent frontmatter and `hooks.json`. Agent frontmatter hooks work for local development; `hooks.json` session-level hooks ensure enforcement when the plugin is installed from a marketplace (where frontmatter hooks are silently ignored).
+> **Hook delivery:** Enforcement hooks are registered in `hooks.json` as the primary delivery path (required for marketplace installs where agent frontmatter hooks are silently ignored). The releaser and doc-finalizer additionally declare their Stop hooks in agent frontmatter for local development visibility; these auto-convert to SubagentStop hooks at runtime.
 
 ## Configuration
 
@@ -148,7 +149,8 @@ tdd-workflow/
 │   ├── tdd-verifier.md
 │   ├── tdd-releaser.md
 │   ├── tdd-doc-finalizer.md
-│   └── context-updater.md
+│   ├── context-updater.md
+│   └── role-creator.md
 ├── skills/
 │   ├── tdd-plan/
 │   │   ├── SKILL.md
@@ -167,6 +169,10 @@ tdd-workflow/
 │   │   └── SKILL.md
 │   ├── role-create/
 │   │   └── SKILL.md
+│   ├── role-init/
+│   │   └── reference/
+│   │       ├── cr-role-creator.md
+│   │       └── role-format.md
 │   └── project-conventions/
 │       └── SKILL.md
 ├── hooks/
@@ -183,20 +189,20 @@ tdd-workflow/
 │   ├── detect-doc-context.sh
 │   ├── detect-project-context.sh
 │   ├── load-conventions.sh
+│   ├── load-role-references.sh
 │   └── validate-role-output.sh
 ├── docs/
-│   ├── extensibility/
-│   │   ├── audit.md
-│   │   └── audit-prompt.md
-│   ├── archive/
-│   │   └── version-control-integration.md
 │   ├── user-guide.md
+│   ├── plugin-developer-context.md
+│   ├── extensibility/
+│   ├── experimental-results/
+│   ├── dev-roles/
+│   ├── reference/
+│   ├── archive/
 │   └── prompts/
-│       └── doc-audit.md
 ├── CLAUDE.md
 ├── README.md
 ├── CHANGELOG.md
-├── MEMORY.md
 └── LICENSE
 ```
 
@@ -239,6 +245,7 @@ Add the following to your `.claude/settings.local.json` to allow Claude Code to 
 
 - **[User Guide](docs/user-guide.md)** — Step-by-step walkthrough of the full TDD workflow
 - **[Version Control](skills/tdd-release/reference/version-control.md)** — Git workflow and commit conventions
+- **[Plugin Developer Context](docs/plugin-developer-context.md)** — Architecture overview for plugin contributors
 
 ## License
 
