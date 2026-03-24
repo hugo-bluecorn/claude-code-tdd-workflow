@@ -46,38 +46,49 @@ When you need specific API details, schemas, or field-level documentation:
 
 ## This Plugin's Architecture
 
-The tdd-workflow plugin (`v2.0.0`) provides:
+The tdd-workflow plugin (`v2.4.0`) provides:
 
-**6 agents** (in `agents/`):
+**7 agents** (in `agents/`):
 - `tdd-planner` — Opus, plan mode, read-only research, Bash allowlist
 - `tdd-implementer` — Opus, read-write, test-first enforcement via hooks
 - `tdd-verifier` — Haiku, plan mode (read-only), blackbox validation
 - `tdd-releaser` — Sonnet, Bash-only writes, approval gates
-- `tdd-doc-finalizer` — Sonnet, Edit-only, post-release docs
-- `context-updater` — Opus, full web access, convention file updates
+- `tdd-doc-finalizer` — Sonnet, Edit-only, post-release docs (not recommended — see user guide)
+- `context-updater` — Opus, full web access, convention file updates (not recommended — see user guide)
+- `role-creator` — Opus, read-only, project research and role file generation
 
-**5 workflow skills** (in `skills/`):
+**6 workflow skills** (in `skills/`):
 - `tdd-plan` — context: inline, spawns tdd-planner via Agent tool, disable-model-invocation
 - `tdd-implement` — context: main, orchestrates implementer + verifier loop
 - `tdd-release` — context: fork, agent: tdd-releaser
 - `tdd-finalize-docs` — context: fork, agent: tdd-doc-finalizer
 - `tdd-update-context` — context: fork, agent: context-updater
+- `role-create` — context: inline, spawns role-creator via Agent tool, disable-model-invocation
 
 **1 convention skill** (dynamic loading):
 - `project-conventions` — loads cached convention files based on project configuration
 
-**9 hook scripts** (in `hooks/` and `scripts/`):
-- `validate-tdd-order.sh` — PreToolUse: blocks impl writes before test exists (agent_type guard for dual delivery)
-- `auto-run-tests.sh` — PostToolUse: auto-runs tests after file changes (agent_type guard for dual delivery)
+**1 reference skill** (not user-invocable):
+- `role-init` — contains reference documents (CR role definition, role format spec) used by the role-creator agent
+
+**7 hook scripts** (in `hooks/`):
+- `validate-tdd-order.sh` — PreToolUse: blocks impl writes before test exists (agent_type guard)
+- `auto-run-tests.sh` — PostToolUse: auto-runs tests after file changes (agent_type guard)
 - `validate-plan-output.sh` — Standalone utility: validates plan structure (sections, refactoring leaks)
 - `check-tdd-progress.sh` — Stop: prevents exit with pending slices
-- `planner-bash-guard.sh` — PreToolUse: read-only command allowlist for planner (agent_type guard for dual delivery)
+- `planner-bash-guard.sh` — PreToolUse: read-only command allowlist for planner (agent_type guard)
 - `check-release-complete.sh` — SubagentStop: verifies branch is pushed
 - `fetch-conventions.sh` — SessionStart: clones/refreshes convention repos to `${CLAUDE_PLUGIN_DATA}/conventions/`
+
+**6 utility scripts** (in `scripts/`):
+- `bump-version.sh` — Propagates version to all version-bearing files
+- `detect-doc-context.sh` — Discovers documentation files in the project
 - `detect-project-context.sh` — Detects project type (Dart/C++/Bash/C)
 - `load-conventions.sh` — DCI script: detects project type, outputs cached convention content
+- `load-role-references.sh` — Loads CR role definition and format spec for role-creator agent
+- `validate-role-output.sh` — Validates generated role files against format spec
 
-**Dual delivery** (`hooks/hooks.json`): All enforcement hooks are registered in both agent frontmatter and `hooks.json`. Hook scripts use `agent_type` guards to pass through silently for non-target agents when fired from session-level hooks. This ensures enforcement works for both local development (frontmatter) and marketplace installs (where frontmatter hooks are ignored). Current `hooks.json` entries: PreToolUse (2: Bash guard, validate-tdd-order), PostToolUse (1: auto-run-tests), SubagentStop (5: implementer, releaser, doc-finalizer, verifier, context-updater), SubagentStart (2: context-updater, tdd-planner), SessionStart (1: fetch-conventions), Stop (1: check-tdd-progress).
+**Hook delivery** (`hooks/hooks.json`): Enforcement hooks are registered in `hooks.json` as the primary delivery path — required for marketplace installs where agent frontmatter hooks are silently ignored. Hook scripts use `agent_type` guards to pass through silently for non-target agents when fired from session-level hooks. The releaser and doc-finalizer additionally declare their Stop hooks in agent frontmatter for local development visibility; these auto-convert to SubagentStop at runtime. Current `hooks.json` entries: PreToolUse (2: Bash guard, validate-tdd-order), PostToolUse (1: auto-run-tests), SubagentStop (5: implementer, releaser, doc-finalizer, verifier, context-updater), SubagentStart (2: context-updater, tdd-planner), SessionStart (1: fetch-conventions), Stop (1: check-tdd-progress).
 
 **State file**: `.tdd-progress.md` tracks slice status across sessions.
 

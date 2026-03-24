@@ -26,7 +26,7 @@ After installation, verify it loaded:
 claude --debug
 ```
 
-Look for `loading plugin: tdd-workflow` in the output. The `/tdd-plan`, `/tdd-implement`, `/tdd-release`, `/tdd-finalize-docs`, and `/role-create` commands should appear in your skill list.
+Look for `loading plugin: tdd-workflow` in the output. The `/tdd-plan`, `/tdd-implement`, `/tdd-release`, `/tdd-finalize-docs`, `/tdd-update-context`, and `/role-create` commands should appear in your skill list.
 
 ---
 
@@ -123,7 +123,7 @@ The plugin system uses the `version` field in `.claude-plugin/plugin.json` to de
 
 ```json
 {
-  "version": "1.11.0"
+  "version": "2.4.0"
 }
 ```
 
@@ -221,7 +221,7 @@ The implementer looks for opportunities to improve code quality:
 After the implementer finishes, the **tdd-verifier** agent runs. It has no knowledge of what was just implemented — it only sees the code on disk. It:
 
 1. Runs the **complete** test suite (not just new tests)
-2. Runs static analysis (`dart analyze`, `flutter analyze`, or clang-tidy)
+2. Runs static analysis (e.g., `shellcheck`, `dart analyze`, `clang-tidy` — depends on project type)
 3. Checks coverage if tooling is available
 4. Verifies each criterion from the plan slice
 5. Reports a structured **PASS** or **FAIL** verdict
@@ -358,6 +358,8 @@ This forks a fresh context and launches the **tdd-doc-finalizer** agent, which:
 
 The doc-finalizer is fully automated with no approval gates. It only modifies documentation — it never touches CHANGELOG, source code, agent definitions, skill definitions, or version files (version bumping is the releaser's responsibility).
 
+> **Not recommended for use.** The doc-finalizer mechanically propagates CHANGELOG entries to documentation files but does not assess whether the documentation is actually accurate or complete. A redesign is planned but not yet scheduled. For now, review and update documentation manually after release.
+
 The same `check-release-complete.sh` hook validates that the push succeeded before the agent finishes.
 
 ---
@@ -406,16 +408,16 @@ The planner runs in `permissionMode: plan` by default. The planner is read-only 
 ### Changing state management or architecture
 
 The planner follows whatever conventions are loaded by the `project-conventions`
-skill from your project's cached convention files. To switch from Riverpod to
-Bloc, Provider, or any other approach:
+skill from your external convention files (configured in `.claude/tdd-conventions.json`).
+To switch from one approach to another (e.g., Riverpod to Bloc, or Provider to Redux):
 
-1. Edit `project-conventions.md`
+1. Edit the relevant convention file in your external conventions repo
 2. Update the **State Management** section with your preferred solution and code examples
-3. Update the **ViewModel Example** and **View Example** to match
+3. Update example code to match
 4. Update the **Official References** table
 
 The plugin itself has no opinion about state management — it reads the conventions
-doc and follows it. You never need to edit SKILL.md or agent files to change
+and follows them. You never need to edit SKILL.md or agent files to change
 architecture choices.
 
 ### Changing the test specification format
@@ -498,21 +500,7 @@ The Stop hook prevents Claude from ending the session while `.tdd-progress.md` h
 
 ## Updating Convention References
 
-Run `/tdd-update-context` to update convention reference files to the latest framework versions. This is useful when a new major version of a framework your project uses is released and the cached conventions become stale.
-
-The context-updater agent will:
-
-1. Read all current reference files and note documented versions
-2. Research latest stable versions from canonical sources (GitHub repos, official sites)
-3. Analyze breaking changes between documented and latest versions
-4. Perform a gap analysis (stale patterns, missing docs, incorrect examples)
-5. Present a structured proposal with priority ratings
-6. Ask for approval before editing any files
-7. Apply approved changes and commit
-
-This workflow only modifies reference content files and SKILL.md quick references — it never touches agent definitions, hook scripts, or workflow logic.
-
-> **Note:** In v2.0.0, language conventions are no longer bundled with the plugin. They live in an external conventions repo configured per project. Run `/tdd-update-context` against your external conventions repo, not the plugin itself.
+> **Not recommended for use.** Since v2.0.0, language conventions live in an external repo, not in this plugin. The context-updater agent's target files no longer exist here, making `/tdd-update-context` effectively non-functional against the plugin. A scope redesign is planned but not yet scheduled. Update convention reference files directly in your external conventions repo.
 
 ---
 
@@ -532,7 +520,7 @@ This workflow only modifies reference content files and SKILL.md quick reference
 
 ### How the agents learn
 
-Three of the plugin's work agents have persistent memory (`memory: project`):
+Four of the plugin's agents have persistent memory (`memory: project`):
 
 | Agent | Memory location | What it learns |
 |---|---|---|

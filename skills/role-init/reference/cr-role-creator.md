@@ -138,4 +138,3 @@ When reviewing an existing role:
 3. Codebase (actual code is ground truth)
 4. CLAUDE.md (project documentation)
 5. Agent memory (machine-learned knowledge)
-6. Convention cache (language conventions)

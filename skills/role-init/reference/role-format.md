@@ -276,7 +276,7 @@ A generated role file is valid when:
 |---|---|
 | `/role-init` | CR researches the project and developer workflow, generates role files |
 | `/role-evolve` | Updates content from agent memory + MEMORY.md |
-| `/role-*` | Loads role file + conventions via DCI into session |
+| `/role-*` | Loads role file into session |
 | `/role-*` mid-session | Re-anchors session identity (drift correction) |
 | `/clear` + `/role-*` | Full reset for new feature |
 | Manual edit | Developer modifies role file directly (preserved by evolve) |

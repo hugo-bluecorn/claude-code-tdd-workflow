@@ -13,7 +13,7 @@
 > technical boundary.
 
 This project uses the **tdd-workflow** plugin for test-driven development.
-The plugin provides six specialized agents that collaborate through a
+The plugin provides seven specialized agents that collaborate through a
 structured RED -> GREEN -> REFACTOR cycle.
 
 ## TDD Workflow
@@ -35,8 +35,8 @@ structured RED -> GREEN -> REFACTOR cycle.
 - **`/tdd-plan <feature description>`** — Create a TDD implementation plan
 - **`/tdd-implement`** — Start or resume TDD implementation for pending slices
 - **`/tdd-release`** — Finalize and release a completed TDD feature
-- **`/tdd-finalize-docs`** — Post-release documentation updates across discovered project docs
-- **`/tdd-update-context`** — Update convention reference files to latest versions
+- **`/tdd-finalize-docs`** — Post-release documentation updates (**not recommended** — mechanically propagates CHANGELOG entries without assessing accuracy; review docs manually after release)
+- **`/tdd-update-context`** — Update convention reference files (**not recommended** — target files no longer exist in plugin since v2.0.0; update conventions directly in your external repo)
 - **`/role-create`** — Generate a role file using the CR meta-role; validates output and writes approved role to `.claude/skills/role-{code}/SKILL.md`
 
 > **Important:** Do NOT manually invoke `tdd-workflow:tdd-planner` via the Task
@@ -74,7 +74,7 @@ The planner agent will:
 ### Step 2: Review and Approve
 
 Review the plan output. Choose:
-- **Approve** — the planner writes `.tdd-progress.md` and a planning archive to `planning/`
+- **Approve** — the skill writes `.tdd-progress.md` and a planning archive to `planning/`
 - **Modify** — provide feedback, the planner revises and asks again
 - **Discard** — abandon the plan, no files written
 

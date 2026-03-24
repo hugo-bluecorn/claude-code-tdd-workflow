@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
 
+## Unreleased
+
+- docs: remove aspirational convention references from role format spec and CR definition
+
 ## [2.4.0] - 2026-03-23
 
 ### Changed
