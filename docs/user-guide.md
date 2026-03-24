@@ -358,6 +358,8 @@ This forks a fresh context and launches the **tdd-doc-finalizer** agent, which:
 
 The doc-finalizer is fully automated with no approval gates. It only modifies documentation — it never touches CHANGELOG, source code, agent definitions, skill definitions, or version files (version bumping is the releaser's responsibility).
 
+> **Not recommended for use.** The doc-finalizer mechanically propagates CHANGELOG entries to documentation files but does not assess whether the documentation is actually accurate or complete. A redesign is planned but not yet scheduled. For now, review and update documentation manually after release.
+
 The same `check-release-complete.sh` hook validates that the push succeeded before the agent finishes.
 
 ---
@@ -498,21 +500,7 @@ The Stop hook prevents Claude from ending the session while `.tdd-progress.md` h
 
 ## Updating Convention References
 
-Run `/tdd-update-context` to update convention reference files to the latest framework versions. This is useful when a new major version of a framework your project uses is released and the cached conventions become stale.
-
-The context-updater agent will:
-
-1. Read all current reference files and note documented versions
-2. Research latest stable versions from canonical sources (GitHub repos, official sites)
-3. Analyze breaking changes between documented and latest versions
-4. Perform a gap analysis (stale patterns, missing docs, incorrect examples)
-5. Present a structured proposal with priority ratings
-6. Ask for approval before editing any files
-7. Apply approved changes and commit
-
-This workflow only modifies reference content files and SKILL.md quick references — it never touches agent definitions, hook scripts, or workflow logic.
-
-> **Note:** In v2.0.0, language conventions are no longer bundled with the plugin. They live in an external conventions repo configured per project. Run `/tdd-update-context` against your external conventions repo, not the plugin itself.
+> **Not recommended for use.** Since v2.0.0, language conventions live in an external repo, not in this plugin. The context-updater agent's target files no longer exist here, making `/tdd-update-context` effectively non-functional against the plugin. A scope redesign is planned but not yet scheduled. Update convention reference files directly in your external conventions repo.
 
 ---
 
