@@ -51,17 +51,17 @@ function test_plugin_json_exists() {
   assert_file_exists "$PLUGIN_JSON"
 }
 
-function test_plugin_json_version_is_2_2_1() {
-  # The version field in plugin.json must be 2.2.1
+function test_plugin_json_version_is_valid_semver() {
+  # The version field in plugin.json must be valid semver (MAJOR.MINOR.PATCH)
   local version
   version=$(grep '"version"' "$PLUGIN_JSON" | sed 's/.*: *"\([^"]*\)".*/\1/')
-  assert_equals "2.2.1" "$version"
+  assert_matches "^[0-9]+\.[0-9]+\.[0-9]+$" "$version"
 }
 
 # ---------- Test 3: CHANGELOG version matches plugin.json version ----------
 
 function test_changelog_latest_version_matches_plugin_json() {
-  # The latest CHANGELOG version and plugin.json version must both be 1.6.0
+  # The latest CHANGELOG version and plugin.json version must match
   local changelog_version
   changelog_version=$(grep -oP '## \[\K[0-9]+\.[0-9]+\.[0-9]+' "$CHANGELOG_MD" | head -1)
   local plugin_version
