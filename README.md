@@ -168,32 +168,57 @@ their target agent, passing through silently for others.
 
 ### Install
 
-1. Clone the repository:
+1. Clone the plugin repository:
 
 ```bash
 git clone https://github.com/hugo-bluecorn/claude-code-tdd-workflow.git
 ```
 
-2. In a Claude Code session, add it as a local marketplace:
+2. Create a local marketplace (a separate directory that catalogs the
+   plugin — a marketplace is not the plugin itself):
+
+```bash
+mkdir -p local-marketplace/.claude-plugin
+cat > local-marketplace/.claude-plugin/marketplace.json << 'EOF'
+{
+  "name": "local-plugins",
+  "owner": { "name": "Your Name" },
+  "plugins": [
+    {
+      "name": "tdd-workflow",
+      "source": "../claude-code-tdd-workflow",
+      "description": "TDD with context-isolated agents"
+    }
+  ]
+}
+EOF
+```
+
+3. In a Claude Code session, add the marketplace and install:
 
 ```
-/plugin marketplace add ./claude-code-tdd-workflow
-```
-
-3. Install the plugin (via the interactive UI or directly):
-
-```
-/plugin install tdd-workflow
+/plugin marketplace add ./local-marketplace
+/plugin install tdd-workflow@local-plugins
 ```
 
 4. Start a new Claude Code session in your target project. The plugin
    loads at session startup — verify with `/tdd-plan` appearing in your
    available skills.
 
-To update after pulling new changes: `/plugin marketplace update`, then
-`/plugin update tdd-workflow`, then restart the session.
+**Updating** after pulling new changes to the plugin repo:
 
-For development without installing, use `claude --plugin-dir ./claude-code-tdd-workflow`.
+```
+/plugin marketplace update local-plugins
+/plugin update tdd-workflow@local-plugins
+```
+
+Then restart the session or run `/reload-plugins`.
+
+**Development mode** (no marketplace needed, current session only):
+
+```bash
+claude --plugin-dir ./claude-code-tdd-workflow
+```
 
 ### Plan
 
