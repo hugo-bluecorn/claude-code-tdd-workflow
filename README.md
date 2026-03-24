@@ -1,251 +1,282 @@
 # tdd-workflow
 
-A Claude Code plugin for Test-Driven Development with context-isolated agents. Enforces red-green-refactor discipline with extensible, project-configured language conventions.
+A Claude Code plugin that structures LLM-assisted development around
+test-driven discipline. Seven context-isolated agents enforce the
+red-green-refactor cycle, while a role system encodes your team's
+workflow patterns so sessions stay focused and consistent.
 
-## Overview
+## Why This Exists
 
-This plugin decomposes TDD into seven context-isolated agents that prevent the common failure modes of single-context TDD: training distribution bias toward implementation-first code, context rot under token accumulation, and absence of epistemic boundaries between test and implementation reasoning.
+This plugin grew organically from one developer's practice with Claude
+Code. The question it answers is: **what does productive developer-AI
+collaboration look like, and how do you encode it?**
 
-## Requirements
+The answer follows the Unix philosophy — small tools that each do one
+thing well and compose into a pipeline. The planner only plans. The
+implementer only implements. The verifier only verifies. Each agent is
+minimal and focused, constrained to its single responsibility by tool
+restrictions and lifecycle hooks. The developer orchestrates the pipeline
+and makes the decisions; the agents execute with discipline.
 
-- Claude Code with plugin support
+Two specific problems shaped the design:
 
-## Installation
+**Procedural instructions are unreliable.** Identical prompts produce
+different quality across runs — a finding confirmed through 12+
+controlled experiments during development. Telling Claude "write the
+test first, then implement" sometimes works and sometimes doesn't. The
+only reliable path is mechanical enforcement: hooks that block
+implementation writes until tests exist, agents with restricted tool
+access, and separate contexts between phases.
+
+**Sessions lose focus.** As conversations grow, earlier instructions
+receive diminishing model attention. Autocompaction can discard the
+constraints that define how a session should behave. The 1M token
+context window (generally available since March 2026 for Opus 4.6 and
+Sonnet 4.6) substantially reduces how often autocompaction triggers,
+but does not eliminate it for long sessions. Without intervention,
+developers repeat the same setup instructions — identity, constraints,
+workflow procedures — every time they start or recover a session. Roles
+encode these patterns once; the TDD pipeline resets agent context
+automatically between phases.
+
+## What It Does
+
+The plugin provides two systems that work together:
+
+### TDD Pipeline
+
+A structured workflow that takes a feature description through planning,
+implementation, verification, and release — each phase handled by a
+dedicated agent with its own context window:
+
+```
+/tdd-plan "Add user authentication with email/password"
+  → tdd-planner (read-only) researches your codebase, decomposes the
+    feature into independently testable slices with Given/When/Then
+    specifications, presents for human approval
+
+/tdd-implement
+  → For each approved slice:
+    tdd-implementer writes failing test → implements → refactors
+    tdd-verifier (separate context, read-only) validates independently
+  → Hooks enforce: no implementation before tests exist,
+    tests run after every file change, planner cannot write code
+
+/tdd-release
+  → tdd-releaser updates CHANGELOG, bumps version, pushes, creates PR
+```
+
+Each agent starts fresh — no prior conversation, no accumulated drift.
+The implementer cannot see the planner's reasoning. The verifier cannot
+see the implementer's intent. This separation is the point.
+
+### Role System
+
+A role encodes the repeated workflow patterns, knowledge references, and
+behavioral constraints that a developer would otherwise manually provide
+at the start of every session. Roles answer three questions:
+
+1. **Who is this session?** — identity, responsibilities, constraints
+2. **What does this session know?** — project context, architecture,
+   key paths
+3. **How does this session work?** — startup procedures, review
+   checklists, coordination protocols
+
+```
+/role-create
+  → role-creator agent researches your project, interviews you about
+    your workflow, generates a validated role file conforming to the
+    Role File Format specification, writes to .claude/skills/role-{code}/
+```
+
+Generated roles are auto-discoverable as Claude Code skills. Invoke
+`/role-ca` to load the architect role, `/role-ci` for the implementer.
+Roles work as mid-session drift correction — invoking a role re-anchors
+the session to its identity without losing conversation history.
+
+Roles are a **recommended approach**, not a requirement. The TDD pipeline
+functions independently of role files. No agent, skill, or hook in the
+core workflow checks for, references, or requires roles.
+
+### Convention System
+
+The plugin is language-agnostic. It knows *how* to do TDD but delegates
+*what idiomatic code looks like* to external convention packages:
+
+- Conventions live in a separate repo (e.g.,
+  `hugo-bluecorn/tdd-workflow-conventions`)
+- A SessionStart hook fetches them into a local cache
+- Agents that write or specify code (planner, implementer) load relevant
+  conventions dynamically based on project type detection
+- Adding a new language means adding a convention package — no plugin
+  changes needed
+
+Convention packages exist for Dart/Flutter, C++, C, and Bash.
+
+## Architecture
+
+The plugin composes four Claude Code primitives:
+
+| Primitive | What it provides | How this plugin uses it |
+|---|---|---|
+| **Agents** | Isolated context per invocation, restricted tool access | Each TDD phase runs in its own agent with only the tools it needs |
+| **Skills** | User-facing commands, orchestration logic | `/tdd-plan` spawns the planner, handles approval, writes files |
+| **Hooks** | Lifecycle event handlers (PreToolUse, PostToolUse, Stop, etc.) | Enforce test-before-implementation ordering, auto-run tests, guard the planner |
+| **Scripts** | Shared utilities called by agents and hooks | Project detection, convention loading, version propagation, role validation |
+
+These operate across three layers:
+
+```
+Session layer:  Roles define WHO you are and HOW you work
+Agent layer:    Conventions define WHAT idiomatic code looks like
+Pipeline layer: Skills orchestrate, agents execute, hooks enforce
+```
+
+Roles and conventions are decoupled by design — conventions reach agents
+directly, regardless of whether a role is active in the session.
+
+### Agents
+
+| Agent | Model | Context | Purpose |
+|-------|-------|---------|---------|
+| tdd-planner | opus | Read-only, plan mode | Researches codebase, returns structured plan text |
+| tdd-implementer | opus | Read-write, full tools | Red-green-refactor per slice |
+| tdd-verifier | haiku | Read-only | Blackbox validation — no knowledge of implementation intent |
+| tdd-releaser | sonnet | Bash-only writes | CHANGELOG, version propagation, branch, PR |
+| role-creator | opus | Read-only | Project research, role file generation, validation |
+
+Four agents have persistent memory (`memory: project`) that accumulates
+knowledge across sessions: planner, implementer, verifier, and
+context-updater.
+
+### Hook Enforcement
+
+Hooks are the mechanical guarantee that agents follow TDD discipline.
+They cannot be overridden by conversation context or model drift:
+
+| Hook | Enforcement |
+|---|---|
+| `validate-tdd-order.sh` | Blocks implementation file writes until a test file exists for that slice |
+| `auto-run-tests.sh` | Runs the test suite after every file change — the implementer cannot proceed without seeing results |
+| `planner-bash-guard.sh` | Allowlists read-only Bash commands for the planner — prevents accidental writes |
+| `check-tdd-progress.sh` | Prevents session exit while slices remain pending |
+
+All enforcement hooks use `agent_type` guards so they activate only for
+their target agent, passing through silently for others.
+
+## Quick Start
+
+### Install
 
 ```bash
 claude plugin install <path-to-tdd-workflow>
 ```
 
-## Quick Start
+### Plan
 
 ```
 /tdd-plan Implement a LocationService that wraps geolocator
 ```
 
-This forks a fresh context, researches your codebase, and produces a structured plan with testable slices. After reviewing and approving the plan:
+Review the generated slices. Choose **Approve**, **Modify**, or
+**Discard** at the approval gate.
+
+### Implement
 
 ```
 /tdd-implement
 ```
 
-This reads `.tdd-progress.md`, finds pending slices, and runs each through red-green-refactor with automated verification. Supports resuming interrupted sessions.
+The implementer picks up each pending slice, runs red-green-refactor,
+and the verifier validates independently. Supports resuming interrupted
+sessions — re-run the same command.
 
-## How It Works
+### Release
 
 ```
-User Request
-    |
-    v
-/tdd-plan (Inline Orchestrating Skill)
-    |  Spawns tdd-planner (opus, read-only) via Agent tool
-    |  Planner researches codebase, returns structured plan text
-    |  Skill handles AskUserQuestion approval
-    |  Writes: .tdd-progress.md + planning/ archive after approval
-    v
-Human Review (approve / revise / reject)
-    |
-    v  For each slice:
-tdd-implementer (opus)
-    |  1. Write failing test (RED)
-    |  2. Minimal implementation (GREEN)
-    |  3. Refactor (still GREEN)
-    |  Hooks: validate-tdd-order, auto-run-tests
-    v
-tdd-verifier (haiku, read-only)
-    |  Blackbox validation:
-    |  - Full test suite
-    |  - Static analysis
-    |  - Coverage check
-    |  - Plan criteria verification
-    v
-PASS -> next slice | FAIL -> retry
-    |
-    v  (all slices done)
-/tdd-release (Orchestrating Skill)
-    |  context: fork
-    |  agent: tdd-releaser (sonnet)
-    |  Updates CHANGELOG, propagates version, pushes branch, creates PR
-    v
-/tdd-finalize-docs (Orchestrating Skill)
-    |  context: fork
-    |  agent: tdd-doc-finalizer (sonnet)
-    |  Updates discovered project docs, pushes
-    v
-Done
+/tdd-release
 ```
 
-## Components
+Updates CHANGELOG, propagates the version, pushes the branch, and
+creates a PR.
 
-### Agents
+### Create Roles (optional)
 
-| Agent | Model | Purpose |
-|-------|-------|---------|
-| tdd-planner | opus | Read-only codebase research; returns structured plan text to `/tdd-plan` skill |
-| tdd-implementer | opus | Red-green-refactor per slice (full tools) |
-| tdd-verifier | haiku | Blackbox validation (read-only) |
-| tdd-releaser | sonnet | Release workflow (CHANGELOG, version propagation, PR) |
-| tdd-doc-finalizer | sonnet | Post-release documentation updates across discovered project docs (**not recommended** — see user guide) |
-| context-updater | opus | Updates convention reference files to latest versions (**not recommended** — see user guide) |
-| role-creator | opus | Read-only project research and role file generation; spawned by `/role-create` |
+```
+/role-create
+```
 
-### Skills
-
-| Skill | Type |
-|-------|------|
-| `/tdd-plan` | Inline orchestrating skill (spawns planner subagent, handles approval, writes files) |
-| `/tdd-implement` | Implementation loop (reads progress, runs slices) |
-| `/tdd-release` | Release entry point (forks context) |
-| `/tdd-finalize-docs` | Post-release documentation finalization (forks context) |
-| `/tdd-update-context` | Updates convention reference files to latest versions |
-| `/role-create` | Inline skill that generates role files via the CR meta-role; spawns role-creator agent, validates output, and writes approved roles to `.claude/skills/role-{code}/SKILL.md` |
-| project-conventions | Dynamic convention loading based on project configuration |
-
-### Hooks
-
-| Hook | Type | Purpose |
-|------|------|---------|
-| validate-tdd-order.sh | PreToolUse (command) | Blocks implementation writes before test exists; agent_type guard ensures safe dual delivery from hooks.json |
-| auto-run-tests.sh | PostToolUse (command) | Runs tests after every file change; agent_type guard ensures safe dual delivery from hooks.json |
-| planner-bash-guard.sh | PreToolUse (command) | Allowlists read-only commands for planner; agent_type guard ensures safe dual delivery from hooks.json |
-| validate-plan-output.sh | standalone utility | Validates plan file structure (required sections, no refactoring leak); called by `/tdd-plan` skill after approval |
-| check-tdd-progress.sh | Stop (command) | Prevents session end with pending slices |
-| SubagentStart (context-updater) | command | Injects git context with edit warning |
-| SubagentStart (tdd-planner) | command | Injects git context (branch, last commit, dirty file count) |
-| check-release-complete.sh | SubagentStop (command) | Validates branch is pushed to remote (releaser + doc-finalizer) |
-| SubagentStop (implementer) | prompt | Verifies R-G-R cycle completion |
-| SubagentStop (tdd-verifier) | prompt | Validates verifier ran full test suite and static analysis |
-| SubagentStop (context-updater) | prompt | Validates framework version changes require user approval |
-| fetch-conventions.sh | SessionStart (command) | Clones/refreshes convention repos to `${CLAUDE_PLUGIN_DATA}/conventions/` |
-
-> **Hook delivery:** Enforcement hooks are registered in `hooks.json` as the primary delivery path (required for marketplace installs where agent frontmatter hooks are silently ignored). The releaser and doc-finalizer additionally declare their Stop hooks in agent frontmatter for local development visibility; these auto-convert to SubagentStop hooks at runtime.
+The role-creator researches your project, asks about your workflow,
+generates validated role files, and writes them as auto-discoverable
+skills.
 
 ## Configuration
 
-### Planner Model
+### Language Conventions
 
-Default: `model: opus`. For faster but less thorough planning, change to `model: sonnet` in `agents/tdd-planner.md`. The `/tdd-plan` skill includes `ultrathink` which works with both models.
-
-### Web Tools on Planner
-
-Default: not included. To let the planner check pub.dev or API docs, add `WebFetch, WebSearch` to the planner's tools list.
-
-### Test Specification Format
-
-Default: compact single-line Given/When/Then. Customizable via the template and planner instructions. See [Changing the test specification format](docs/user-guide.md#changing-the-test-specification-format).
-
-### permissionMode on Planner
-
-Default: `permissionMode: plan`. The planner is read-only and does not write files, so plan mode is a safe default. If Bash read commands are unexpectedly blocked, remove `permissionMode: plan` from `agents/tdd-planner.md`.
-
-## File Structure
-
-```
-tdd-workflow/
-├── .claude-plugin/
-│   └── plugin.json
-├── agents/
-│   ├── tdd-planner.md
-│   ├── tdd-implementer.md
-│   ├── tdd-verifier.md
-│   ├── tdd-releaser.md
-│   ├── tdd-doc-finalizer.md
-│   ├── context-updater.md
-│   └── role-creator.md
-├── skills/
-│   ├── tdd-plan/
-│   │   ├── SKILL.md
-│   │   └── reference/
-│   │       ├── tdd-task-template.md
-│   │       └── feature-notes-template.md
-│   ├── tdd-implement/
-│   │   └── SKILL.md
-│   ├── tdd-release/
-│   │   ├── SKILL.md
-│   │   └── reference/
-│   │       └── version-control.md
-│   ├── tdd-finalize-docs/
-│   │   └── SKILL.md
-│   ├── tdd-update-context/
-│   │   └── SKILL.md
-│   ├── role-create/
-│   │   └── SKILL.md
-│   ├── role-init/
-│   │   └── reference/
-│   │       ├── cr-role-creator.md
-│   │       └── role-format.md
-│   └── project-conventions/
-│       └── SKILL.md
-├── hooks/
-│   ├── hooks.json
-│   ├── validate-tdd-order.sh
-│   ├── auto-run-tests.sh
-│   ├── check-tdd-progress.sh
-│   ├── planner-bash-guard.sh
-│   ├── validate-plan-output.sh
-│   ├── check-release-complete.sh
-│   └── fetch-conventions.sh
-├── scripts/
-│   ├── bump-version.sh
-│   ├── detect-doc-context.sh
-│   ├── detect-project-context.sh
-│   ├── load-conventions.sh
-│   ├── load-role-references.sh
-│   └── validate-role-output.sh
-├── docs/
-│   ├── user-guide.md
-│   ├── plugin-developer-context.md
-│   ├── extensibility/
-│   ├── experimental-results/
-│   ├── dev-roles/
-│   ├── reference/
-│   ├── archive/
-│   └── prompts/
-├── CLAUDE.md
-├── README.md
-├── CHANGELOG.md
-└── LICENSE
-```
-
-## Bash/Shell Prerequisites
-
-If your project uses bash conventions (via external convention repo or local config), install bashunit and shellcheck:
-
-### bashunit
-
-```bash
-curl -s https://bashunit.typeddevs.com/install.sh | bash
-```
-
-### shellcheck
-
-```bash
-# Debian/Ubuntu
-apt install shellcheck
-
-# macOS
-brew install shellcheck
-```
-
-### Permissions
-
-Add the following to your `.claude/settings.local.json` to allow Claude Code to run these tools:
+Create `.claude/tdd-conventions.json` to point to your convention
+sources:
 
 ```json
 {
-  "permissions": {
-    "allow": [
-      "Bash(shellcheck *)",
-      "Bash(bashunit *)"
-    ]
-  }
+  "conventions": [
+    "https://github.com/hugo-bluecorn/tdd-workflow-conventions"
+  ]
 }
 ```
 
+Local paths also work for development:
+
+```json
+{
+  "conventions": ["/path/to/local/conventions"]
+}
+```
+
+### Planner Customization
+
+| Setting | Default | How to change |
+|---|---|---|
+| Model | `opus` | Change `model:` in `agents/tdd-planner.md` |
+| Web access | Disabled | Add `WebFetch, WebSearch` to planner's `tools:` list |
+| Permission mode | `plan` (read-only) | Remove `permissionMode: plan` if Bash commands are blocked |
+| Test spec format | Compact Given/When/Then | Edit `skills/tdd-plan/reference/tdd-task-template.md` |
+
+## Experimental Results
+
+The role system was developed through 12+ controlled experiments across
+three projects of different complexity — a Bash plugin, a Flutter/Flame
+game, and a Dart FFI/C cross-language binding. Key findings from the
+[validation report](docs/experimental-results/):
+
+- **Prompt-level instructions are non-deterministic** — identical prompts
+  produce different quality across runs. Forked agents with restricted
+  tools provide mechanical enforcement that instructions cannot.
+- **RTFM produces dramatically better output** — requiring agents to
+  research official documentation yields verified API references instead
+  of plausible-sounding guesses from training data.
+- **Adjectives in system prompts are directives** — the word "optional"
+  caused systematic deprioritization of the described concept across all
+  subsequent token generation.
+- **Role quality determines downstream output quality** — the causal
+  chain from CR definition to generated code is traceable.
+- **CR generalizes to cross-language architectures** — a one-sentence
+  project description produced 512 lines of role output with
+  project-specific content no training data could provide.
+
 ## Documentation
 
-- **[User Guide](docs/user-guide.md)** — Step-by-step walkthrough of the full TDD workflow
-- **[Version Control](skills/tdd-release/reference/version-control.md)** — Git workflow and commit conventions
-- **[Plugin Developer Context](docs/plugin-developer-context.md)** — Architecture overview for plugin contributors
+- **[User Guide](docs/user-guide.md)** — Step-by-step walkthrough of the
+  full TDD workflow
+- **[Experimental Results](docs/experimental-results/)** — Validation
+  report, self-compilation experiment, generalizability proof
+- **[Plugin Developer Context](docs/plugin-developer-context.md)** —
+  Architecture overview for plugin contributors
+- **[CHANGELOG](CHANGELOG.md)** — Release history (v1.0.0 through v2.4.0)
+
+## Requirements
+
+- Claude Code with plugin support
 
 ## License
 
