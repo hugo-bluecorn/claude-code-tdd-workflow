@@ -12,6 +12,21 @@
 > core workflow skills use the `tdd-` prefix. The naming enforces the
 > technical boundary.
 
+---
+
+## ⚡ Self-implementing the v2.4 → v3 upgrade (read this FIRST)
+
+> If you are a Claude session here to **implement the planned upgrade of this plugin**, start with **`memory/`** — read `memory/INDEX.md`, then seed your own project memory from those files. They bootstrap: the upgrade roadmap (22 items in 4 dependency waves), the **ratified decisions**, the dev process, the test-suite caveats, and the PRIME DIRECTIVE.
+
+- **What's happening:** this plugin (v2.4.0) is being upgraded. A modernized audit + an evolution review produced a unified **upgrade roadmap** (memory: [[upgrade-roadmap]]). Implement roadmap items **as TDD slices** via this plugin's own workflow (dogfood: `/tdd-plan` → `/tdd-implement` → `/tdd-release`) or direct TDD against the suite.
+- **Run the test suite:** `./lib/bashunit test/` (≈770 tests). Single file: `./lib/bashunit test/<dir>/<name>_test.sh`.
+  - ⚠️ **Known non-defect failures (~48):** missing `shellcheck` (`apt-get install shellcheck`), a gitignored `.claude/settings.local.json` (developer-created), and **stale `test/integration/*_documentation_test.sh`** that assert a pre-v2 README structure the rewrite removed (`grep -c bashunit README.md` = 0). Reconcile these (roadmap R14/R15) or treat as known-stale; do **not** read them as core breakage.
+- **Ratified decisions you must honor** (full detail in `memory/decisions.md`): R1 conventions deliver via **`userConfig` + `skills-dir` packs**; vision = **Direction 1** (language-agnostic framework + convention-pack ecosystem); verifier model = **A/B haiku-vs-sonnet during R4**; `/upgrade` ships as **`/tdd-upgrade`**; **`/tdd-update-context` → retire**, **`/tdd-finalize-docs` → rebuild** (add accuracy assessment + approval gate).
+- **Hard constraint:** every change honors the PRIME DIRECTIVE (no `tdd-*`/manifest/convention/hook may require a role file) and Conventional Commits (`test:`→`feat:`→`refactor:`).
+- **Full artifacts** (methods, audit run, evolution run, roadmap) live in the upgrade workspace `research/plugin-upgrade/` (knowledge-pack repo) — `memory/` summarizes what you need; transplant the method docs into `docs/extensibility/` when implementing R-items that touch them.
+
+---
+
 This project uses the **tdd-workflow** plugin for test-driven development.
 The plugin provides seven specialized agents that collaborate through a
 structured RED -> GREEN -> REFACTOR cycle.
@@ -35,8 +50,8 @@ structured RED -> GREEN -> REFACTOR cycle.
 - **`/tdd-plan <feature description>`** — Create a TDD implementation plan
 - **`/tdd-implement`** — Start or resume TDD implementation for pending slices
 - **`/tdd-release`** — Finalize and release a completed TDD feature
-- **`/tdd-finalize-docs`** — Post-release documentation updates (**not recommended** — mechanically propagates CHANGELOG entries without assessing accuracy; review docs manually after release)
-- **`/tdd-update-context`** — Update convention reference files (**not recommended** — target files no longer exist in plugin since v2.0.0; update conventions directly in your external repo)
+- **`/tdd-finalize-docs`** — Post-release documentation updates (**not recommended; slated to REBUILD — roadmap R11** — currently propagates CHANGELOG entries without assessing accuracy or an approval gate; the rebuild adds both. Until then, review docs manually after release)
+- **`/tdd-update-context`** — Update convention reference files (**not recommended; slated to RETIRE — roadmap R11** — its target files were externalized in v2.0.0 so it is non-functional here; the version-research engine will be salvaged to the convention-pack freshness story)
 - **`/role-create`** — Generate a role file using the CR meta-role; validates output and writes approved role to `.claude/skills/role-{code}/SKILL.md`
 
 > **Important:** Do NOT manually invoke `tdd-workflow:tdd-planner` via the Task
