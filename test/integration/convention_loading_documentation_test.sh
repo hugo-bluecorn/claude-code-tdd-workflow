@@ -67,10 +67,6 @@ function test_claude_md_has_c_testing_subsection() {
 
 # ---------- Test 4: README.md skills table lists project-conventions ----------
 
-function test_readme_skills_table_has_project_conventions() {
-  assert_file_contains "$README_MD" "project-conventions"
-}
-
 function test_readme_no_dart_flutter_conventions_skill() {
   local skills_section
   skills_section=$(sed -n '/### Skills/,/^###/p' "$README_MD")
@@ -96,12 +92,6 @@ function test_readme_no_bash_testing_conventions_skill() {
 }
 
 # ---------- Test 5: README.md file structure updated ----------
-
-function test_readme_file_structure_has_project_conventions_dir() {
-  local structure_section
-  structure_section=$(sed -n '/## File Structure/,/^##[^#]/p' "$README_MD")
-  assert_contains "project-conventions/" "$structure_section"
-}
 
 function test_readme_file_structure_no_dart_flutter_conventions_dir() {
   local structure_section
@@ -153,10 +143,9 @@ function test_changelog_v2_mentions_convention_externalization() {
 function test_plugin_json_version_is_2_0_0() {
   local version
   version=$(grep '"version"' "$PLUGIN_JSON" | sed 's/.*: *"\([^"]*\)".*/\1/')
-  local major minor
+  local major
   major=$(echo "$version" | cut -d. -f1)
-  minor=$(echo "$version" | cut -d. -f2)
-  # Must be 2.x.x (major=2, minor>=0) — confirms v2.0.0 convention externalization landed
+  # Must be 2.x.x (major=2) — confirms v2.0.0 convention externalization landed
   assert_equals "2" "$major"
 }
 

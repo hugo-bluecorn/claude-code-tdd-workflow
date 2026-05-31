@@ -20,17 +20,6 @@ function test_version_control_not_at_old_location() {
 
 # ---------- Test 3: README file structure tree shows new path ----------
 
-function test_readme_file_structure_shows_new_version_control_path() {
-  local file_structure
-  file_structure=$(sed -n '/## File Structure/,/^##/p' "$README_MD")
-  # The tdd-release section must have a reference/ subdirectory with version-control.md
-  # Extract from "tdd-release/" up to the next skill directory at the same indentation level
-  local tdd_release_section
-  tdd_release_section=$(echo "$file_structure" | awk '/tdd-release\//{found=1} found{print} found && /tdd-finalize-docs\//{exit}')
-  assert_contains "reference/" "$tdd_release_section"
-  assert_contains "version-control.md" "$tdd_release_section"
-}
-
 function test_readme_file_structure_does_not_show_version_control_under_docs() {
   # Extract only the docs/ section of the file structure tree
   local docs_section
@@ -40,12 +29,6 @@ function test_readme_file_structure_does_not_show_version_control_under_docs() {
 }
 
 # ---------- Test 4: README documentation links section points to new path ----------
-
-function test_readme_documentation_link_points_to_new_path() {
-  local doc_section
-  doc_section=$(sed -n '/## Documentation/,/^##/p' "$README_MD")
-  assert_contains "skills/tdd-release/reference/version-control.md" "$doc_section"
-}
 
 function test_readme_documentation_link_not_old_path() {
   local doc_section

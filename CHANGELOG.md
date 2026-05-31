@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
 
+## [2.4.5] - 2026-05-31
+
+### Changed
+- Test suite now reaches a genuine 0-failure floor — 0 failed both locally and on a
+  fresh clone/CI (roadmap R14). The 9 settings tests in
+  `test/agents/tdd_verifier_bash_test.sh` now skip-when-absent via a `settings_present`
+  guard instead of hard-failing when the gitignored `.claude/settings.local.json` is
+  absent.
+- `test/integration/c_documentation_test.sh` renamed to
+  `test/integration/language_documentation_test.sh`; two doc assertions de-brittled to
+  presence-anywhere checks that remain falsifiable.
+
+### Removed
+- 32 stale doc-test assertions across 6 integration/test files that asserted a pre-v2
+  README structure removed in the rewrite, plus 7 obsolete C-specific assertions dropped
+  in the rename. No test file emptied or deleted — every file trimmed or renamed.
+
 ## [2.4.4] - 2026-05-31
 
 ### Removed
