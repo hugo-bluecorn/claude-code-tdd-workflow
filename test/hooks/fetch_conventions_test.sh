@@ -268,3 +268,51 @@ EOF
 
   rm -rf "$upstream" "$tmp_dir"
 }
+
+# ---------- Test 9: warn-and-proceed when a known marker is present but no pack (R1 F5) ----------
+
+function test_warns_when_marker_present_but_no_pack() {
+  local tmp_dir rc stderr_output
+  tmp_dir=$(create_tmp_env)
+  # A Dart project (pubspec.yaml marker) with NO convention pack bound.
+  touch "$tmp_dir/pubspec.yaml"
+  rm -f "$tmp_dir/.claude/tdd-conventions.json"
+
+  run_hook_in_dir "$tmp_dir"
+  rc=$?
+  assert_equals 0 "$rc"   # proceeds, never blocks
+
+  stderr_output=$(run_hook_in_dir_stderr "$tmp_dir")
+  assert_contains "no convention pack" "$stderr_output"
+  assert_contains "Dart" "$stderr_output"
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- Test 10: no warning when no known ecosystem marker is present ----------
+
+function test_no_warning_when_no_marker_present() {
+  local tmp_dir stderr_output
+  tmp_dir=$(create_tmp_env)
+  rm -f "$tmp_dir/.claude/tdd-conventions.json"
+
+  stderr_output=$(run_hook_in_dir_stderr "$tmp_dir")
+  assert_not_contains "no convention pack" "$stderr_output"
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- Test 11: a bash project does NOT warn (bashunit is the built-in default) ----------
+
+function test_bash_project_does_not_warn() {
+  local tmp_dir stderr_output
+  tmp_dir=$(create_tmp_env)
+  rm -f "$tmp_dir/.claude/tdd-conventions.json"
+  touch "$tmp_dir/.bashunit.yml"
+  touch "$tmp_dir/something_test.sh"
+
+  stderr_output=$(run_hook_in_dir_stderr "$tmp_dir")
+  assert_not_contains "no convention pack" "$stderr_output"
+
+  rm -rf "$tmp_dir"
+}
