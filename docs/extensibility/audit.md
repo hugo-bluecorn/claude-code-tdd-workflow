@@ -7,6 +7,12 @@
 
 ---
 
+> ⚠️ **SUPERSEDED (2026-05-31).** This v2.0.0 conformance audit has been superseded by the
+> v2.4→v3 upgrade engagement. The current audit is **`audit-v2.4.0.md`**
+> (`research/plugin-upgrade/audit-v2.4.0.md`, methodology v2.0 / inventory v4.0), merged with the
+> evolution review into the upgrade roadmap. Wave 1 of that roadmap shipped (v2.4.5). Treat this
+> file as historical; consult `audit-v2.4.0.md` and `memory/upgrade-roadmap.md` for current state.
+
 ## How to use this document
 
 This is a living reference for the tdd-workflow plugin. It tracks every Claude
