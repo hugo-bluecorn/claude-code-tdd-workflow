@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
 
+## [2.4.2] - 2026-05-31
+
+### Added
+- Plugin manifest metadata (roadmap R3): `.claude-plugin/plugin.json` now declares
+  `$schema`, `author`, `repository`, and `license` (Apache-2.0) alongside the existing
+  name/description/version
+- `test/integration/plugin_manifest_metadata_test.sh` — falsifiable jq assertions on the
+  four new fields (exact values, with empty/null guards)
+
 ## [2.4.1] - 2026-05-31
 
 ### Added
