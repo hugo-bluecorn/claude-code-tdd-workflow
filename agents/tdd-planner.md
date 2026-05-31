@@ -6,6 +6,7 @@ description: >
   and returns a structured plan as text. Invoked via /tdd-plan.
 tools: Read, Glob, Grep, Bash
 model: opus
+effort: high
 color: blue
 permissionMode: plan
 maxTurns: 30

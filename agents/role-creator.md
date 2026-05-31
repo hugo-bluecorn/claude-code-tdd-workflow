@@ -6,6 +6,7 @@ description: >
   returns the validated content as text. Spawned by /role-create.
 tools: Read, Bash, Glob, Grep, WebSearch, WebFetch
 model: opus
+effort: medium
 color: magenta
 maxTurns: 30
 ---
