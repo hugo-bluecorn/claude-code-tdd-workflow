@@ -5,6 +5,45 @@
 VERIFIER_FILE="agents/tdd-verifier.md"
 SETTINGS_FILE=".claude/settings.local.json"
 
+# ---------- Settings-skip helper (R14 settings-skip) ----------
+# settings_present <base>: returns 0 if "<base>/.claude/settings.local.json"
+# exists, else 1. Used as a path-override so the absent branch can be exercised
+# against mktemp scratch dirs WITHOUT ever touching the real, gitignored file.
+
+# ---------- Settings-skip helper tests (R14 settings-skip) ----------
+
+function test_settings_present_reports_absent_on_empty_scratch_dir() {
+  local d
+  d=$(mktemp -d)
+  # No .claude/settings.local.json under $d -> helper must report absent.
+  settings_present "$d"
+  local rc=$?
+  rm -rf "$d"
+  assert_not_equals "0" "$rc"
+}
+
+function test_settings_present_reports_present_on_scratch_dir_with_dummy() {
+  local d
+  d=$(mktemp -d)
+  mkdir -p "$d/.claude"
+  echo '{}' > "$d/.claude/settings.local.json"
+  settings_present "$d"
+  local rc=$?
+  rm -rf "$d"
+  assert_equals "0" "$rc"
+}
+
+function test_absent_path_coverage_uses_scratch_dirs_only() {
+  # Safety: this test file must NEVER move/delete the real gitignored settings
+  # file. Absent-path coverage comes only from mktemp scratch dirs. Assert the
+  # file's own source contains no rm/mv/rmdir targeting the real settings path.
+  local self="test/agents/tdd_verifier_bash_test.sh"
+  assert_file_exists "$self"
+  local dangerous
+  dangerous=$(grep -En '(rm|mv|rmdir)[^|&;]*\.claude/settings\.local\.json' "$self" || true)
+  assert_empty "$dangerous"
+}
+
 # ---------- Test 1: Verifier mentions bashunit as test runner for bash ----------
 
 function test_verifier_mentions_bashunit_for_bash() {
