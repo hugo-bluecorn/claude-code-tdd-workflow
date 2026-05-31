@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
 
+## [2.4.4] - 2026-05-31
+
+### Removed
+- Dead `scripts/load-role-references.sh` and its orphaned test
+  `test/scripts/load_role_references_test.sh` (roadmap R15): the script had zero runtime
+  callers in skills/agents/hooks/scripts. A permanent absence-guard test
+  (`test/scripts/load_role_references_removed_test.sh`) prevents silent reintroduction.
+  The stale doc reference in `docs/plugin-developer-context.md` was also removed.
+
 ## [2.4.3] - 2026-05-31
 
 ### Changed
