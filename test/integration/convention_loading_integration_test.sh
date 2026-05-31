@@ -147,22 +147,23 @@ function test_bash_doc_test_no_bash_testing_conventions_in_readme_skills_assert(
   assert_empty "$readme_skills_lines"
 }
 
-# ---------- Test 6: C documentation test has no old skill name assertions ----------
+# ---------- Test 6: language documentation test has no old skill name assertions ----------
+# (formerly c_documentation_test.sh; renamed to language_documentation_test.sh in R14)
 
-function test_c_doc_test_exists() {
-  assert_file_exists "test/integration/c_documentation_test.sh"
+function test_language_doc_test_exists() {
+  assert_file_exists "test/integration/language_documentation_test.sh"
 }
 
-function test_c_doc_test_no_c_conventions_in_skills_table_assert() {
+function test_language_doc_test_no_c_conventions_in_skills_table_assert() {
   local content
-  content=$(cat "test/integration/c_documentation_test.sh")
+  content=$(cat "test/integration/language_documentation_test.sh")
   # Should not assert c-conventions is present in CLAUDE.md/README skills table
   assert_not_contains "c-conventions" "$content"
 }
 
-function test_c_doc_test_no_old_convention_skill_preservation_asserts() {
+function test_language_doc_test_no_old_convention_skill_preservation_asserts() {
   local content
-  content=$(cat "test/integration/c_documentation_test.sh")
+  content=$(cat "test/integration/language_documentation_test.sh")
   # Should not assert old convention skills still exist
   assert_not_contains "dart-flutter-conventions" "$content"
   assert_not_contains "cpp-testing-conventions" "$content"

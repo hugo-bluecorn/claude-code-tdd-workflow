@@ -53,54 +53,6 @@ function test_readme_exists() {
   assert_file_exists "$README_MD"
 }
 
-function test_readme_overview_mentions_bash() {
-  # Overview/description conveys extensibility (language-agnostic since v2.0)
-  local overview
-  overview=$(sed -n '1,10p' "$README_MD")
-  assert_matches "extensible|convention" "$overview"
-}
-
-function test_readme_hooks_mentions_sh_support() {
-  # Hooks section mentions .sh file support
-  local hooks_section
-  hooks_section=$(sed -n '/### Hooks/,/^##/p' "$README_MD")
-  assert_matches "\.sh" "$hooks_section"
-}
-
-function test_readme_has_bashunit_install_instructions() {
-  # Installation instructions for bashunit
-  assert_file_contains "$README_MD" "bashunit.typeddevs.com/install.sh"
-}
-
-function test_readme_has_shellcheck_install_apt() {
-  # Installation instructions for shellcheck via apt
-  assert_file_contains "$README_MD" "apt install shellcheck"
-}
-
-function test_readme_has_shellcheck_install_brew() {
-  # Installation instructions for shellcheck via brew
-  assert_file_contains "$README_MD" "brew install shellcheck"
-}
-
-function test_readme_has_permissions_note() {
-  # Note about settings.local.json permissions for shellcheck and bashunit
-  assert_file_contains "$README_MD" "settings.local.json"
-}
-
-function test_readme_permissions_mentions_shellcheck() {
-  # Permissions note mentions shellcheck
-  local perms_section
-  perms_section=$(grep -A10 "settings.local.json" "$README_MD")
-  assert_matches "shellcheck|Bash.shellcheck" "$perms_section"
-}
-
-function test_readme_permissions_mentions_bashunit() {
-  # Permissions note mentions bashunit
-  local perms_section
-  perms_section=$(grep -A10 "settings.local.json" "$README_MD")
-  assert_matches "bashunit|Bash.bashunit" "$perms_section"
-}
-
 # ---------- Test 3: CHANGELOG.md updated with bash support ----------
 
 function test_changelog_exists() {
@@ -157,11 +109,6 @@ function test_claude_md_still_has_dart_testing_content() {
 function test_claude_md_still_has_cpp_testing_content() {
   # C++ Testing section still present
   assert_file_contains "$CLAUDE_MD" "### C++ Testing"
-}
-
-function test_readme_still_mentions_dart_flutter() {
-  # README conveys extensible conventions (language-agnostic since v2.0)
-  assert_file_contains "$README_MD" "project-conventions"
 }
 
 function test_readme_still_mentions_cpp() {

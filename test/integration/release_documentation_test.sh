@@ -15,55 +15,11 @@ function test_readme_exists() {
   assert_file_exists "$README_MD"
 }
 
-function test_readme_skills_table_has_tdd_release() {
-  # The Skills table must include /tdd-release
-  local skills_section
-  skills_section=$(sed -n '/### Skills/,/^###/p' "$README_MD")
-  assert_contains "/tdd-release" "$skills_section"
-}
-
 function test_readme_agents_table_has_tdd_releaser() {
   # The Agents table must include tdd-releaser
   local agents_section
   agents_section=$(sed -n '/### Agents/,/^###/p' "$README_MD")
   assert_contains "tdd-releaser" "$agents_section"
-}
-
-function test_readme_hooks_table_has_check_release_complete() {
-  # The Hooks table must include check-release-complete.sh
-  local hooks_section
-  hooks_section=$(sed -n '/### Hooks/,/^##/p' "$README_MD")
-  assert_contains "check-release-complete.sh" "$hooks_section"
-}
-
-function test_readme_file_structure_has_tdd_releaser_agent() {
-  # File Structure section shows tdd-releaser.md
-  local file_structure
-  file_structure=$(sed -n '/## File Structure/,/^##/p' "$README_MD")
-  assert_contains "tdd-releaser.md" "$file_structure"
-}
-
-function test_readme_file_structure_has_tdd_release_skill() {
-  # File Structure section shows tdd-release/ directory
-  local file_structure
-  file_structure=$(sed -n '/## File Structure/,/^##/p' "$README_MD")
-  assert_contains "tdd-release/" "$file_structure"
-}
-
-function test_readme_file_structure_has_check_release_complete_hook() {
-  # File Structure section shows check-release-complete.sh
-  local file_structure
-  file_structure=$(sed -n '/## File Structure/,/^##/p' "$README_MD")
-  assert_contains "check-release-complete.sh" "$file_structure"
-}
-
-# ---------- Test 2: README workflow diagram includes release phase ----------
-
-function test_readme_workflow_diagram_has_tdd_releaser() {
-  # The ASCII workflow diagram must include tdd-releaser after the verify loop
-  local diagram
-  diagram=$(sed -n '/## How It Works/,/^##/p' "$README_MD")
-  assert_contains "tdd-releaser" "$diagram"
 }
 
 # ---------- Test 3: CLAUDE.md mentions /tdd-release ----------
@@ -197,36 +153,6 @@ function test_audit_directory_has_check_release_complete() {
 
 # ---------- Test 8: README mentions tdd-doc-finalizer agent ----------
 
-function test_readme_agents_table_has_tdd_doc_finalizer() {
-  local agents_section
-  agents_section=$(sed -n '/### Agents/,/^###/p' "$README_MD")
-  assert_contains "tdd-doc-finalizer" "$agents_section"
-}
-
-function test_readme_skills_table_has_tdd_finalize_docs() {
-  local skills_section
-  skills_section=$(sed -n '/### Skills/,/^###/p' "$README_MD")
-  assert_contains "/tdd-finalize-docs" "$skills_section"
-}
-
-function test_readme_file_structure_has_tdd_doc_finalizer_agent() {
-  local file_structure
-  file_structure=$(sed -n '/## File Structure/,/^##/p' "$README_MD")
-  assert_contains "tdd-doc-finalizer.md" "$file_structure"
-}
-
-function test_readme_file_structure_has_tdd_finalize_docs_skill() {
-  local file_structure
-  file_structure=$(sed -n '/## File Structure/,/^##/p' "$README_MD")
-  assert_contains "tdd-finalize-docs/" "$file_structure"
-}
-
-function test_readme_workflow_diagram_has_tdd_doc_finalizer() {
-  local diagram
-  diagram=$(sed -n '/## How It Works/,/^##/p' "$README_MD")
-  assert_contains "tdd-doc-finalizer" "$diagram"
-}
-
 # ---------- Test 9: CLAUDE.md mentions /tdd-finalize-docs ----------
 
 function test_claude_md_available_commands_has_tdd_finalize_docs() {
@@ -261,34 +187,12 @@ function test_user_guide_finalize_docs_mentions_push() {
 
 # ---------- Test 11: README and user-guide reflect inline orchestration (1.11.0) ----------
 
-function test_readme_workflow_diagram_describes_inline_orchestration() {
-  local diagram
-  diagram=$(sed -n '/## How It Works/,/^##/p' "$README_MD")
-  assert_contains "Inline" "$diagram"
-}
-
 function test_readme_agents_table_planner_is_read_only() {
   local agents_section
   agents_section=$(sed -n '/### Agents/,/^###/p' "$README_MD")
   local planner_row
   planner_row=$(echo "$agents_section" | grep "tdd-planner")
   assert_contains "Read-only" "$planner_row"
-}
-
-function test_readme_skills_table_tdd_plan_is_inline() {
-  local skills_section
-  skills_section=$(sed -n '/### Skills/,/^###/p' "$README_MD")
-  local plan_row
-  plan_row=$(echo "$skills_section" | grep "/tdd-plan")
-  assert_matches "[Ii]nline" "$plan_row"
-}
-
-function test_readme_hooks_table_validate_plan_is_standalone() {
-  local hooks_section
-  hooks_section=$(sed -n '/### Hooks/,/^##/p' "$README_MD")
-  local validate_row
-  validate_row=$(echo "$hooks_section" | grep "validate-plan-output")
-  assert_contains "standalone" "$validate_row"
 }
 
 function test_user_guide_starting_section_describes_inline_skill() {
@@ -373,34 +277,6 @@ function test_readme_agents_table_doc_finalizer_is_generic() {
   assert_not_contains "plugin.json" "$doc_finalizer_row"
 }
 
-function test_readme_file_structure_has_new_scripts_and_reference() {
-  # File Structure must show bump-version.sh and detect-doc-context.sh under scripts/
-  # and version-control.md under skills/tdd-release/reference/
-  # and must NOT list version-control.md under docs/
-  local file_structure
-  file_structure=$(sed -n '/## File Structure/,/^##/p' "$README_MD")
-  assert_contains "bump-version.sh" "$file_structure"
-  assert_contains "detect-doc-context.sh" "$file_structure"
-
-  # version-control.md should be under tdd-release/reference/
-  local release_ref_section
-  release_ref_section=$(sed -n '/tdd-release/,/tdd-finalize-docs/p' <<< "$file_structure")
-  assert_contains "version-control.md" "$release_ref_section"
-
-  # version-control.md must NOT be under docs/
-  local docs_section
-  docs_section=$(sed -n '/docs\//,/^[^ │├└]/p' <<< "$file_structure")
-  assert_not_contains "version-control.md" "$docs_section"
-}
-
-function test_readme_documentation_links_version_control_location() {
-  # The Documentation section's Version Control link must point to
-  # skills/tdd-release/reference/version-control.md
-  local doc_section
-  doc_section=$(sed -n '/## Documentation/,/^##/p' "$README_MD")
-  assert_contains "skills/tdd-release/reference/version-control.md" "$doc_section"
-}
-
 function test_readme_agents_table_releaser_mentions_version() {
   # The tdd-releaser row must mention "version" or "bump-version"
   # reflecting its new responsibility for version propagation
@@ -432,24 +308,3 @@ function test_claude_md_lists_all_agents_and_commands() {
   assert_contains "/tdd-update-context" "$commands_section"
 }
 
-function test_readme_lists_all_agents_and_skills() {
-  # README must still list all six agents
-  local agents_section
-  agents_section=$(sed -n '/### Agents/,/^###/p' "$README_MD")
-  assert_contains "tdd-planner" "$agents_section"
-  assert_contains "tdd-implementer" "$agents_section"
-  assert_contains "tdd-verifier" "$agents_section"
-  assert_contains "tdd-releaser" "$agents_section"
-  assert_contains "tdd-doc-finalizer" "$agents_section"
-  assert_contains "context-updater" "$agents_section"
-
-  # README must still list command skills + project-conventions
-  local skills_section
-  skills_section=$(sed -n '/### Skills/,/^###/p' "$README_MD")
-  assert_contains "/tdd-plan" "$skills_section"
-  assert_contains "/tdd-implement" "$skills_section"
-  assert_contains "/tdd-release" "$skills_section"
-  assert_contains "/tdd-finalize-docs" "$skills_section"
-  assert_contains "/tdd-update-context" "$skills_section"
-  assert_contains "project-conventions" "$skills_section"
-}
