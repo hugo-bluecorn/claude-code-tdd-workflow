@@ -115,7 +115,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/fetch-conventions.sh"
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/fetch-conventions.sh",
+            "async": true
           }
         ]
       }
