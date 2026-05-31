@@ -6,9 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
 
-## Unreleased
+## [2.4.1] - 2026-05-31
 
-- docs: remove aspirational convention references from role format spec and CR definition
+### Added
+- `effort` field pinned in the YAML frontmatter of every agent under `agents/`
+  (roadmap R6): `tdd-verifier=low`, `tdd-planner=high`, `tdd-implementer=high`;
+  all other present agents (`context-updater`, `role-creator`, `tdd-doc-finalizer`,
+  `tdd-releaser`) set to `medium`
+- `test/agents/agent_effort_test.sh` — asserts each agent declares a valid effort
+  tier inside frontmatter, with the non-core set discovered dynamically (no hard-coded
+  agent list, no role-* references)
+
+### Changed
+- Removed aspirational convention references from the role format spec and CR definition
 
 ## [2.4.0] - 2026-03-23
 
