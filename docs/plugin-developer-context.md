@@ -80,12 +80,11 @@ The tdd-workflow plugin (`v2.4.0`) provides:
 - `check-release-complete.sh` — SubagentStop: verifies branch is pushed
 - `fetch-conventions.sh` — SessionStart: clones/refreshes convention repos to `${CLAUDE_PLUGIN_DATA}/conventions/`
 
-**6 utility scripts** (in `scripts/`):
+**5 utility scripts** (in `scripts/`):
 - `bump-version.sh` — Propagates version to all version-bearing files
 - `detect-doc-context.sh` — Discovers documentation files in the project
 - `detect-project-context.sh` — Detects project type (Dart/C++/Bash/C)
 - `load-conventions.sh` — DCI script: detects project type, outputs cached convention content
-- `load-role-references.sh` — Loads CR role definition and format spec for role-creator agent
 - `validate-role-output.sh` — Validates generated role files against format spec
 
 **Hook delivery** (`hooks/hooks.json`): Enforcement hooks are registered in `hooks.json` as the primary delivery path — required for marketplace installs where agent frontmatter hooks are silently ignored. Hook scripts use `agent_type` guards to pass through silently for non-target agents when fired from session-level hooks. The releaser and doc-finalizer additionally declare their Stop hooks in agent frontmatter for local development visibility; these auto-convert to SubagentStop at runtime. Current `hooks.json` entries: PreToolUse (2: Bash guard, validate-tdd-order), PostToolUse (1: auto-run-tests), SubagentStop (5: implementer, releaser, doc-finalizer, verifier, context-updater), SubagentStart (2: context-updater, tdd-planner), SessionStart (1: fetch-conventions), Stop (1: check-tdd-progress).
