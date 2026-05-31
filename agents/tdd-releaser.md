@@ -10,11 +10,6 @@ model: sonnet
 effort: medium
 color: cyan
 maxTurns: 30
-hooks:
-  Stop:
-    - hooks:
-        - type: command
-          command: "${CLAUDE_PLUGIN_ROOT}/hooks/check-release-complete.sh"
 ---
 
 You are a TDD release agent. Your job is to finalize a completed TDD feature
