@@ -41,19 +41,9 @@ function test_agent_model_is_sonnet() {
   assert_equals "sonnet" "$model"
 }
 
-# ---------- Test 4: Agent has stop hook referencing check-release-complete.sh ----------
-
-function test_agent_has_stop_hook_for_release_complete() {
-  assert_file_exists "$AGENT_FILE"
-  local frontmatter
-  frontmatter=$(get_frontmatter)
-  # Must contain a Stop hook section
-  assert_contains "Stop:" "$frontmatter"
-  # Must reference the check-release-complete.sh script
-  assert_contains 'check-release-complete.sh' "$frontmatter"
-  # Must use CLAUDE_PLUGIN_ROOT variable
-  assert_contains '${CLAUDE_PLUGIN_ROOT}/hooks/check-release-complete.sh' "$frontmatter"
-}
+# (R16) Removed the frontmatter Stop-hook assertion: the inert frontmatter `hooks:`
+# block was dropped. The canonical Stop gate lives in hooks/hooks.json and is covered
+# by test/hooks/hooks_json_releaser_test.sh.
 
 # ---------- Test 5: Agent does NOT have memory field ----------
 

@@ -58,16 +58,9 @@ function test_agent_max_turns_is_30() {
   assert_equals "30" "$max_turns"
 }
 
-# ---------- Test: Agent has Stop hook referencing check-release-complete.sh ----------
-
-function test_agent_has_stop_hook_for_release_complete() {
-  assert_file_exists "$AGENT_FILE"
-  local frontmatter
-  frontmatter=$(get_frontmatter)
-  assert_contains "Stop:" "$frontmatter"
-  assert_contains "check-release-complete.sh" "$frontmatter"
-  assert_contains '${CLAUDE_PLUGIN_ROOT}/hooks/check-release-complete.sh' "$frontmatter"
-}
+# (R16) Removed the frontmatter Stop-hook assertion: the inert frontmatter `hooks:`
+# block was dropped. The canonical Stop gate lives in hooks/hooks.json and is covered
+# by test/hooks/hooks_json_releaser_test.sh.
 
 # ---------- Test: Body contains git commit and push workflow ----------
 

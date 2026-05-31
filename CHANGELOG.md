@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
 
+## [2.4.3] - 2026-05-31
+
+### Changed
+- context-updater agent denylist now denies the renamed `Agent` tool instead of the
+  inert `Task` (roadmap R2): the subagent-spawning tool was renamed Task→Agent, so the
+  old `disallowedTools: …, Task` entry was a no-op
+- SessionStart convention fetch (`fetch-conventions.sh`) runs asynchronously via
+  `"async": true` (roadmap R7) — it no longer blocks session startup
+
+### Removed
+- Inert frontmatter `hooks:` blocks dropped from the `tdd-releaser` and
+  `tdd-doc-finalizer` agents (roadmap R16); the canonical Stop/SubagentStop gates in
+  `hooks/hooks.json` remain authoritative (frontmatter hooks are ignored on marketplace
+  installs)
+
 ## [2.4.2] - 2026-05-31
 
 ### Added

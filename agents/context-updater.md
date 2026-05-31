@@ -7,7 +7,7 @@ description: >
   changes. Does NOT modify agent definitions, hook scripts, or workflow
   skills — only reference content files and SKILL.md quick references.
 tools: Read, Write, Edit, Glob, Grep, Bash, WebSearch, WebFetch, AskUserQuestion
-disallowedTools: MultiEdit, NotebookEdit, Task
+disallowedTools: MultiEdit, NotebookEdit, Agent
 model: opus
 effort: medium
 color: red

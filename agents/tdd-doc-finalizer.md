@@ -11,11 +11,6 @@ model: sonnet
 effort: medium
 color: magenta
 maxTurns: 30
-hooks:
-  Stop:
-    - hooks:
-        - type: command
-          command: "${CLAUDE_PLUGIN_ROOT}/hooks/check-release-complete.sh"
 ---
 
 You are a post-release documentation finalization agent.
