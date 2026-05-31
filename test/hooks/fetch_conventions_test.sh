@@ -235,3 +235,36 @@ function test_hooks_json_session_start_has_hooks_array_wrapper() {
   hooks_type=$(jq -r '.hooks.SessionStart[0].hooks | type' "$HOOKS_JSON" 2>/dev/null)
   assert_equals "array" "$hooks_type"
 }
+
+# ---------- Test 8: new {packs} form clones and checks out the version tag (R1 F3) ----------
+
+function test_packs_clone_and_checkout_version_tag() {
+  local upstream tmp_dir rc cache
+  # Build a tiny local upstream repo: tag v1.0.0 at "v1", then move HEAD past it.
+  upstream=$(mktemp -d)
+  git -C "$upstream" init -q
+  git -C "$upstream" config user.email t@example.com
+  git -C "$upstream" config user.name tester
+  echo "marker v1" > "$upstream/marker.txt"
+  git -C "$upstream" add -A
+  git -C "$upstream" commit -qm "v1"
+  git -C "$upstream" tag v1.0.0
+  echo "marker v2" > "$upstream/marker.txt"
+  git -C "$upstream" commit -qam "v2"
+
+  tmp_dir=$(create_tmp_env)
+  cat > "$tmp_dir/.claude/tdd-conventions.json" << EOF
+{"packs": [{"source": "file://$upstream", "version": "v1.0.0"}]}
+EOF
+
+  run_hook_in_dir "$tmp_dir"
+  rc=$?
+  assert_equals 0 "$rc"
+
+  # Cache lives at <repo>@<version> and is checked out to the TAG, not HEAD.
+  cache="$tmp_dir/plugin-data/conventions/$(basename "$upstream")@v1.0.0"
+  assert_directory_exists "$cache/.git"
+  assert_file_contains "$cache/marker.txt" "marker v1"
+
+  rm -rf "$upstream" "$tmp_dir"
+}
