@@ -23,7 +23,7 @@
   - ⚠️ **Known non-defect failures (~48):** missing `shellcheck` (`apt-get install shellcheck`), a gitignored `.claude/settings.local.json` (developer-created), and **stale `test/integration/*_documentation_test.sh`** that assert a pre-v2 README structure the rewrite removed (`grep -c bashunit README.md` = 0). Reconcile these (roadmap R14/R15) or treat as known-stale; do **not** read them as core breakage.
 - **Ratified decisions you must honor** (full detail in `memory/decisions.md`): R1 conventions deliver via **`userConfig` + `skills-dir` packs**; vision = **Direction 1** (language-agnostic framework + convention-pack ecosystem); verifier model = **A/B haiku-vs-sonnet during R4**; `/upgrade` ships as **`/tdd-upgrade`**; **`/tdd-update-context` → retire**, **`/tdd-finalize-docs` → rebuild** (add accuracy assessment + approval gate).
 - **Hard constraint:** every change honors the PRIME DIRECTIVE (no `tdd-*`/manifest/convention/hook may require a role file) and Conventional Commits (`test:`→`feat:`→`refactor:`).
-- **Full artifacts** (methods, audit run, evolution run, roadmap) live in the upgrade workspace `research/plugin-upgrade/` (knowledge-pack repo) — `memory/` summarizes what you need; transplant the method docs into `docs/extensibility/` when implementing R-items that touch them.
+- **Full artifacts** (methods, audit run, evolution run, roadmap) live in a separate upgrade workspace outside this repo. Don't go looking for them here — `memory/` summarizes what you need, and session orientation lives in native memory → **`SESSION-HANDOFF.md` (Read FIRST)**, which holds the workspace location if you actually need the source docs. Transplant the relevant method docs into `docs/extensibility/` when implementing R-items that touch them.
 
 ---
 
