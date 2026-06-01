@@ -74,6 +74,43 @@ run_hook_in_dir_stderr() {
   { cd "$dir" && CLAUDE_PLUGIN_DATA="$dir/plugin-data" bash "$HOOK_ABS" 1>/dev/null; } 2>&1
 }
 
+# Install a PATH-shim fake `git` into <dir>/bin that records every `clone`
+# invocation's argv to <dir>/git-invocations.log and EXITS NON-ZERO on clone
+# (so a test can never pass merely because cleanup ran). All other git
+# subcommands (init/config/add/commit/tag/-C ...) delegate to the real git so
+# fixtures still build. Echoes the bin dir to prepend onto PATH.
+install_clone_spy() {
+  local dir="$1"
+  local bin="$dir/bin"
+  local real_git
+  real_git="$(command -v git)"
+  mkdir -p "$bin"
+  cat > "$bin/git" << EOF
+#!/bin/bash
+# Find the first non-flag subcommand token.
+sub=""
+for a in "\$@"; do
+  case "\$a" in
+    -*) ;;
+    *) sub="\$a"; break ;;
+  esac
+done
+if [ "\$sub" = "clone" ]; then
+  printf '%s\n' "\$*" >> "$dir/git-invocations.log"
+  exit 1
+fi
+exec "$real_git" "\$@"
+EOF
+  chmod +x "$bin/git"
+  echo "$bin"
+}
+
+# Run the hook with the clone-spy bin prepended to PATH; capture stderr.
+run_hook_with_spy_stderr() {
+  local dir="$1" bin="$2"
+  { cd "$dir" && PATH="$bin:$PATH" CLAUDE_PLUGIN_DATA="$dir/plugin-data" bash "$HOOK_ABS" 1>/dev/null; } 2>&1
+}
+
 # ---------- Test 1: new-schema versioned source -> <repo>@<version> cache ----------
 
 function test_versioned_source_creates_versioned_cache_dir() {
@@ -148,27 +185,59 @@ EOF
   rm -rf "$tmp_dir"
 }
 
-# ---------- Test 4: dev:true / local new-schema source is NOT fetched ----------
+# ---------- Test 4: dev:true source triggers NO `git clone` (ACTION assert) ----
+# Regression guard for the tab-collapse bug: parse-binding emits "<src>\t\tdev"
+# for a dev pack; a naive `IFS=$'\t' read` collapses the adjacent tabs, reads
+# version="dev"/dev="", MISSES the dev-skip, and fires the versioned-clone path
+# every SessionStart. The OLD test asserted count==0 -- which the bug satisfied
+# (the failed clone was rm -rf'd). This asserts the ACTION: clone is NEVER
+# invoked for a dev pack. A clone-spy `git` records every clone and exits
+# non-zero, so the test cannot pass merely because cleanup ran.
 
-function test_dev_source_is_not_fetched() {
-  local tmp_dir repo
+function test_dev_source_triggers_no_git_clone() {
+  local tmp_dir repo bin
   tmp_dir=$(create_tmp_env)
   repo=$(create_fixture_repo "$tmp_dir")
+  bin=$(install_clone_spy "$tmp_dir")
 
   cat > "$tmp_dir/.claude/tdd-conventions.json" << EOF
 {"packs": [{"source": "$repo", "dev": true}]}
 EOF
 
-  run_hook_in_dir "$tmp_dir"
-  local rc=$?
+  local stderr_output
+  stderr_output=$(run_hook_with_spy_stderr "$tmp_dir" "$bin")
 
-  assert_equals 0 "$rc"
+  # Zero clone invocations were recorded for the dev pack.
+  local clone_count=0
+  [ -f "$tmp_dir/git-invocations.log" ] && \
+    clone_count=$(grep -c '.' "$tmp_dir/git-invocations.log")
+  assert_equals "0" "$clone_count"
 
-  # No clone into the dev path, and no versioned cache dir for it.
-  assert_directory_absent "$repo/.git/refs/conventions-cache-marker"
-  local count
-  count=$(find "$tmp_dir/plugin-data/conventions" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l)
-  assert_equals "0" "$count"
+  # And no clone-failure diagnostic leaked.
+  assert_not_contains "failed to clone" "$stderr_output"
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- Test 4b (edge): dev source beginning with ~/ -> NO `git clone` -----
+
+function test_dev_source_with_tilde_triggers_no_git_clone() {
+  local tmp_dir bin
+  tmp_dir=$(create_tmp_env)
+  bin=$(install_clone_spy "$tmp_dir")
+
+  cat > "$tmp_dir/.claude/tdd-conventions.json" << 'EOF'
+{"packs": [{"source": "~/some/local/dev-pack", "dev": true}]}
+EOF
+
+  local stderr_output
+  stderr_output=$(run_hook_with_spy_stderr "$tmp_dir" "$bin")
+
+  local clone_count=0
+  [ -f "$tmp_dir/git-invocations.log" ] && \
+    clone_count=$(grep -c '.' "$tmp_dir/git-invocations.log")
+  assert_equals "0" "$clone_count"
+  assert_not_contains "failed to clone" "$stderr_output"
 
   rm -rf "$tmp_dir"
 }
