@@ -100,6 +100,41 @@ function test_description_contains_trigger_phrases() {
   assert_matches "publish" "$description"
 }
 
+# ---------- Test 9: Quality gates defer to the pack-driven releaser ----------
+
+function test_skill_quality_gates_defer_to_pack() {
+  assert_file_exists "$SKILL_FILE"
+  local body
+  body=$(get_body)
+  # The wrapper must point the quality gates at the pack-driven resolution
+  # (pack.commands / active-pack.sh / the releaser's committed-binding resolution)
+  # rather than presenting a per-language matrix as the authoritative list.
+  assert_matches "pack\.commands|active-pack\.sh|pack-driven|active.*pack|releaser.*resolv" "$body"
+}
+
+# ---------- Test 10: No authoritative duplicated per-language format matrix ----------
+
+function test_skill_no_authoritative_format_matrix() {
+  assert_file_exists "$SKILL_FILE"
+  local body
+  body=$(get_body)
+  # The duplicated hardcoded formatter matrix (dart format . alongside clang-format
+  # presented as THE command list) must no longer be re-listed as the source of
+  # truth. The pack/releaser is authoritative for the format gate.
+  assert_not_contains "dart format ." "$body"
+}
+
+# ---------- Test 11: Built-in bash floor still expressed ----------
+
+function test_skill_bash_floor_still_expressed() {
+  assert_file_exists "$SKILL_FILE"
+  local body
+  body=$(get_body)
+  # The pack-less bash case keeps bashunit/shellcheck as the built-in floor.
+  assert_matches "bashunit" "$body"
+  assert_matches "shellcheck" "$body"
+}
+
 # ---------- Test 7: Release skill body reflects bump-version step ----------
 
 function test_skill_body_contains_bump_version_step() {
