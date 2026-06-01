@@ -26,6 +26,21 @@ function test_verifier_still_has_shellcheck() {
   assert_file_contains "$VERIFIER_MD" "shellcheck"
 }
 
+# ---------- C5: pack-aware framing (resolve binding, commands-only) ----------
+
+function test_verifier_documents_pack_commands_resolution() {
+  # Reconciled: the verifier resolves the active pack via the committed binding
+  # and reads its commands (test/lint/coverage), rather than a hardcoded matrix.
+  assert_file_contains "$VERIFIER_MD" ".commands"
+}
+
+function test_verifier_does_not_read_pack_standards_index() {
+  # Blackbox stance (decision #2): commands-only — never standards.index.
+  local hits
+  hits=$(grep -nF 'standards.index' "$VERIFIER_MD" || true)
+  assert_empty "$hits"
+}
+
 # ---------- Test 2: README overview conveys the extensible / convention framing ----------
 
 function test_readme_overview_conveys_extensible_framing() {
