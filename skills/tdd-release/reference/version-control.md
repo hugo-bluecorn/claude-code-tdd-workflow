@@ -162,9 +162,11 @@ Always create a PR for any merge to `main`, even solo work (creates documentatio
 
 ### Merging
 
-**Preferred:** Squash and merge — creates clean, linear history with single commit per feature on `main`.
+**Required:** Merge commit — use `gh pr merge --merge` (a true merge commit), **never** `gh pr merge --squash`.
 
-**Alternative:** Rebase and merge — use when individual commit history is valuable (each commit must be atomic and pass tests).
+**Rationale:** never squash. Squashing collapses the per-slice TDD commit trail. A single TDD slice produces a meaningful `test:` → `feat:` → `refactor:` sequence (the RED → GREEN → REFACTOR cycle); squashing destroys that per-change history and erases the evidence that tests were written before implementation. A merge commit preserves every commit on `main`, keeping the red-green-refactor trail auditable.
+
+**Avoid:** `--rebase` unless explicitly requested; never squash (no `--squash`).
 
 ---
 
@@ -182,6 +184,22 @@ MAJOR.MINOR.PATCH
 0.2.1  → Bug fix
 1.0.0  → First stable/production release
 ```
+
+### Versioning Authority (what owns what)
+
+Versioning responsibility is deliberately split between the **core workflow** and
+the **active convention pack**, so that the meaning of a version is consistent
+everywhere while the mechanics adapt to each ecosystem:
+
+| Concern | Owner | Notes |
+|---------|-------|-------|
+| **SemVer semantics** — what MAJOR/MINOR/PATCH *mean* (breaking vs. feature vs. fix) | **Core** | The MAJOR.MINOR.PATCH (SemVer) decision is **owned by core** and is **not fragmented** across convention packs. Every project, regardless of language, bumps by the same rules. |
+| **Version-bearing files** — which files hold the version, and the ecosystem command/format used to rewrite them | **Active convention pack** | Version-bearing files come from the pack's `versionFiles`, and rewriting is performed by the now pack-driven `bump-version.sh`. A Dart pack points at `pubspec.yaml`, a Rust pack at `Cargo.toml`, and so on. |
+
+In short: **core owns the SemVer decision** (MAJOR/MINOR/PATCH semantics are
+core-owned, never the pack's), while the **pack owns where the version lives and
+how it is written** — the version-bearing files and ecosystem command/format come
+from the active pack (`versionFiles` + pack-driven `bump-version.sh`).
 
 ### Creating a Release
 
