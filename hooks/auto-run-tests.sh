@@ -15,31 +15,71 @@ fi
 
 FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // .tool_input.path // ""')
 
+# Resolve sibling scripts relative to this hook (same idiom as fetch-conventions.sh).
+HOOK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ACTIVE_PACK_SH="${HOOK_DIR}/../scripts/active-pack.sh"
+READ_PACK_SH="${HOOK_DIR}/../scripts/read-pack.sh"
+
+# Derive the test file for a file-granularity command: a *_test.<ext> path is
+# used as-is; otherwise map lib/ -> test/ and insert _test before the suffix.
+derive_test_file() {
+  local file="$1" ext="$2"
+  if [[ "$file" == *_test"$ext" ]]; then
+    printf '%s\n' "$file"
+  else
+    printf '%s\n' "$(echo "$file" | sed "s|lib/|test/|;s|${ext//./\\.}\$|_test${ext}|")"
+  fi
+}
+
 # Only run for source/test files
 if ! echo "$FILE_PATH" | grep -qE '\.(dart|cpp|cc|h|hpp|sh)$'; then
   exit 0
 fi
 
-# Detect and run appropriate test command
-if echo "$FILE_PATH" | grep -qE '\.dart$'; then
-  # Find matching test file
-  if echo "$FILE_PATH" | grep -qE '_test\.dart$'; then
-    TEST_FILE="$FILE_PATH"
-  else
-    TEST_FILE=$(echo "$FILE_PATH" | sed 's|lib/|test/|;s|\.dart$|_test.dart|')
-  fi
-  if [ -f "$TEST_FILE" ]; then
-    # Use fvm if available (check for .fvmrc in project root)
-    if [ -f ".fvmrc" ] && command -v fvm &>/dev/null; then
-      FLUTTER_CMD="fvm flutter"
-    else
-      FLUTTER_CMD="flutter"
+# --- Pack-driven, file-granularity path (data-driven, pack-optional). ---------
+# Resolve the active pack for this project. If one resolves, the edited file's
+# extension is among its detect.extensions, and its test granularity is "file",
+# run the pack's commands.test.run with {file} substituted to the derived test
+# file. No pack / no match -> fall through to the built-in branches below; a
+# pack EXTENSION with no active pack degrades silently (no fabricated command).
+PACK_DIR=""
+if [ -f "$ACTIVE_PACK_SH" ]; then
+  PACK_DIR=$(bash "$ACTIVE_PACK_SH" "$(pwd)" 2>/dev/null | head -1)
+fi
+
+if [ -n "$PACK_DIR" ] && [ -f "$READ_PACK_SH" ]; then
+  FILE_EXT=".${FILE_PATH##*.}"
+  PACK_EXTS=$(bash "$READ_PACK_SH" "$PACK_DIR" detect.extensions 2>/dev/null)
+  if echo "$PACK_EXTS" | grep -qxF "$FILE_EXT"; then
+    GRANULARITY=$(bash "$READ_PACK_SH" "$PACK_DIR" commands.test.granularity 2>/dev/null)
+    if [ "$GRANULARITY" = "file" ]; then
+      RUN_TMPL=$(bash "$READ_PACK_SH" "$PACK_DIR" commands.test.run 2>/dev/null)
+      TEST_FILE=$(derive_test_file "$FILE_PATH" "$FILE_EXT")
+      if [ -n "$RUN_TMPL" ]; then
+        TEST_CMD="${RUN_TMPL//\{file\}/$TEST_FILE}"
+        if [ -f "$TEST_FILE" ]; then
+          RESULT=$(eval "$TEST_CMD" 2>&1 | tail -10)
+        else
+          RESULT="No matching test file found for $FILE_PATH"
+        fi
+        # Emit informational systemMessage and stop (never blocks).
+        jq -n --arg msg "Auto-test: $RESULT" '{"systemMessage": $msg}'
+        exit 0
+      fi
     fi
-    RESULT=$($FLUTTER_CMD test "$TEST_FILE" 2>&1 | tail -10)
-  else
-    RESULT="No matching test file found for $FILE_PATH"
   fi
-elif echo "$FILE_PATH" | grep -qE '\.(cpp|cc|h|hpp)$'; then
+  # Pack resolved but this file is a non-pack extension -> fall through to the
+  # built-in branches (e.g. .sh) below.
+fi
+
+# A pack EXTENSION with no resolved pack degrades silently (no built-in dart
+# command, no fabricated command). bashunit (.sh) keeps its built-in default.
+if echo "$FILE_PATH" | grep -qE '\.dart$'; then
+  exit 0
+fi
+
+# Detect and run appropriate test command (built-in C++/suite + bash defaults).
+if echo "$FILE_PATH" | grep -qE '\.(cpp|cc|h|hpp)$'; then
   if [ -d "build" ]; then
     RESULT=$(cmake --build build/ 2>&1 | tail -10)
   else
