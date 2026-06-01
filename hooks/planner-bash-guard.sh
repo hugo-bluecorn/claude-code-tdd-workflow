@@ -40,10 +40,48 @@ is_allowed_target() {
   esac
 }
 
-# Allowlist of read-only commands
+# Built-in safe floor: an advisory allowlist of read-only / git / language
+# tooling. This floor is PRIME-safe and ALWAYS holds, even with no pack bound.
 readonly ALLOWED="find grep rg cat head tail wc ls tree file stat du df git flutter dart fvm test command which type pwd echo"
 
-for cmd in $ALLOWED; do
+# UNION the floor with the leading binary of each command declared by the
+# resolved active pack (commands.test.run, each commands.test.setup[] step,
+# commands.lint, commands.format, commands.coverage). The pack only ADDS
+# binaries; it never removes a floor entry. With no pack bound this collects
+# nothing and the floor stands alone (never opens up to arbitrary binaries).
+#
+# Sibling scripts live beside this hook (same idiom as fetch-conventions.sh).
+HOOK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ACTIVE_PACK_SH="${HOOK_DIR}/../scripts/active-pack.sh"
+READ_PACK_SH="${HOOK_DIR}/../scripts/read-pack.sh"
+
+# Echo the leading binary token of a command template, with any leading
+# env-var assignments stripped. {placeholders} after the binary are irrelevant
+# since only the first token is taken.
+leading_binary() {
+  local tmpl="$1"
+  while [[ "$tmpl" =~ ^[A-Za-z_][A-Za-z0-9_]*=[^[:space:]]*[[:space:]]+(.*) ]]; do
+    tmpl="${BASH_REMATCH[1]}"
+  done
+  printf '%s\n' "${tmpl%% *}"
+}
+
+PACK_ALLOWED=""
+if [ -f "$ACTIVE_PACK_SH" ] && [ -f "$READ_PACK_SH" ]; then
+  PACK_DIR=$(bash "$ACTIVE_PACK_SH" "$(pwd)" 2>/dev/null | head -1)
+  if [ -n "$PACK_DIR" ]; then
+    for field in commands.test.run commands.test.setup commands.lint \
+                 commands.format commands.coverage; do
+      while IFS= read -r tmpl; do
+        [ -n "$tmpl" ] || continue
+        bin="$(leading_binary "$tmpl")"
+        [ -n "$bin" ] && PACK_ALLOWED="$PACK_ALLOWED $bin"
+      done < <(bash "$READ_PACK_SH" "$PACK_DIR" "$field" 2>/dev/null)
+    done
+  fi
+fi
+
+for cmd in $ALLOWED $PACK_ALLOWED; do
   if [ "$BASE_CMD" = "$cmd" ]; then
     # Check for output redirection to disallowed targets
     if echo "$COMMAND" | grep -q '>'; then
