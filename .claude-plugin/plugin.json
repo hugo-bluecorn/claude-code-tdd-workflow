@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "tdd-workflow",
   "description": "Test-Driven Development workflow with context-isolated planning, implementation, and verification agents. Enforces red-green-refactor discipline via hooks.",
-  "version": "2.6.0",
+  "version": "2.7.0",
   "author": {
     "name": "Hugo Garcia",
     "email": "hugo.a.garcia@gmail.com"
