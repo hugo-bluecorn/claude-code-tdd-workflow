@@ -102,24 +102,26 @@ function test_sh_no_matching_test_file() {
   rm -rf "$tmp_dir"
 }
 
-# ---------- Test 4: Existing dart/cpp behavior unchanged ----------
+# ---------- Test 4: C++ suite pack runs ctest (FALSE-GREEN FIX), not bashunit ----------
 
-function test_dart_file_still_triggers_flutter() {
-  local output
-  output=$(run_hook "lib/widget.dart")
+function test_cpp_suite_pack_runs_ctest_not_bashunit() {
+  local proj
+  proj=$(make_cpp_project)
 
-  # Should reference flutter test, not bashunit
+  local json output
+  json=$(build_json "src/parser.cpp")
+  output=$(cd "$proj" \
+    && export PATH="$proj/bin:/usr/bin:/bin" \
+    && export TDD_ACTIVE_PACK="$CPP_FIXTURE" \
+    && echo "$json" | bash "$HOOK_ABS" 2>/dev/null)
+
+  # FALSE-GREEN FIX PROOF: a ctest invocation occurs; the hook no longer
+  # builds-only via cmake without running the test runner.
+  assert_contains "CTEST_STUB_INVOKED" "$output"
   assert_contains "systemMessage" "$output"
   assert_not_contains "bashunit" "$output"
-}
 
-function test_cpp_file_still_triggers_cmake() {
-  local output
-  output=$(run_hook "src/parser.cpp")
-
-  # Should reference cmake/build, not bashunit
-  assert_contains "systemMessage" "$output"
-  assert_not_contains "bashunit" "$output"
+  rm -rf "$proj"
 }
 
 # ---------- Edge Case: bashunit not installed ----------
@@ -243,32 +245,7 @@ TESTEOF
   rm -rf "$tmp_dir"
 }
 
-# ---------- JSON Safety Test 4: No matching test file produces valid JSON ----------
-
-function test_json_valid_for_no_matching_test_file() {
-  local tmp_dir
-  tmp_dir=$(create_tmp_env --with-bashunit)
-
-  # Create a .dart source file with no matching test
-  mkdir -p "$tmp_dir/lib"
-  echo 'void main() {}' > "$tmp_dir/lib/orphan.dart"
-
-  local output
-  output=$(run_hook_in_tmp "$tmp_dir" "lib/orphan.dart")
-
-  # Must be valid JSON
-  echo "$output" | jq . > /dev/null 2>&1
-  assert_exit_code 0
-
-  # Must contain the expected message
-  local msg
-  msg=$(echo "$output" | jq -r '.systemMessage')
-  assert_contains "No matching test file" "$msg"
-
-  rm -rf "$tmp_dir"
-}
-
-# ---------- JSON Safety Test 5: bashunit not installed produces valid JSON ----------
+# ---------- JSON Safety Test 4: bashunit not installed produces valid JSON ----------
 
 function test_json_valid_for_bashunit_not_installed() {
   local tmp_dir
@@ -309,263 +286,259 @@ function test_non_source_file_exits_silently() {
 }
 
 # ==========================================================================
-# Slice 3 — FVM Detection, Dart/C++ Path Coverage, and Edge Cases
-# Tests that the hook correctly detects FVM, maps Dart file paths,
-# handles C++ files, and exits silently for non-source files.
+# Slice C2 — Pack-driven test command (file-granularity / dart path)
+# Tests that the hook resolves the active pack via scripts/active-pack.sh,
+# reads commands.test.run, substitutes {file} with the derived test file, and
+# emits the resulting command in the informational systemMessage. The .sh
+# bashunit built-in default and the C++/suite path are NOT touched here.
 # ==========================================================================
 
-# ---------- FVM Test 1: fvmrc + fvm available uses fvm flutter ----------
+DART_FIXTURE="$PROJECT_ROOT/test/fixtures/dart-fixture"
+CPP_FIXTURE="$PROJECT_ROOT/test/fixtures/cpp-fixture"
 
-function test_fvmrc_and_fvm_available_uses_fvm_flutter() {
-  local tmp_dir
-  tmp_dir=$(create_tmp_env)
-
-  # Create .fvmrc so the hook detects FVM project
-  echo '{"flutterSdkVersion": "3.24.0"}' > "$tmp_dir/.fvmrc"
-
-  # Create Dart source and matching test file
-  mkdir -p "$tmp_dir/lib/models"
-  mkdir -p "$tmp_dir/test/models"
-  echo 'void main() {}' > "$tmp_dir/lib/models/user.dart"
-  echo 'void main() {}' > "$tmp_dir/test/models/user_test.dart"
-
-  # Create stub fvm that outputs an identifiable marker
-  mkdir -p "$tmp_dir/bin"
-  cat > "$tmp_dir/bin/fvm" << 'STUB'
+# Helper: scaffold a temp C++ project (CMakeLists.txt marker + a .cpp source)
+# with stub `cmake` and `ctest` on PATH. Each stub appends an identifiable
+# marker plus its args to "$proj/invocations.log" (preserving call ORDER) and
+# also echoes to stdout. Echoes the project dir.
+make_cpp_project() {
+  local proj
+  proj=$(mktemp -d)
+  echo 'cmake_minimum_required(VERSION 3.20)' > "$proj/CMakeLists.txt"
+  mkdir -p "$proj/src"
+  echo 'int main() {}' > "$proj/src/parser.cpp"
+  mkdir -p "$proj/bin"
+  cat > "$proj/bin/cmake" << STUB
 #!/bin/bash
-echo "FVM_STUB_INVOKED: $*"
+echo "CMAKE_STUB_INVOKED: \$*" | tee -a "$proj/invocations.log"
 STUB
-  chmod +x "$tmp_dir/bin/fvm"
-
-  # Run with our stub on PATH (include /usr/bin for jq, tail, etc.)
-  local json
-  json=$(build_json "lib/models/user.dart")
-  local output
-  output=$(cd "$tmp_dir" && export PATH="$tmp_dir/bin:/usr/bin:/bin" && echo "$json" | bash "$tmp_dir/$HOOK" 2>/dev/null)
-
-  # The output should contain FVM_STUB_INVOKED, proving fvm was called
-  assert_contains "FVM_STUB_INVOKED" "$output"
-  assert_contains "systemMessage" "$output"
-
-  rm -rf "$tmp_dir"
+  cat > "$proj/bin/ctest" << STUB
+#!/bin/bash
+echo "CTEST_STUB_INVOKED: \$*" | tee -a "$proj/invocations.log"
+STUB
+  chmod +x "$proj/bin/cmake" "$proj/bin/ctest"
+  printf '%s\n' "$proj"
 }
 
-# ---------- FVM Test 2: fvmrc present but fvm NOT available falls back to flutter ----------
-
-function test_fvmrc_present_but_no_fvm_falls_back_to_flutter() {
-  local tmp_dir
-  tmp_dir=$(create_tmp_env)
-
-  # Create .fvmrc
-  echo '{"flutterSdkVersion": "3.24.0"}' > "$tmp_dir/.fvmrc"
-
-  # Create Dart source and matching test file
-  mkdir -p "$tmp_dir/lib/models"
-  mkdir -p "$tmp_dir/test/models"
-  echo 'void main() {}' > "$tmp_dir/lib/models/user.dart"
-  echo 'void main() {}' > "$tmp_dir/test/models/user_test.dart"
-
-  # Create stub flutter only (no fvm)
-  mkdir -p "$tmp_dir/bin"
-  cat > "$tmp_dir/bin/flutter" << 'STUB'
+# Helper: scaffold a temp dart project with a derivable test file + a stub
+# `flutter` that echoes an identifiable marker plus its args. Echoes the dir.
+make_dart_project() {
+  local proj
+  proj=$(mktemp -d)
+  # A pubspec.yaml marker so detection (committed-binding path) matches.
+  echo 'name: tmp_app' > "$proj/pubspec.yaml"
+  mkdir -p "$proj/lib/models" "$proj/test/models"
+  echo 'void main() {}' > "$proj/lib/models/user.dart"
+  echo 'void main() {}' > "$proj/test/models/user_test.dart"
+  # Stub flutter so the pack command "flutter test {file}" is observable.
+  mkdir -p "$proj/bin"
+  cat > "$proj/bin/flutter" << 'STUB'
 #!/bin/bash
 echo "FLUTTER_STUB_INVOKED: $*"
 STUB
-  chmod +x "$tmp_dir/bin/flutter"
+  chmod +x "$proj/bin/flutter"
+  printf '%s\n' "$proj"
+}
 
-  # PATH has only our stubs + system essentials, no fvm
-  local json
+# ---------- C2 Test 1: Pack-driven command (TDD_ACTIVE_PACK fast-path) ----------
+
+function test_dart_pack_driven_command_via_env_fast_path() {
+  local proj
+  proj=$(make_dart_project)
+
+  local json output
   json=$(build_json "lib/models/user.dart")
-  local output
-  output=$(cd "$tmp_dir" && export PATH="$tmp_dir/bin:/usr/bin:/bin" && echo "$json" | bash "$tmp_dir/$HOOK" 2>/dev/null)
+  # Run the REAL hook (so ../scripts/active-pack.sh resolves) from inside the
+  # temp project. TDD_ACTIVE_PACK fast-path points the resolver at the dart pack.
+  output=$(cd "$proj" \
+    && export PATH="$proj/bin:/usr/bin:/bin" \
+    && export TDD_ACTIVE_PACK="$DART_FIXTURE" \
+    && echo "$json" | bash "$HOOK_ABS" 2>/dev/null)
 
-  # Should use plain flutter, not fvm
+  # The pack's commands.test.run is "flutter test {file}" -> the stub fires and
+  # {file} is substituted to the derived test path.
   assert_contains "FLUTTER_STUB_INVOKED" "$output"
-  assert_not_contains "FVM" "$output"
-  assert_contains "systemMessage" "$output"
-
-  rm -rf "$tmp_dir"
-}
-
-# ---------- FVM Test 3: No fvmrc uses plain flutter ----------
-
-function test_no_fvmrc_uses_plain_flutter() {
-  local tmp_dir
-  tmp_dir=$(create_tmp_env)
-
-  # No .fvmrc created
-
-  # Create Dart source and matching test file
-  mkdir -p "$tmp_dir/lib/models"
-  mkdir -p "$tmp_dir/test/models"
-  echo 'void main() {}' > "$tmp_dir/lib/models/user.dart"
-  echo 'void main() {}' > "$tmp_dir/test/models/user_test.dart"
-
-  # Create stub flutter
-  mkdir -p "$tmp_dir/bin"
-  cat > "$tmp_dir/bin/flutter" << 'STUB'
-#!/bin/bash
-echo "FLUTTER_PLAIN_INVOKED: $*"
-STUB
-  chmod +x "$tmp_dir/bin/flutter"
-
-  # Also create fvm stub to ensure it is NOT used even if available
-  cat > "$tmp_dir/bin/fvm" << 'STUB'
-#!/bin/bash
-echo "FVM_SHOULD_NOT_BE_USED: $*"
-STUB
-  chmod +x "$tmp_dir/bin/fvm"
-
-  local json
-  json=$(build_json "lib/models/user.dart")
-  local output
-  output=$(cd "$tmp_dir" && export PATH="$tmp_dir/bin:/usr/bin:/bin" && echo "$json" | bash "$tmp_dir/$HOOK" 2>/dev/null)
-
-  # Should use plain flutter, not fvm
-  assert_contains "FLUTTER_PLAIN_INVOKED" "$output"
-  assert_not_contains "FVM_SHOULD_NOT_BE_USED" "$output"
-  assert_contains "systemMessage" "$output"
-
-  rm -rf "$tmp_dir"
-}
-
-# ---------- Dart Mapping Test 4: lib/ to test/ mapping ----------
-
-function test_dart_lib_to_test_mapping() {
-  local tmp_dir
-  tmp_dir=$(create_tmp_env)
-
-  # Create Dart source and matching test file
-  mkdir -p "$tmp_dir/lib/models"
-  mkdir -p "$tmp_dir/test/models"
-  echo 'void main() {}' > "$tmp_dir/lib/models/user.dart"
-  echo 'void main() {}' > "$tmp_dir/test/models/user_test.dart"
-
-  # Create stub flutter that echoes the test file path it receives
-  mkdir -p "$tmp_dir/bin"
-  cat > "$tmp_dir/bin/flutter" << 'STUB'
-#!/bin/bash
-echo "FLUTTER_TEST_PATH: $2"
-STUB
-  chmod +x "$tmp_dir/bin/flutter"
-
-  local json
-  json=$(build_json "lib/models/user.dart")
-  local output
-  output=$(cd "$tmp_dir" && export PATH="$tmp_dir/bin:/usr/bin:/bin" && echo "$json" | bash "$tmp_dir/$HOOK" 2>/dev/null)
-
-  # Should map lib/models/user.dart -> test/models/user_test.dart
   assert_contains "test/models/user_test.dart" "$output"
   assert_contains "systemMessage" "$output"
 
-  rm -rf "$tmp_dir"
+  rm -rf "$proj"
 }
 
-# ---------- Dart Mapping Test 5: _test.dart runs directly ----------
+# ---------- C2 Test 2: Pack-driven command via committed binding, env unset ----------
 
-function test_dart_test_file_runs_directly() {
-  local tmp_dir
-  tmp_dir=$(create_tmp_env)
+function test_dart_pack_driven_command_via_committed_binding_env_unset() {
+  local proj
+  proj=$(make_dart_project)
 
-  # Create only the test file
-  mkdir -p "$tmp_dir/test/models"
-  echo 'void main() {}' > "$tmp_dir/test/models/user_test.dart"
+  # Bind the dart fixture as a DEV pack so active-pack.sh resolves it with the
+  # env var UNSET (committed-binding fallback).
+  mkdir -p "$proj/.claude"
+  cat > "$proj/.claude/tdd-conventions.json" << JSON
+{ "packs": [ { "source": "$DART_FIXTURE", "dev": true } ] }
+JSON
 
-  # Create stub flutter that echoes what it receives
-  mkdir -p "$tmp_dir/bin"
-  cat > "$tmp_dir/bin/flutter" << 'STUB'
-#!/bin/bash
-echo "FLUTTER_DIRECT_RUN: $2"
-STUB
-  chmod +x "$tmp_dir/bin/flutter"
+  local json output
+  json=$(build_json "lib/models/user.dart")
+  output=$(cd "$proj" \
+    && export PATH="$proj/bin:/usr/bin:/bin" \
+    && unset TDD_ACTIVE_PACK \
+    && echo "$json" | bash "$HOOK_ABS" 2>/dev/null)
 
-  local json
-  json=$(build_json "test/models/user_test.dart")
-  local output
-  output=$(cd "$tmp_dir" && export PATH="$tmp_dir/bin:/usr/bin:/bin" && echo "$json" | bash "$tmp_dir/$HOOK" 2>/dev/null)
-
-  # Should use test/models/user_test.dart directly
+  # Same pack-driven command appears via the committed binding (no env).
+  assert_contains "FLUTTER_STUB_INVOKED" "$output"
   assert_contains "test/models/user_test.dart" "$output"
   assert_contains "systemMessage" "$output"
 
-  rm -rf "$tmp_dir"
+  rm -rf "$proj"
 }
 
-# ---------- C++ Test 6: C++ with build dir runs cmake ----------
+# ---------- C2 Test 3 (edge): Pack extension, no active pack degrades silently ----------
 
-function test_cpp_with_build_dir_runs_cmake() {
-  local tmp_dir
-  tmp_dir=$(create_tmp_env)
+function test_dart_no_active_pack_degrades_silently() {
+  local proj
+  proj=$(make_dart_project)
+  # No binding file, no TDD_ACTIVE_PACK -> no pack resolves.
 
-  # Create C++ source and build directory
-  mkdir -p "$tmp_dir/src"
-  echo 'int main() {}' > "$tmp_dir/src/parser.cpp"
-  mkdir -p "$tmp_dir/build"
+  local json output exit_code
+  json=$(build_json "lib/models/user.dart")
+  output=$(cd "$proj" \
+    && export PATH="$proj/bin:/usr/bin:/bin" \
+    && unset TDD_ACTIVE_PACK \
+    && echo "$json" | bash "$HOOK_ABS" 2>/dev/null)
+  exit_code=$?
 
-  # Create stub cmake
-  mkdir -p "$tmp_dir/bin"
-  cat > "$tmp_dir/bin/cmake" << 'STUB'
-#!/bin/bash
-echo "CMAKE_STUB_INVOKED: $*"
-STUB
-  chmod +x "$tmp_dir/bin/cmake"
+  # Graceful no-op: exit 0, and no fabricated command was run.
+  assert_equals 0 "$exit_code"
+  assert_not_contains "FLUTTER_STUB_INVOKED" "$output"
+  # If anything is emitted it must be valid JSON (never a decision:block).
+  if [[ -n "$output" ]]; then
+    echo "$output" | jq -e 'has("systemMessage") and (has("decision") | not)' > /dev/null 2>&1
+    assert_exit_code 0
+  fi
 
-  local json
-  json=$(build_json "src/parser.cpp")
-  local output
-  output=$(cd "$tmp_dir" && export PATH="$tmp_dir/bin:/usr/bin:/bin" && echo "$json" | bash "$tmp_dir/$HOOK" 2>/dev/null)
+  rm -rf "$proj"
+}
 
-  assert_contains "CMAKE_STUB_INVOKED" "$output"
-  assert_contains "systemMessage" "$output"
+# ---------- C2 Test 4: Output is informational systemMessage, never decision:block ----------
 
-  # Validate JSON
-  echo "$output" | jq . > /dev/null 2>&1
+function test_pack_driven_output_is_informational_never_block() {
+  local proj
+  proj=$(make_dart_project)
+
+  local json output
+  json=$(build_json "lib/models/user.dart")
+  output=$(cd "$proj" \
+    && export PATH="$proj/bin:/usr/bin:/bin" \
+    && export TDD_ACTIVE_PACK="$DART_FIXTURE" \
+    && echo "$json" | bash "$HOOK_ABS" 2>/dev/null)
+
+  # Valid JSON carrying systemMessage, with no decision/block field.
+  echo "$output" | jq -e 'has("systemMessage") and (has("decision") | not) and (has("block") | not)' > /dev/null 2>&1
   assert_exit_code 0
 
-  rm -rf "$tmp_dir"
+  rm -rf "$proj"
 }
 
-# ---------- C++ Test 7: C++ without build dir reports error ----------
+# ---------- C++ Test 6: setup[] steps run BEFORE the test command, in order ----------
 
-function test_cpp_without_build_dir_reports_error() {
-  local tmp_dir
-  tmp_dir=$(create_tmp_env)
+function test_cpp_suite_setup_runs_before_ctest_in_order() {
+  local proj
+  proj=$(make_cpp_project)
 
-  # Create C++ source but NO build directory
-  mkdir -p "$tmp_dir/src"
-  echo 'int main() {}' > "$tmp_dir/src/parser.cpp"
-
-  local json
+  local json output
   json=$(build_json "src/parser.cpp")
-  local output
-  output=$(cd "$tmp_dir" && export PATH="/usr/bin:/bin" && echo "$json" | bash "$tmp_dir/$HOOK" 2>/dev/null)
+  output=$(cd "$proj" \
+    && export PATH="$proj/bin:/usr/bin:/bin" \
+    && export TDD_ACTIVE_PACK="$CPP_FIXTURE" \
+    && echo "$json" | bash "$HOOK_ABS" 2>/dev/null)
 
-  assert_contains "No build directory found" "$output"
-  assert_contains "systemMessage" "$output"
+  # The invocation log records call ORDER: both cmake setup steps must precede
+  # the ctest run. Lines (in order): cmake --preset, cmake --build, ctest.
+  local log="$proj/invocations.log"
+  assert_file_exists "$log"
 
-  rm -rf "$tmp_dir"
+  local first_cmake_line build_line ctest_line
+  first_cmake_line=$(grep -n 'CMAKE_STUB_INVOKED: --preset' "$log" | head -1 | cut -d: -f1)
+  build_line=$(grep -n 'CMAKE_STUB_INVOKED: --build' "$log" | head -1 | cut -d: -f1)
+  ctest_line=$(grep -n 'CTEST_STUB_INVOKED' "$log" | head -1 | cut -d: -f1)
+
+  # Both setup steps appear, and both precede ctest.
+  assert_not_equals "" "$first_cmake_line"
+  assert_not_equals "" "$build_line"
+  assert_not_equals "" "$ctest_line"
+  assert_equals 1 "$(( first_cmake_line < ctest_line ? 1 : 0 ))"
+  assert_equals 1 "$(( build_line < ctest_line ? 1 : 0 ))"
+  assert_equals 1 "$(( first_cmake_line < build_line ? 1 : 0 ))"
+
+  rm -rf "$proj"
 }
 
-# ---------- C++ Test 8: .hpp handled as C++ ----------
+# ---------- C++ Test 7: {variant} substituted from the pack's default variant ----------
 
-function test_hpp_handled_as_cpp() {
-  local tmp_dir
-  tmp_dir=$(create_tmp_env)
+function test_cpp_suite_substitutes_default_variant() {
+  local proj
+  proj=$(make_cpp_project)
 
-  # Create .hpp source but NO build directory
-  mkdir -p "$tmp_dir/src"
-  echo '#pragma once' > "$tmp_dir/src/types.hpp"
+  local json output
+  json=$(build_json "src/parser.cpp")
+  output=$(cd "$proj" \
+    && export PATH="$proj/bin:/usr/bin:/bin" \
+    && export TDD_ACTIVE_PACK="$CPP_FIXTURE" \
+    && echo "$json" | bash "$HOOK_ABS" 2>/dev/null)
 
-  local json
-  json=$(build_json "src/types.hpp")
-  local output
-  output=$(cd "$tmp_dir" && export PATH="/usr/bin:/bin" && echo "$json" | bash "$tmp_dir/$HOOK" 2>/dev/null)
+  # The cpp fixture's default variant is "tdd-asan". The emitted/logged commands
+  # must contain that name, never the literal "{variant}" placeholder.
+  local log="$proj/invocations.log"
+  assert_file_contains "$log" "tdd-asan"
+  assert_not_contains "{variant}" "$(cat "$log")"
 
-  # Should enter C++ branch and report no build directory
-  assert_contains "No build directory found" "$output"
-  assert_contains "systemMessage" "$output"
+  rm -rf "$proj"
+}
 
-  rm -rf "$tmp_dir"
+# ---------- C++ Test 8: single-step (file-granularity) pack runs ONLY run, no setup ----------
+
+function test_file_granularity_pack_runs_only_run_no_setup() {
+  local proj
+  proj=$(make_dart_project)
+
+  local json output
+  json=$(build_json "lib/models/user.dart")
+  output=$(cd "$proj" \
+    && export PATH="$proj/bin:/usr/bin:/bin" \
+    && export TDD_ACTIVE_PACK="$DART_FIXTURE" \
+    && echo "$json" | bash "$HOOK_ABS" 2>/dev/null)
+
+  # The dart fixture has NO setup[] and granularity "file": only the run command
+  # (flutter test) fires; no setup steps are fabricated (preserves C2).
+  assert_contains "FLUTTER_STUB_INVOKED" "$output"
+  assert_not_contains "cmake" "$output"
+  assert_not_contains "ctest" "$output"
+
+  rm -rf "$proj"
+}
+
+# ---------- C++ Test 9: C++ project with no pack degrades (no fabricated command) ----------
+
+function test_cpp_no_pack_degrades_no_fabricated_command() {
+  local proj
+  proj=$(make_cpp_project)
+  # No binding file, no TDD_ACTIVE_PACK -> no pack resolves.
+
+  local json output exit_code
+  json=$(build_json "src/parser.cpp")
+  output=$(cd "$proj" \
+    && export PATH="$proj/bin:/usr/bin:/bin" \
+    && unset TDD_ACTIVE_PACK \
+    && echo "$json" | bash "$HOOK_ABS" 2>/dev/null)
+  exit_code=$?
+
+  # Graceful: exit 0, no built-in C++ default, no fabricated cmake/ctest run.
+  assert_equals 0 "$exit_code"
+  assert_not_contains "CTEST_STUB_INVOKED" "$output"
+  assert_not_contains "CMAKE_STUB_INVOKED" "$output"
+  # No invocation log was written (no command fired).
+  assert_file_not_exists "$proj/invocations.log"
+
+  rm -rf "$proj"
 }
 
 # ---------- Edge Case Test 9: Non-source file (.md) exits silently ----------

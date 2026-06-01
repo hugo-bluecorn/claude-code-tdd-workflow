@@ -6,6 +6,40 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
 
+## [2.6.0] - 2026-06-01
+
+### Added
+- Shared convention-pack resolver `scripts/active-pack.sh` (roadmap R1 Wave 1):
+  resolves the active pack for a project via the committed binding
+  (`.claude/tdd-conventions.json`) with a `$TDD_ACTIVE_PACK` in-session fast-path,
+  degrading to empty/exit-0 when no pack is bound. Consumers compose it so no
+  consumer depends on env→subagent propagation.
+
+### Changed
+- The 6 consumer sites that hardcoded the dart/cpp/bash/c language matrix are now
+  data-driven from the active pack's `pack.json` (R1 Wave 1 consumer fan-out):
+  - `scripts/load-conventions.sh` — detection resolves the active pack instead of
+    four hardcoded skill dirnames; content delivery + DCI unchanged.
+  - `hooks/auto-run-tests.sh` — runs the pack's `commands.test` (`{file}`/`{variant}`
+    substituted); `.sh → bashunit` stays the built-in default; informational
+    `systemMessage` preserved.
+  - `hooks/validate-tdd-order.sh` — recognizes test files via the pack's
+    `testFilePattern`; `.sh` built-in; unknown extension with no pack passes through.
+  - `agents/tdd-verifier.md` — resolves the committed binding and reads
+    `jq '.commands'` only (never pack standards), preserving its blackbox stance.
+  - `scripts/detect-project-context.sh` — `test_runner` and the `test_count` glob
+    derive from the active pack's `commands.test`/extensions.
+  - `hooks/planner-bash-guard.sh` — allowlist is the union of the built-in safe
+    floor with binaries declared in the active pack's `commands` (the floor is
+    never replaced).
+- Core remains pack-optional throughout: with no pack bound, bashunit stays the
+  built-in script default, unknown languages pass through, and nothing hard-blocks.
+
+### Fixed
+- C++ false-green in `hooks/auto-run-tests.sh`: a suite-granularity pack now runs
+  `commands.test.setup[]` then `commands.test.run` (e.g. cmake configure/build then
+  `ctest`) instead of `cmake --build` only — the tests actually run.
+
 ## [2.5.0] - 2026-06-01
 
 ### Added

@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "name": "dart-fixture",
+  "version": "1.0.0",
+  "language": "Dart/Flutter",
+  "detect": {
+    "extensions": [".dart"],
+    "markers": ["pubspec.yaml"]
+  },
+  "commands": {
+    "test": {
+      "granularity": "file",
+      "run": "flutter test {file}",
+      "passOn": "exitZero"
+    },
+    "lint": "flutter analyze",
+    "format": "dart format"
+  },
+  "testFilePattern": "*_test.dart",
+  "standards": {
+    "index": "SKILL.md",
+    "dir": "standards/"
+  }
+}

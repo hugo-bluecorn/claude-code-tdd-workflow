@@ -5,7 +5,9 @@
 # and prevents output redirection except to /dev/null.
 
 HOOK="hooks/planner-bash-guard.sh"
-HOOK_ABS="$(pwd)/$HOOK"
+PROJECT_ROOT="$(pwd)"
+HOOK_ABS="$PROJECT_ROOT/$HOOK"
+CPP_FIXTURE="$PROJECT_ROOT/test/fixtures/cpp-fixture"
 
 # Helper: build PreToolUse JSON for a given bash command
 build_json() {
@@ -406,5 +408,157 @@ function test_agent_type_null_passes_through() {
   json='{"tool_name":"Bash","tool_input":{"command":"python3 --version"},"agent_type":null}'
   echo "$json" | bash "$HOOK_ABS" 2>/dev/null
   assert_exit_code 0
+}
+
+# =====================================================================
+# Slice C7 — UNION the built-in safe floor with the active pack's command
+# binaries. The floor is advisory and PRIME-safe: it holds with NO pack
+# (never replaced, never opened up). A resolved pack ADDS the leading
+# binaries of its commands.test.run / setup[] / lint / format / coverage.
+# The hook is run as the REAL $HOOK_ABS from inside a temp project so its
+# sibling ../scripts/active-pack.sh resolves (the copied-tmp hook lacks it).
+# =====================================================================
+
+# Helper: scaffold a temp C++ project (CMakeLists.txt marker + a .cpp source)
+# bound to the cpp fixture as a DEV pack via committed binding. Echoes the dir.
+make_cpp_project_bound() {
+  local proj
+  proj=$(mktemp -d)
+  echo 'cmake_minimum_required(VERSION 3.20)' > "$proj/CMakeLists.txt"
+  mkdir -p "$proj/src"
+  echo 'int main() {}' > "$proj/src/parser.cpp"
+  mkdir -p "$proj/.claude"
+  cat > "$proj/.claude/tdd-conventions.json" << JSON
+{ "packs": [ { "source": "$CPP_FIXTURE", "dev": true } ] }
+JSON
+  printf '%s\n' "$proj"
+}
+
+# Helper: run the REAL hook from inside a project dir, env TDD_ACTIVE_PACK unset.
+# Sets the exit code; stderr suppressed.
+run_hook_in_project() {
+  local proj="$1" cmd="$2"
+  local json
+  json=$(build_json "$cmd")
+  (cd "$proj" \
+    && unset TDD_ACTIVE_PACK \
+    && echo "$json" | bash "$HOOK_ABS" 2>/dev/null)
+}
+
+# ---------- C7 Test 1: Built-in floor still accepted with NO pack (PRESERVE) ----------
+
+function test_c7_builtin_floor_accepted_no_pack() {
+  local proj
+  proj=$(mktemp -d)
+  # No binding, env unset -> floor-only.
+  local -a floor_commands=(
+    find grep rg cat head tail wc ls tree file stat du df
+    git flutter dart fvm test command which type pwd echo
+  )
+  local accepted=0
+  for cmd in "${floor_commands[@]}"; do
+    run_hook_in_project "$proj" "$cmd --help"
+    local rc=$?
+    if [ "$rc" -ne 0 ]; then
+      bashunit::fail "Expected exit 0 for floor command '$cmd' with no pack, got $rc"
+      rm -rf "$proj"
+      return
+    fi
+    accepted=$((accepted + 1))
+  done
+  assert_equals "${#floor_commands[@]}" "$accepted"
+  rm -rf "$proj"
+}
+
+# ---------- C7 Test 2: Pack-declared binary added to allowlist (env unset) ----------
+
+function test_c7_pack_binary_added_via_committed_binding() {
+  local proj
+  proj=$(make_cpp_project_bound)
+  # ctest is the leading binary of the cpp pack's commands.test.run; not in floor.
+  run_hook_in_project "$proj" "ctest --preset tdd-asan --output-on-failure"
+  assert_exit_code 0
+  rm -rf "$proj"
+}
+
+function test_c7_pack_setup_binary_added_via_committed_binding() {
+  local proj
+  proj=$(make_cpp_project_bound)
+  # cmake is the leading binary of the cpp pack's commands.test.setup[]; not floor.
+  run_hook_in_project "$proj" "cmake --preset tdd-asan"
+  assert_exit_code 0
+  rm -rf "$proj"
+}
+
+# ---------- C7 Test 3: Floor + pack are a UNION, not a replacement ----------
+
+function test_c7_floor_and_pack_are_union_not_replacement() {
+  local proj
+  proj=$(make_cpp_project_bound)
+  # The cpp pack never declares `flutter`; it must still be allowed via the floor.
+  run_hook_in_project "$proj" "flutter test"
+  assert_exit_code 0
+  rm -rf "$proj"
+}
+
+# ---------- C7 Test 4 (edge): Non-floor, non-pack binary still BLOCKED ----------
+
+function test_c7_non_floor_non_pack_binary_blocked() {
+  local proj
+  proj=$(make_cpp_project_bound)
+  run_hook_in_project "$proj" "rm -rf /"
+  assert_exit_code 2
+}
+
+function test_c7_non_floor_non_pack_binary_blocked_stderr() {
+  local proj
+  proj=$(make_cpp_project_bound)
+  local json stderr_output
+  json=$(build_json "rm -rf /")
+  stderr_output=$(cd "$proj" \
+    && unset TDD_ACTIVE_PACK \
+    && echo "$json" | bash "$HOOK_ABS" 2>&1 >/dev/null)
+  assert_contains "BLOCKED" "$stderr_output"
+  rm -rf "$proj"
+}
+
+# ---------- C7 Test 5 (edge): No pack -> floor-only, unknown command BLOCKED ----------
+
+function test_c7_no_pack_unknown_command_blocked() {
+  local proj
+  proj=$(mktemp -d)
+  run_hook_in_project "$proj" "npm install"
+  assert_exit_code 2
+}
+
+function test_c7_no_pack_unknown_command_blocked_stderr() {
+  local proj
+  proj=$(mktemp -d)
+  local json stderr_output
+  json=$(build_json "npm install")
+  stderr_output=$(cd "$proj" \
+    && unset TDD_ACTIVE_PACK \
+    && echo "$json" | bash "$HOOK_ABS" 2>&1 >/dev/null)
+  assert_contains "BLOCKED" "$stderr_output"
+  rm -rf "$proj"
+}
+
+# ---------- C7 Test 6 (edge): Redirection guard preserved for a pack binary ----------
+
+function test_c7_pack_binary_redirection_to_arbitrary_path_blocked() {
+  local proj
+  proj=$(make_cpp_project_bound)
+  # ctest is now allowlisted via the pack, but redirecting to a non-/dev/null
+  # target must still be BLOCKED (existing guard intact for unioned binaries).
+  run_hook_in_project "$proj" "ctest --preset tdd-asan > /tmp/out.txt"
+  assert_exit_code 2
+}
+
+function test_c7_pack_binary_redirection_to_dev_null_allowed() {
+  local proj
+  proj=$(make_cpp_project_bound)
+  run_hook_in_project "$proj" "ctest --preset tdd-asan > /dev/null"
+  assert_exit_code 0
+  rm -rf "$proj"
 }
 

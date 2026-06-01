@@ -70,6 +70,33 @@ function test_verifier_still_has_cpp_test_references() {
   assert_file_contains "$VERIFIER_FILE" "ctest"
 }
 
+# ---------- C5: Verifier resolves committed binding, reads pack commands only ----------
+
+function test_verifier_instructed_to_resolve_committed_binding() {
+  # The verifier (a subagent) must resolve the active pack from the committed
+  # binding (.claude/tdd-conventions.json), not from env propagation.
+  assert_file_exists "$VERIFIER_FILE"
+  assert_file_contains "$VERIFIER_FILE" "tdd-conventions.json"
+}
+
+function test_verifier_instructed_to_read_pack_commands() {
+  # The verifier reads jq '.commands' (test/lint/coverage) from the active pack.
+  assert_file_contains "$VERIFIER_FILE" ".commands"
+}
+
+function test_verifier_never_reads_standards_index() {
+  # Blackbox guard (decision #2): commands-only scope. The verifier must NOT
+  # be instructed to read pack standards / standards.index.
+  local hits
+  hits=$(grep -nF 'standards.index' "$VERIFIER_FILE" || true)
+  assert_empty "$hits"
+}
+
+function test_verifier_preserves_run_fast_tests_instruction() {
+  # Per-slice fast-subset instruction must remain (full suite at release/CI).
+  assert_file_contains "$VERIFIER_FILE" "scripts/run-fast-tests.sh"
+}
+
 # ---------- Test 2: settings.local.json includes shellcheck and bashunit permissions ----------
 
 function test_settings_file_exists() {

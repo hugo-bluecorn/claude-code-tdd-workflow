@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "name": "cpp-fixture",
+  "version": "1.0.0",
+  "language": "C/C++",
+  "detect": {
+    "extensions": [".cpp", ".hpp"],
+    "markers": ["CMakeLists.txt"]
+  },
+  "commands": {
+    "test": {
+      "granularity": "suite",
+      "setup": ["cmake --preset {variant}", "cmake --build build-{variant}"],
+      "run": "ctest --preset {variant} --output-on-failure",
+      "variants": [
+        { "name": "tdd-asan", "default": true },
+        { "name": "tdd-tsan" }
+      ],
+      "passOn": "exitZero"
+    },
+    "lint": "clang-tidy",
+    "format": "clang-format"
+  },
+  "testFilePattern": "*_test.cpp",
+  "standards": {
+    "index": "SKILL.md",
+    "dir": "standards/"
+  }
+}

@@ -5,6 +5,8 @@
 
 HOOK="hooks/validate-tdd-order.sh"
 HOOK_ABS="$(pwd)/hooks/validate-tdd-order.sh"
+PROJECT_ROOT="$(pwd)"
+DART_FIXTURE="$PROJECT_ROOT/test/fixtures/dart-fixture"
 
 # Helper: build PreToolUse JSON for a given file path
 build_json() {
@@ -117,14 +119,19 @@ function test_allows_cpp_test_files() {
   assert_exit_code 0
 }
 
-function test_blocks_dart_source_when_no_tests_written() {
+# RECONCILED (C4): with NO pack bound, .dart is an unknown extension to the
+# pack-optional hook (the copied-tmp repo has no ../scripts and no binding), so
+# it must DEGRADE to pass-through (exit 0) -- never block a language for which
+# there is no pack or built-in. Blocking for .dart now requires an active pack
+# (see test_dart_source_blocked_when_no_test_pack_path).
+function test_dart_source_no_pack_passes_through() {
   local tmp_repo
   tmp_repo=$(create_tmp_repo)
 
   run_hook_in_repo "$tmp_repo" "lib/widget.dart"
   local rc=$?
 
-  assert_equals 2 "$rc"
+  assert_equals 0 "$rc"
 
   rm -rf "$tmp_repo"
 }
@@ -180,16 +187,17 @@ function test_hpp_in_test_directory_allowed() {
   assert_exit_code 0
 }
 
-# ---------- Test 12: .hpp source file blocked when no tests ----------
+# ---------- Test 12: .hpp source, no pack -> pass-through (RECONCILED C4) ------
+# Without an active pack, .hpp is an unknown extension -> degrade, never block.
 
-function test_hpp_source_blocked_when_no_tests() {
+function test_hpp_source_no_pack_passes_through() {
   local tmp_repo
   tmp_repo=$(create_tmp_repo)
 
   run_hook_in_repo "$tmp_repo" "src/utils.hpp"
   local rc=$?
 
-  assert_equals 2 "$rc"
+  assert_equals 0 "$rc"
 
   rm -rf "$tmp_repo"
 }
@@ -219,39 +227,45 @@ function test_git_diff_failure_blocks_with_message() {
   rm -rf "$tmp_dir"
 }
 
-# ---------- Test 15: .cc source file blocked when no tests ----------
+# ---------- Test 15: .cc source, no pack -> pass-through (RECONCILED C4) -------
+# Without an active pack, .cc is an unknown extension -> degrade, never block.
 
-function test_cc_source_blocked_when_no_tests() {
+function test_cc_source_no_pack_passes_through() {
   local tmp_repo
   tmp_repo=$(create_tmp_repo)
 
   run_hook_in_repo "$tmp_repo" "src/parser.cc"
   local rc=$?
 
-  assert_equals 2 "$rc"
+  assert_equals 0 "$rc"
 
   rm -rf "$tmp_repo"
 }
 
-# ---------- Test 16: _test.cc file allowed ----------
+# ---------- Test 16: _test.cc file, no pack -> pass-through (RECONCILED C4) ----
+# .cc is not the .sh built-in and not under test/, and there is no pack -> the
+# unknown extension degrades to pass-through (exit 0).
 
-function test_test_cc_file_allowed() {
+function test_test_cc_file_no_pack_passes_through() {
   run_hook "src/parser_test.cc"
   assert_exit_code 0
 }
 
-# ---------- Test 17: _test.hpp NOT recognized as test (latent bug) ----------
-# Line 9 regex does not include hpp in the _test pattern.
-# Falls through to line 14 where .hpp IS a source extension, so it blocks.
+# ---------- Test 17: _test.hpp, no pack -> pass-through (RECONCILED C4) --------
+# Previously a LATENT BUG: the hardcoded regex omitted .hpp from the _test
+# pattern, so a *_test.hpp write FALSE-BLOCKED (exit 2). Under the pack-driven,
+# pack-optional design that bug is gone: with no pack bound, .hpp is an unknown
+# extension and the hook DEGRADES to pass-through (exit 0) rather than blocking a
+# write for a language it has no pack/built-in for.
 
-function test_test_hpp_not_recognized_as_test_latent_bug() {
+function test_test_hpp_no_pack_passes_through() {
   local tmp_repo
   tmp_repo=$(create_tmp_repo)
 
   run_hook_in_repo "$tmp_repo" "src/parser_test.hpp"
   local rc=$?
 
-  assert_equals 2 "$rc"
+  assert_equals 0 "$rc"
 
   rm -rf "$tmp_repo"
 }
@@ -377,6 +391,112 @@ function test_namespaced_implementer_allows_when_tests_exist() {
 
   run_hook_in_repo_with_agent_type "$tmp_repo" "hooks/my_script.sh" "tdd-workflow:tdd-implementer"
   assert_exit_code 0
+
+  rm -rf "$tmp_repo"
+}
+
+# ==========================================================================
+# C4: test-file recognition driven by the active pack's testFilePattern.
+# These run the REAL committed hook ($HOOK_ABS) from inside a temp git PROJECT
+# so its sibling ../scripts/active-pack.sh resolves. The dart fixture is bound
+# as a DEV pack via .claude/tdd-conventions.json (committed-binding path), with
+# TDD_ACTIVE_PACK UNSET -- proving the env-unset fallback works (decision #1).
+# ==========================================================================
+
+# Helper: scaffold a temp git project with the dart fixture bound as a dev pack.
+# pubspec.yaml marker makes the data-driven detector match the dart fixture.
+make_dart_pack_repo() {
+  local proj
+  proj=$(mktemp -d)
+  git init --quiet "$proj"
+  git -C "$proj" config user.email "test@test.com"
+  git -C "$proj" config user.name "Test"
+  echo 'name: tmp_app' > "$proj/pubspec.yaml"
+  mkdir -p "$proj/.claude"
+  cat > "$proj/.claude/tdd-conventions.json" << JSON
+{ "packs": [ { "source": "$DART_FIXTURE", "dev": true } ] }
+JSON
+  git -C "$proj" add -A
+  git -C "$proj" commit --quiet -m "init"
+  printf '%s\n' "$proj"
+}
+
+# Run the REAL hook from inside a project dir with env unset, capturing exit code.
+run_real_hook_env_unset() {
+  local proj="$1" file_path="$2"
+  local json
+  json=$(build_json "$file_path")
+  (cd "$proj" && unset TDD_ACTIVE_PACK && echo "$json" | bash "$HOOK_ABS" 2>/dev/null)
+}
+
+# Run the REAL hook from inside a project dir with env unset, capturing stderr.
+run_real_hook_env_unset_stderr() {
+  local proj="$1" file_path="$2"
+  local json
+  json=$(build_json "$file_path")
+  (cd "$proj" && unset TDD_ACTIVE_PACK && { echo "$json" | bash "$HOOK_ABS" >/dev/null; } 2>&1)
+}
+
+# ---------- C4 Test 1: testFilePattern recognition (env unset) ----------
+# A write matching the pack's testFilePattern (*_test.dart) is recognized as a
+# test -> exit 0 (allowed), even with no test files staged yet.
+
+function test_pack_testfilepattern_recognized_as_test_env_unset() {
+  local proj
+  proj=$(make_dart_pack_repo)
+
+  run_real_hook_env_unset "$proj" "test/models/user_test.dart"
+  assert_exit_code 0
+
+  rm -rf "$proj"
+}
+
+# ---------- C4 Test 2: pack source write blocked when no test written yet ------
+# A .dart SOURCE write (does NOT match testFilePattern) with no staged/changed
+# test files -> exit 2 with BLOCKED on stderr (RED-first enforced, pack path).
+
+function test_dart_source_blocked_when_no_test_pack_path() {
+  local proj
+  proj=$(make_dart_pack_repo)
+
+  run_real_hook_env_unset "$proj" "lib/models/user.dart"
+  local rc=$?
+
+  local stderr_output
+  stderr_output=$(run_real_hook_env_unset_stderr "$proj" "lib/models/user.dart")
+
+  assert_equals 2 "$rc"
+  assert_contains "BLOCKED" "$stderr_output"
+
+  rm -rf "$proj"
+}
+
+# ---------- C4 Test 3: .sh recognition is built-in, no pack required ----------
+# A write to a *_test.sh path with NO pack bound is recognized via the built-in
+# bashunit default -> exit 0.
+
+function test_sh_test_recognized_builtin_no_pack() {
+  local tmp_repo
+  tmp_repo=$(create_tmp_repo)
+
+  run_hook_in_repo "$tmp_repo" "hooks/my_test.sh"
+  assert_exit_code 0
+
+  rm -rf "$tmp_repo"
+}
+
+# ---------- C4 Test 4 (edge): unknown ext + no pack -> pass-through ----------
+# A .py SOURCE write with no pack bound is a language the plugin has no pack or
+# built-in for -> degrade to pass-through (exit 0), never block.
+
+function test_unknown_extension_no_pack_passes_through() {
+  local tmp_repo
+  tmp_repo=$(create_tmp_repo)
+
+  run_hook_in_repo "$tmp_repo" "src/script.py"
+  local rc=$?
+
+  assert_equals 0 "$rc"
 
   rm -rf "$tmp_repo"
 }

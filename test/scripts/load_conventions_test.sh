@@ -39,6 +39,32 @@ function set_up() {
   fi
 }
 
+# Run load-conventions.sh in <dir> with the env var unset (committed-binding
+# PACK track) and stderr suppressed.
+run_load_pack_track() {
+  local dir="$1"
+  local plugin_data="$2"
+  (cd "$dir" && unset TDD_ACTIVE_PACK && CLAUDE_PLUGIN_DATA="$plugin_data" bash "$SCRIPT" 2>/dev/null)
+}
+
+# Wrap a real convention skill dir as a dev PACK: drop a pack.json beside the
+# real SKILL.md so the data-driven PACK track resolves and emits it. The real
+# SKILL.md is the standards index and reference/ is the standards dir, so the
+# real Riverpod/GoogleTest/Unity content flows through output_pack_standards.
+wrap_skill_as_pack() {
+  local skill_dir="$1" markers="$2" exts="$3"
+  cat > "$skill_dir/pack.json" << EOF
+{
+  "schemaVersion": 1,
+  "name": "$(basename "$skill_dir")",
+  "version": "1.0.0",
+  "detect": { "extensions": [$exts], "markers": [$markers] },
+  "commands": { "test": { "run": "true {file}" } },
+  "standards": { "index": "SKILL.md", "dir": "reference/" }
+}
+EOF
+}
+
 # ---------- Test 1: Script exists and is executable ----------
 
 function test_script_exists_and_is_executable() {
@@ -46,6 +72,37 @@ function test_script_exists_and_is_executable() {
 
   test -x "$SCRIPT"
   assert_exit_code 0
+}
+
+# ---------- Test 1b: Real Dart content delivered via the PACK track ----------
+# Reconciled for R1 C1: proves the data-driven PACK track (active-pack.sh ->
+# output_pack_standards) emits the REAL Riverpod/widget content -- not just the
+# legacy cache-scan fallback. Env unset, committed dev-pack binding.
+
+function test_real_dart_content_via_pack_track() {
+  local tmp_dir pack_root
+  tmp_dir=$(create_tmp_dir)
+  touch "$tmp_dir/pubspec.yaml"
+
+  # Copy the real dart skill dir and wrap it as a dev pack.
+  pack_root=$(create_tmp_dir)
+  cp -r "$CONVENTIONS_CLONE/conventions/tdd-workflow-conventions/dart-flutter-conventions" \
+    "$pack_root/dart-pack"
+  wrap_skill_as_pack "$pack_root/dart-pack" '"pubspec.yaml"' '".dart"'
+
+  mkdir -p "$tmp_dir/.claude"
+  cat > "$tmp_dir/.claude/tdd-conventions.json" << EOF
+{"packs":[{"source":"$pack_root/dart-pack","dev":true}]}
+EOF
+
+  local output
+  output=$(run_load_pack_track "$tmp_dir" "$CONVENTIONS_CLONE")
+
+  # Real content still emitted, now through the pack-resolution path.
+  assert_contains "Riverpod" "$output"
+  assert_contains "pumpWidget" "$output"
+
+  rm -rf "$tmp_dir" "$pack_root"
 }
 
 # ---------- Test 2: Detects Dart/Flutter project ----------

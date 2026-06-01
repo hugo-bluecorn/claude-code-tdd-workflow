@@ -31,6 +31,29 @@ run_load_in_dir() {
   (cd "$dir" && CLAUDE_PLUGIN_DATA="$plugin_data" bash "$SCRIPT" 2>/dev/null)
 }
 
+# Run load-conventions.sh in <dir> with the env var unset (committed-binding
+# PACK track) and stderr suppressed.
+run_load_pack_track() {
+  local dir="$1"
+  (cd "$dir" && unset TDD_ACTIVE_PACK CLAUDE_PLUGIN_DATA && bash "$SCRIPT" 2>/dev/null)
+}
+
+# Wrap a real convention skill dir as a dev PACK (pack.json beside the real
+# SKILL.md) so the data-driven PACK track resolves and emits it.
+wrap_skill_as_pack() {
+  local skill_dir="$1" markers="$2" exts="$3"
+  cat > "$skill_dir/pack.json" << EOF
+{
+  "schemaVersion": 1,
+  "name": "$(basename "$skill_dir")",
+  "version": "1.0.0",
+  "detect": { "extensions": [$exts], "markers": [$markers] },
+  "commands": { "test": { "run": "true {file}" } },
+  "standards": { "index": "SKILL.md", "dir": "reference/" }
+}
+EOF
+}
+
 # ---------- Suite setup ----------
 
 function set_up() {
@@ -230,6 +253,38 @@ EOF
   assert_contains "Riverpod" "$output"
 
   rm -rf "$tmp_dir"
+}
+
+# ---------- Test 8: Real C++ content delivered via the PACK track ----------
+# Reconciled for R1 C1: proves the data-driven PACK track emits the REAL
+# GoogleTest/GoogleMock content via a committed dev-pack binding (env unset),
+# not only the legacy cache-scan fallback exercised by the tests above.
+
+function test_real_cpp_content_via_pack_track() {
+  local tmp_dir pack_root
+  tmp_dir=$(create_tmp_dir)
+  touch "$tmp_dir/CMakeLists.txt"
+  mkdir -p "$tmp_dir/src"
+  touch "$tmp_dir/src/main.cpp"
+
+  pack_root=$(create_tmp_dir)
+  cp -r "$CONVENTIONS_CLONE/tdd-workflow-conventions/cpp-testing-conventions" \
+    "$pack_root/cpp-pack"
+  wrap_skill_as_pack "$pack_root/cpp-pack" '"CMakeLists.txt"' '".cpp"'
+
+  mkdir -p "$tmp_dir/.claude"
+  cat > "$tmp_dir/.claude/tdd-conventions.json" << EOF
+{"packs":[{"source":"$pack_root/cpp-pack","dev":true}]}
+EOF
+
+  local output
+  output=$(run_load_pack_track "$tmp_dir")
+
+  # Real C++ content still emitted, now through the pack-resolution path.
+  assert_contains "GoogleTest" "$output"
+  assert_contains "MOCK_METHOD" "$output"
+
+  rm -rf "$tmp_dir" "$pack_root"
 }
 
 # ---------- Cleanup ----------
