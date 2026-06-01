@@ -18,6 +18,7 @@
   },
   "testFilePattern": "*_test.dart",
   "versionFiles": ["pubspec.yaml"],
+  "projectFiles": ["analysis_options.yaml"],
   "standards": {
     "index": "SKILL.md",
     "dir": "standards/"

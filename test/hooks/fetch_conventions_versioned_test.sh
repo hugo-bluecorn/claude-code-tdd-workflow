@@ -8,6 +8,7 @@
 HOOK="hooks/fetch-conventions.sh"
 PROJECT_ROOT="$(pwd)"
 HOOK_ABS="$PROJECT_ROOT/$HOOK"
+DART_FIXTURE="$PROJECT_ROOT/test/fixtures/dart-fixture"
 
 # ---------- shared helpers ----------
 
@@ -326,6 +327,149 @@ EOF
   # Diagnostic must name the source and version (clone of normalized URL failed).
   assert_contains "nonexistent-pack-xyz" "$stderr_output"
   assert_contains "v1.0.0" "$stderr_output"
+
+  rm -rf "$tmp_dir"
+}
+
+# =====================================================================
+# Slice T1: projectFiles materialization (non-destructive, warn-on-drift)
+# C4: at pack resolution, for each ACTIVE pack's projectFiles[], materialize
+# each into the PROJECT ROOT. Absent -> copy (the ONLY write). Identical ->
+# no-op. Present-but-different -> NEVER overwrite, drift advisory to stderr.
+# PRIME-safe: no active pack / no projectFiles -> no writes, hook exit 0s.
+# =====================================================================
+
+# Write a dev-pack binding for the dart fixture into a temp project so the pack
+# resolves ACTIVE via the committed-binding path (env TDD_ACTIVE_PACK unset).
+write_dart_dev_binding() {
+  local proj="$1"
+  mkdir -p "$proj/.claude"
+  printf '{"packs":[{"source":"%s","dev":true}]}\n' "$DART_FIXTURE" \
+    >"$proj/.claude/tdd-conventions.json"
+}
+
+# Run the hook in <dir> with TDD_ACTIVE_PACK explicitly UNSET (so resolution
+# goes through the committed dev binding) and CLAUDE_PLUGIN_DATA set. Discards
+# stdout; returns the hook's exit code.
+run_t1_hook() {
+  local dir="$1"
+  ( cd "$dir" \
+      && unset TDD_ACTIVE_PACK \
+      && CLAUDE_PLUGIN_DATA="$dir/plugin-data" bash "$HOOK_ABS" 2>/dev/null )
+}
+
+# Same, but capture stderr (drift advisory lands here).
+run_t1_hook_stderr() {
+  local dir="$1"
+  { cd "$dir" \
+      && unset TDD_ACTIVE_PACK \
+      && CLAUDE_PLUGIN_DATA="$dir/plugin-data" bash "$HOOK_ABS" 1>/dev/null; } 2>&1
+}
+
+# ---------- T1 Test 1 (FFT): absent projectFiles entry is materialized --------
+# The pack's analysis_options.yaml is copied into the project root, byte-for-byte.
+
+function test_t1_absent_project_file_is_materialized_with_pack_content() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+  : >"$tmp_dir/pubspec.yaml"            # marker -> dart pack is ACTIVE
+  write_dart_dev_binding "$tmp_dir"
+  # NO analysis_options.yaml in the project root yet.
+
+  run_t1_hook "$tmp_dir"
+  local rc=$?
+  assert_equals 0 "$rc"
+
+  # ACTION: the file was actually created...
+  assert_file_exists "$tmp_dir/analysis_options.yaml"
+  # ...with the pack's EXACT bytes (assert exact content, not merely existence).
+  if cmp -s "$DART_FIXTURE/analysis_options.yaml" "$tmp_dir/analysis_options.yaml"; then
+    assert_equals "identical" "identical"
+  else
+    assert_equals "identical to pack content" "differs from pack content"
+  fi
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- T1 Test 2 (safety-critical ACTION): present-but-different ----------
+# Never overwrite the user's bytes; emit a drift advisory naming the file.
+
+function test_t1_present_but_different_is_not_overwritten_and_warns() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+  : >"$tmp_dir/pubspec.yaml"
+  write_dart_dev_binding "$tmp_dir"
+
+  # Pre-existing user-customized file with DISTINCT content.
+  local user_content="# user-customized analysis options"$'\n'"linter: {}"$'\n'
+  printf '%s' "$user_content" >"$tmp_dir/analysis_options.yaml"
+
+  local stderr_output
+  stderr_output=$(run_t1_hook_stderr "$tmp_dir")
+
+  # ACTION (never-overwrite): the file still holds the ORIGINAL user bytes.
+  local after
+  after=$(cat "$tmp_dir/analysis_options.yaml")
+  assert_equals "$user_content" "$after"$'\n'
+  # The pack content must NOT have clobbered it.
+  if cmp -s "$DART_FIXTURE/analysis_options.yaml" "$tmp_dir/analysis_options.yaml"; then
+    assert_equals "user bytes preserved" "pack content overwrote user file"
+  else
+    assert_equals "user bytes preserved" "user bytes preserved"
+  fi
+
+  # Drift advisory on stderr names the file.
+  assert_contains "analysis_options.yaml" "$stderr_output"
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- T1 Test 3 (edge): present-and-identical -> silent no-op -----------
+
+function test_t1_present_and_identical_is_silent_no_op() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+  : >"$tmp_dir/pubspec.yaml"
+  write_dart_dev_binding "$tmp_dir"
+
+  # Pre-seed with bytes IDENTICAL to the pack's file.
+  cp "$DART_FIXTURE/analysis_options.yaml" "$tmp_dir/analysis_options.yaml"
+
+  local stderr_output
+  stderr_output=$(run_t1_hook_stderr "$tmp_dir")
+
+  # File unchanged (still identical to the pack).
+  if cmp -s "$DART_FIXTURE/analysis_options.yaml" "$tmp_dir/analysis_options.yaml"; then
+    assert_equals "unchanged" "unchanged"
+  else
+    assert_equals "unchanged" "changed"
+  fi
+  # Identical != drift: NO advisory naming the file.
+  assert_not_contains "analysis_options.yaml" "$stderr_output"
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- T1 Test 4 (edge, degrade): no active pack -> no writes, exit 0 -----
+
+function test_t1_no_active_pack_no_writes_no_advisory() {
+  local tmp_dir
+  tmp_dir=$(create_tmp_env)
+  # No binding file, TDD_ACTIVE_PACK unset, just a stray marker file.
+  : >"$tmp_dir/some-marker.txt"
+
+  local stderr_output
+  stderr_output=$(run_t1_hook_stderr "$tmp_dir")
+  local rc
+  run_t1_hook "$tmp_dir"
+  rc=$?
+
+  assert_equals 0 "$rc"
+  # No project file was materialized.
+  assert_file_not_exists "$tmp_dir/analysis_options.yaml"
+  # No drift advisory.
+  assert_not_contains "analysis_options.yaml" "$stderr_output"
 
   rm -rf "$tmp_dir"
 }
