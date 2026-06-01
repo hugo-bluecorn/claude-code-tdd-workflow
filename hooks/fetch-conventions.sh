@@ -47,7 +47,12 @@ mkdir -p "$conventions_dir"
 
 # Resolve helper scripts (Slices 1/2/4) relative to this hook.
 hook_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-parse_binding="${hook_dir}/../scripts/parse-binding.sh"
+
+# Shared binding-iteration helper. SOURCE it so we share the ONE correct tuple
+# split with active-pack.sh -- avoiding the dev-pack tab-collapse trap that a
+# naive `IFS=$'\t' read` falls into (it mis-reads an empty version as "dev").
+# shellcheck source=../scripts/iterate-binding.sh
+. "${hook_dir}/../scripts/iterate-binding.sh"
 
 # True for sources we can hand to `git clone` directly.
 is_fetchable_url() {
@@ -104,30 +109,36 @@ fetch_versioned() {
   fi
 }
 
-# Stream normalized tuples from parse-binding and resolve each. With no config
-# file there is simply no binding to resolve (the C3 floor below still runs).
+# Resolve one normalized binding tuple. Invoked per-tuple by iterate_binding,
+# which splits the fields correctly (preserving a dev pack's EMPTY version).
+resolve_binding_tuple() {
+  local source="$1" version="$2" dev="$3"
+  [ -n "$source" ] || return 0
+
+  # Case 1: dev pack -> local, never fetched.
+  if [ "$dev" = "dev" ]; then
+    return 0
+  fi
+
+  if [ "$version" = "legacy" ]; then
+    # Case 2: legacy. Fetch only real URLs; skip bare local paths.
+    if is_fetchable_url "$source"; then
+      fetch_legacy "$source"
+    fi
+    return 0
+  fi
+
+  # Case 3: real version -> versioned resolve.
+  if [ -n "$version" ]; then
+    fetch_versioned "$source" "$version"
+  fi
+}
+
+# Stream normalized tuples from the shared helper and resolve each. With no
+# config file there is simply no binding to resolve (the C3 floor below still
+# runs).
 if [ -f "$config_file" ]; then
-  while IFS=$'\t' read -r source version dev; do
-    [ -n "$source" ] || continue
-
-    # Case 1: dev pack -> local, never fetched.
-    if [ "$dev" = "dev" ]; then
-      continue
-    fi
-
-    if [ "$version" = "legacy" ]; then
-      # Case 2: legacy. Fetch only real URLs; skip bare local paths.
-      if is_fetchable_url "$source"; then
-        fetch_legacy "$source"
-      fi
-      continue
-    fi
-
-    # Case 3: real version -> versioned resolve.
-    if [ -n "$version" ]; then
-      fetch_versioned "$source" "$version"
-    fi
-  done < <(bash "$parse_binding" "." 2>/dev/null)
+  iterate_binding "." resolve_binding_tuple
 fi
 
 # ---------------------------------------------------------------------------
