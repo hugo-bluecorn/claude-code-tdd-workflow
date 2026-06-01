@@ -670,6 +670,101 @@ function test_polyglot_sh_edit_falls_through_to_bashunit() {
   rm -rf "$proj"
 }
 
+# ==========================================================================
+# Slice H3 — derive_test_file: anchored lib/ -> test/ substitution
+# An UNANCHORED sed rewrote the FIRST "lib/" anywhere in the path, so a nested
+# package path "packages/mylib/lib/foo.dart" mangled to "packages/mytest/lib/..."
+# (the "lib/" inside "myLIB/"), yielding "No matching test file found". The fix
+# anchors the substitution to a full path segment (start-of-string or after a
+# "/"). These FFTs assert the EXACT derived path string the emitted command
+# carries — the precise correct path AND the absence of the mangled one.
+# ==========================================================================
+
+# Helper: scaffold a temp dart project with a NESTED package source + matching
+# nested test file. "packages/mylib/lib/foo.dart" must derive to
+# "packages/mylib/test/foo_test.dart" (NOT "packages/mytest/lib/foo_test.dart").
+# Stubs flutter so "flutter test {file}" is observable. Echoes the dir.
+make_nested_dart_project() {
+  local proj
+  proj=$(mktemp -d)
+  echo 'name: tmp_app' > "$proj/pubspec.yaml"
+  mkdir -p "$proj/packages/mylib/lib" "$proj/packages/mylib/test"
+  echo 'void main() {}' > "$proj/packages/mylib/lib/foo.dart"
+  echo 'void main() {}' > "$proj/packages/mylib/test/foo_test.dart"
+  mkdir -p "$proj/bin"
+  cat > "$proj/bin/flutter" << 'STUB'
+#!/bin/bash
+echo "FLUTTER_STUB_INVOKED: $*"
+STUB
+  chmod +x "$proj/bin/flutter"
+  printf '%s\n' "$proj"
+}
+
+# ---------- H3 Test 1 (FFT): nested package path derives the EXACT test path ----------
+
+function test_nested_lib_derives_exact_test_path_not_mangled() {
+  local proj
+  proj=$(make_nested_dart_project)
+
+  local json output
+  json=$(build_json "packages/mylib/lib/foo.dart")
+  output=$(cd "$proj" \
+    && export PATH="$proj/bin:/usr/bin:/bin" \
+    && export TDD_ACTIVE_PACK="$DART_FIXTURE" \
+    && echo "$json" | bash "$HOOK_ABS" 2>/dev/null)
+
+  # ACTION assert: the emitted command carries the EXACT correct derived path
+  # (lib/ anchored as a whole segment) AND never the mangled "packages/mytest/".
+  assert_contains "FLUTTER_STUB_INVOKED" "$output"
+  assert_contains "packages/mylib/test/foo_test.dart" "$output"
+  assert_not_contains "packages/mytest/" "$output"
+  assert_contains "systemMessage" "$output"
+
+  rm -rf "$proj"
+}
+
+# ---------- H3 Test 2 (no-regression): top-level lib/ still maps to test/ ----------
+
+function test_top_level_lib_still_maps_to_test() {
+  local proj
+  proj=$(make_dart_project)
+
+  local json output
+  json=$(build_json "lib/models/user.dart")
+  output=$(cd "$proj" \
+    && export PATH="$proj/bin:/usr/bin:/bin" \
+    && export TDD_ACTIVE_PACK="$DART_FIXTURE" \
+    && echo "$json" | bash "$HOOK_ABS" 2>/dev/null)
+
+  # The anchored substitution must still rewrite a leading "lib/" segment.
+  assert_contains "FLUTTER_STUB_INVOKED" "$output"
+  assert_contains "test/models/user_test.dart" "$output"
+
+  rm -rf "$proj"
+}
+
+# ---------- H3 Test 3 (edge): a *_test.dart path edited directly is used verbatim ----------
+
+function test_nested_test_file_edited_directly_used_verbatim() {
+  local proj
+  proj=$(make_nested_dart_project)
+
+  local json output
+  json=$(build_json "packages/mylib/test/foo_test.dart")
+  output=$(cd "$proj" \
+    && export PATH="$proj/bin:/usr/bin:/bin" \
+    && export TDD_ACTIVE_PACK="$DART_FIXTURE" \
+    && echo "$json" | bash "$HOOK_ABS" 2>/dev/null)
+
+  # The early-return branch (a *_test.dart path) is untouched by the anchor fix:
+  # the path is used verbatim, with no segment rewriting.
+  assert_contains "FLUTTER_STUB_INVOKED" "$output"
+  assert_contains "packages/mylib/test/foo_test.dart" "$output"
+  assert_not_contains "packages/mytest/" "$output"
+
+  rm -rf "$proj"
+}
+
 # ---------- Edge Case Test 9: Non-source file (.md) exits silently ----------
 
 function test_markdown_file_exits_silently() {
