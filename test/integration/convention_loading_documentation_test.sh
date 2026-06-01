@@ -65,6 +65,54 @@ function test_claude_md_has_c_testing_subsection() {
   assert_file_contains "$CLAUDE_MD" "### C Testing"
 }
 
+# ---------- Slice T2: C Testing body removed (header retained, tight fence) ----------
+
+# FFT (ACTION): the C-specific BODY content is removed from the ### C Testing
+# section. Scoped to the section slice (### C Testing -> next ### heading) so
+# the Pre-Commit Checklist cppcheck/clang-tidy line is not falsely matched.
+function test_claude_md_c_testing_section_has_no_unity_body() {
+  local c_section
+  c_section=$(sed -n '/### C Testing/,/^###/{/^###/!p;}' "$CLAUDE_MD")
+  assert_not_contains "Unity" "$c_section"
+}
+
+function test_claude_md_c_testing_section_has_no_cmock_body() {
+  local c_section
+  c_section=$(sed -n '/### C Testing/,/^###/{/^###/!p;}' "$CLAUDE_MD")
+  assert_not_contains "CMock" "$c_section"
+}
+
+function test_claude_md_c_testing_section_has_no_barr_c_body() {
+  local c_section
+  c_section=$(sed -n '/### C Testing/,/^###/{/^###/!p;}' "$CLAUDE_MD")
+  assert_not_contains "BARR-C:2018" "$c_section"
+}
+
+function test_claude_md_c_testing_section_has_no_sei_cert_body() {
+  local c_section
+  c_section=$(sed -n '/### C Testing/,/^###/{/^###/!p;}' "$CLAUDE_MD")
+  assert_not_contains "SEI CERT C" "$c_section"
+}
+
+# Other side of the fence: ### C Testing header itself stays present.
+function test_claude_md_c_testing_header_retained() {
+  assert_file_contains "$CLAUDE_MD" "### C Testing"
+}
+
+# Edge: neighbors + checklist untouched by the body removal.
+function test_claude_md_neighbors_and_checklist_intact_after_c_removal() {
+  assert_file_contains "$CLAUDE_MD" "### Bash Testing"
+  assert_file_contains "$CLAUDE_MD" "### C++ Testing"
+  local checklist
+  checklist=$(sed -n '/## Pre-Commit Checklist/,/^---$/p' "$CLAUDE_MD")
+  assert_contains "cppcheck" "$checklist"
+  assert_contains "clang-tidy" "$checklist"
+  local bash_section
+  bash_section=$(sed -n '/### Bash Testing/,/^###/p' "$CLAUDE_MD")
+  assert_contains "bashunit" "$bash_section"
+  assert_contains "shellcheck" "$bash_section"
+}
+
 # ---------- Test 4: README.md skills table lists project-conventions ----------
 
 function test_readme_no_dart_flutter_conventions_skill() {
