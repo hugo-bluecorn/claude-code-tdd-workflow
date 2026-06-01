@@ -43,4 +43,7 @@ if [[ "${1:-}" == "--list" ]]; then
   exit 0
 fi
 
-exec ./lib/bashunit "${fast_files[@]}"
+# --parallel: the fast subset excludes the stateful network files, so it is
+# parallel-safe and ~10x faster. (The FULL release/CI suite stays sequential —
+# its network files share set_up_before_script state that races under parallel.)
+exec ./lib/bashunit "${fast_files[@]}" --parallel
