@@ -21,18 +21,22 @@ Finalize the current TDD feature for release: $ARGUMENTS
    - Check the current branch. Refuse to release if on main or master.
      You must be on a feature branch.
 
-2. **Quality gates:**
-   - Run the full test suite. Detect the project type and use the appropriate runner:
-     - Dart/Flutter: `flutter test` (or `fvm flutter test` if FVM detected)
-     - C++: `ctest --test-dir build/ --output-on-failure`
-     - Bash: `./lib/bashunit test/`
-   - Run static analysis appropriate to the project:
-     - Dart: `dart analyze` (or `fvm dart analyze`)
-     - Bash: `shellcheck -S warning` on all `.sh` files
-     - C++: `clang-tidy` if configured
-   - Run the formatter (project-type aware):
-     - Dart: `dart format .` (or `fvm dart format .`)
-     - Bash/C++: skip or use appropriate tool if configured
+2. **Quality gates (pack-driven):**
+   The releaser runs the test suite, static analysis, and formatter using the
+   **active convention pack's commands** — not a hardcoded per-language matrix.
+   The pack is resolved from the committed binding `.claude/tdd-conventions.json`
+   (via `scripts/active-pack.sh`); the test/lint/format commands come from
+   `pack.commands` (`pack.commands.test`, `pack.commands.lint`,
+   `pack.commands.format`). See `agents/tdd-releaser.md` for the resolution
+   detail — it is the authoritative source for the quality-chain commands.
+   - **Test suite:** `pack.commands.test`. Illustrative: a `ctest` invocation
+     for C++, `flutter test` for Dart.
+   - **Static analysis:** `pack.commands.lint`. Illustrative: `clang-tidy` for
+     C++, `analyze` for Dart.
+   - **Formatter:** `pack.commands.format` (skipped when the pack defines none).
+   - **Built-in bash floor (no pack):** Bash projects need no pack — the
+     releaser falls back to `bashunit` for the test suite and `shellcheck` for
+     static analysis.
 
 3. **CHANGELOG update:**
    - Read `skills/tdd-release/reference/version-control.md` for semantic versioning rules
