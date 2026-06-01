@@ -6,6 +6,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
 
+## [2.7.0] - 2026-06-01
+
+### Changed
+- Version-authority chain is now pack-driven (roadmap R1 Wave 2), completing R1's
+  de-hardcoding of the release path:
+  - `scripts/bump-version.sh` reads the active pack's `versionFiles[]` (bare-path
+    heuristic or `{path,pattern}` object) instead of a hardcoded 6-ecosystem list;
+    `.claude-plugin/plugin.json` is always bumped as a built-in self-host. The
+    `bump-version.sh <version>` positional CLI is unchanged.
+  - `agents/tdd-releaser.md` — the release quality chain (test/analysis/format)
+    resolves the committed binding and reads `pack.commands.{test,lint,format}`
+    (never pack standards), with bashunit/shellcheck as the built-in bash fallback.
+  - `skills/tdd-release/SKILL.md` — the wrapper's quality-gate block defers to the
+    pack-driven releaser instead of duplicating a per-language command matrix.
+- `skills/tdd-release/reference/version-control.md` — documents the versioning
+  authority split (SemVer MAJOR/MINOR/PATCH owned by core; version-bearing files +
+  ecosystem command format owned by the convention pack).
+
+### Fixed
+- Corrected the merge guidance in `version-control.md`: the release flow now
+  prescribes a merge commit (`gh pr merge --merge`) and **never** squash, preserving
+  the per-slice `test:`→`feat:`→`refactor:` TDD commit trail (previously the doc
+  recommended "Squash and merge", contradicting the project's never-squash policy).
+
+### Notes
+- Core stays pack-optional: with no convention pack bound, `bump-version.sh` still
+  self-hosts `plugin.json`, the releaser/SKILL keep bashunit/shellcheck and SemVer
+  semantics, and nothing hard-blocks.
+
 ## [2.6.0] - 2026-06-01
 
 ### Added

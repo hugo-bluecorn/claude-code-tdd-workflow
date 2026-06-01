@@ -31,35 +31,57 @@ Before starting the release workflow, verify these conditions:
    If the branch is `main` or `master`, refuse to proceed. Releases must be
    created from feature branches.
 
+## Resolving the active convention pack
+
+The quality-chain commands (Steps 1–3 below) are **pack-driven**, not hardcoded.
+Resolve the committed binding before running them:
+
+1. Read the project's committed binding `.claude/tdd-conventions.json`
+   (the source of truth — do NOT rely on environment propagation; you are a
+   subagent and may not inherit `$TDD_ACTIVE_PACK`). The foundation helper
+   `scripts/active-pack.sh <project-dir>` runs the resolve chain and prints the
+   active pack directory (empty output, exit 0, when no pack is bound).
+2. From the resolved pack's `pack.json`, read **`jq '.commands'` ONLY** — the
+   `test`, `lint`, and `format` commands (`pack.commands.test`,
+   `pack.commands.lint`, `pack.commands.format`). For example, the test command
+   lives at `jq -r '.commands.test.run'`.
+3. When no pack resolves, fall back to the built-in bash defaults named in each
+   step (bashunit for the test suite, shellcheck for static analysis). Bash
+   projects need no pack.
+
 ## Release Workflow
 
 Execute these steps in order. Use AskUserQuestion for approval gates.
 
 ### Step 1: Run Full Test Suite
 
-Detect the project type and run the appropriate test command:
+Run the test command from the resolved pack — `pack.commands.test`
+(`jq -r '.commands.test.run'`). Illustrative resolved commands:
 - **Dart/Flutter:** `flutter test` (prefix with `fvm` if `.fvmrc` exists)
-- **C++:** `ctest --test-dir build/ --output-on-failure`
-- **Bash:** `./lib/bashunit test/`
+- **C++:** a `ctest` invocation (e.g. `ctest --test-dir build/ --output-on-failure`)
+- **Bash (built-in, no pack):** `./lib/bashunit test/`
 
 All tests must pass. If any fail, stop and report the failures.
 
 ### Step 2: Run Static Analysis
 
-Run the appropriate static analysis tool:
+Run the lint command from the resolved pack — `pack.commands.lint`
+(`jq -r '.commands.lint'` when present). Illustrative resolved commands:
 - **Dart:** `dart analyze`
-- **Bash:** `shellcheck -S warning` on all `.sh` files
 - **C++:** `clang-tidy` if configured
+- **Bash (built-in, no pack):** `shellcheck -S warning` on all `.sh` files
 
 All checks must pass cleanly.
 
 ### Step 3: Run Formatter
 
-Apply the project-type aware formatter:
+Apply the format command from the resolved pack — `pack.commands.format`
+(`jq -r '.commands.format'` when present). Illustrative resolved commands:
 - **Dart:** `dart format .` to format all Dart files
 - **Non-Dart projects (Bash, C++):** skip the formatter step or use the
-  appropriate tool if configured (e.g., `clang-format` for C++). For Bash
-  projects, there is no standard formatter beyond shellcheck.
+  appropriate tool if the pack defines one (e.g., `clang-format` for C++). For
+  Bash projects (built-in, no pack), there is no standard formatter beyond
+  shellcheck, so the format step is skipped.
 
 ### Step 4: Determine Version and Update CHANGELOG.md
 

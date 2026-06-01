@@ -1,23 +1,34 @@
 #!/bin/bash
 
-# Tests for Slice 2: bump-version.sh script
-# Propagates a version string into all version-bearing files in the current directory.
+# Tests for Slice V1: bump-version.sh — pack-driven (versionFiles + plugin.json self-host).
+#
+# bump-version.sh keeps its positional CLI (`bump-version.sh <version>`, decision #4)
+# but is now pack-driven INTERNALLY: it resolves the active convention pack for the
+# CURRENT directory via scripts/active-pack.sh and reads the pack's top-level
+# `versionFiles[]` to decide which files to rewrite. `.claude-plugin/plugin.json`
+# is a BUILT-IN self-host that always bumps regardless of pack (pack-optional).
+#
+# versionFiles encoding (one array element is either):
+#   - a BARE PATH STRING (default heuristic keyed by extension):
+#       .yaml/.yml -> s/^version: .*/version: <V>/
+#       .json      -> s/"version": "[^"]*"/"version": "<V>"/
+#       .toml      -> 0,/^version = "[^"]*"/s//version = "<V>"/   (first only)
+#   - a {path, pattern} OBJECT: pattern is a sed script with a literal {version}
+#     token; {version} is substituted with <V> and the sed run on path.
 
 SCRIPT="$(pwd)/scripts/bump-version.sh"
+FIXTURES="$(pwd)/test/fixtures"
+DART_FIXTURE="${FIXTURES}/dart-fixture"
 
-# Helper: create a temp directory for isolated testing
-create_tmp_dir() {
-  mktemp -d
-}
-
-# Helper: run bump-version.sh in a given directory with arguments
+# Run bump-version.sh inside <dir>, env-fast-path TDD_ACTIVE_PACK forwarded if set.
+# stderr suppressed; stdout reaches the caller via $(...).
 run_bump_in_dir() {
   local dir="$1"
   shift
   (cd "$dir" && bash "$SCRIPT" "$@" 2>/dev/null)
 }
 
-# Helper: run bump-version.sh capturing stderr (suppress stdout)
+# Run capturing stderr (suppress stdout) — for usage/diagnostic assertions.
 run_bump_in_dir_stderr() {
   local dir="$1"
   shift
@@ -25,227 +36,246 @@ run_bump_in_dir_stderr() {
   (cd "$dir" && bash "$SCRIPT" "$@" 2>&1 >/dev/null)
 }
 
-# ---------- Test 1: Script exits 0 and updates pubspec.yaml version field ----------
+# Run capturing BOTH streams merged — for "no version" degrade message.
+run_bump_in_dir_all() {
+  local dir="$1"
+  shift
+  (cd "$dir" && bash "$SCRIPT" "$@" 2>&1)
+}
 
-function test_updates_pubspec_yaml_version() {
-  local tmp_dir
-  tmp_dir=$(create_tmp_dir)
+# Write a local dev-pack binding into <project>/.claude/tdd-conventions.json.
+write_dev_binding() {
+  local proj="$1" src="$2"
+  mkdir -p "$proj/.claude"
+  printf '{"packs":[{"source":"%s","dev":true}]}\n' "$src" >"$proj/.claude/tdd-conventions.json"
+}
 
-  cat > "$tmp_dir/pubspec.yaml" << 'EOF'
+function set_up() {
+  TMP_DIRS=()
+  unset TDD_ACTIVE_PACK
+}
+
+function tear_down() {
+  local d
+  for d in "${TMP_DIRS[@]:-}"; do
+    [ -n "$d" ] && rm -rf "$d"
+  done
+  unset TDD_ACTIVE_PACK
+}
+
+mk() {
+  local d
+  d=$(mktemp -d)
+  TMP_DIRS+=("$d")
+  echo "$d"
+}
+
+# ---------- Test 1: pack-driven bump via TDD_ACTIVE_PACK fast-path ----------
+# Project bound to the dart fixture (versionFiles:["pubspec.yaml"]); pubspec
+# bumps, exit 0, stdout lists the file. A package.json present but NOT listed in
+# versionFiles must be LEFT UNTOUCHED — proving the sweep is pack-driven, not the
+# old hardcoded ecosystem matrix.
+
+function test_pack_driven_bump_via_env_fast_path() {
+  local proj
+  proj=$(mk)
+  cat > "$proj/pubspec.yaml" << 'EOF'
 name: my_app
 version: 1.0.0
 description: A sample app
 EOF
-
-  run_bump_in_dir "$tmp_dir" "1.2.0"
-  assert_exit_code 0
-
-  assert_file_contains "$tmp_dir/pubspec.yaml" "version: 1.2.0"
-
-  rm -rf "$tmp_dir"
-}
-
-# ---------- Test 2: Script updates package.json version field ----------
-
-function test_updates_package_json_version() {
-  local tmp_dir
-  tmp_dir=$(create_tmp_dir)
-
-  cat > "$tmp_dir/package.json" << 'EOF'
+  # package.json is NOT in the dart fixture's versionFiles -> must stay at 1.0.0.
+  cat > "$proj/package.json" << 'EOF'
 {
   "name": "my-app",
+  "version": "1.0.0"
+}
+EOF
+
+  export TDD_ACTIVE_PACK="$DART_FIXTURE"
+  local out
+  out=$(run_bump_in_dir "$proj" "1.2.0")
+  assert_exit_code 0
+
+  assert_file_contains "$proj/pubspec.yaml" "version: 1.2.0"
+  assert_contains "pubspec.yaml" "$out"
+  # Not listed in versionFiles -> unchanged (proves pack-driven, not hardcoded matrix).
+  assert_file_contains "$proj/package.json" '"version": "1.0.0"'
+}
+
+# ---------- Test 2: plugin.json self-host bumps with NO pack bound ----------
+
+function test_plugin_json_self_host_no_pack() {
+  local proj
+  proj=$(mk)
+  mkdir -p "$proj/.claude-plugin"
+  cat > "$proj/.claude-plugin/plugin.json" << 'EOF'
+{
+  "name": "my-plugin",
+  "version": "1.0.0"
+}
+EOF
+
+  local out
+  out=$(run_bump_in_dir "$proj" "1.5.0")
+  assert_exit_code 0
+
+  assert_file_contains "$proj/.claude-plugin/plugin.json" '"version": "1.5.0"'
+  assert_contains "plugin.json" "$out"
+}
+
+# ---------- Test 3: env-unset committed-binding resolution ----------
+# $TDD_ACTIVE_PACK UNSET; committed dev-binding -> local pack whose
+# versionFiles is ["pubspec.yaml"]; pubspec bumps via committed binding.
+
+function test_env_unset_committed_binding_resolution() {
+  local proj pack
+  proj=$(mk)
+  pack=$(mk)
+
+  # versionFiles uses a NON-standard name the old hardcoded matrix never knew
+  # about, so a passing result can only come from reading the pack.
+  cat > "$pack/pack.json" << 'EOF'
+{
+  "schemaVersion": 1,
+  "name": "local-dart",
   "version": "1.0.0",
-  "description": "A sample app"
+  "language": "Dart/Flutter",
+  "detect": { "extensions": [".dart"], "markers": ["pubspec.yaml"] },
+  "versionFiles": ["pubspec.yaml", "VERSION.yaml"]
 }
 EOF
 
-  run_bump_in_dir "$tmp_dir" "2.0.0"
+  cat > "$proj/pubspec.yaml" << 'EOF'
+name: my_app
+version: 1.0.0
+EOF
+  cat > "$proj/VERSION.yaml" << 'EOF'
+version: 1.0.0
+EOF
+  write_dev_binding "$proj" "$pack"
 
-  assert_file_contains "$tmp_dir/package.json" '"version": "2.0.0"'
-
-  rm -rf "$tmp_dir"
+  unset TDD_ACTIVE_PACK
+  run_bump_in_dir "$proj" "2.0.0"
+  assert_exit_code 0
+  assert_file_contains "$proj/pubspec.yaml" "version: 2.0.0"
+  # Pack-listed non-standard file proves resolution drove the sweep.
+  assert_file_contains "$proj/VERSION.yaml" "version: 2.0.0"
 }
 
-# ---------- Test 3: Script updates plugin.json version field ----------
+# ---------- Test 4: object-form {path,pattern} rewrite ----------
 
-function test_updates_plugin_json_version() {
-  local tmp_dir
-  tmp_dir=$(create_tmp_dir)
+function test_object_form_path_pattern_rewrite() {
+  local proj pack
+  proj=$(mk)
+  pack=$(mk)
 
-  mkdir -p "$tmp_dir/.claude-plugin"
-  cat > "$tmp_dir/.claude-plugin/plugin.json" << 'EOF'
+  # detect marker is CMakeLists.txt (so the pack resolves) but the versionFiles
+  # OBJECT targets a DIFFERENT, non-standard file (build.cmake) the old hardcoded
+  # matrix never touched — proving the {path,pattern} object drove the rewrite.
+  cat > "$pack/pack.json" << 'EOF'
 {
-  "name": "my-plugin",
-  "version": "1.0.0"
+  "schemaVersion": 1,
+  "name": "local-cmake",
+  "version": "1.0.0",
+  "language": "C/C++",
+  "detect": { "extensions": [".cpp"], "markers": ["CMakeLists.txt"] },
+  "versionFiles": [
+    { "path": "build.cmake", "pattern": "s/\\(project([^ ]* VERSION \\)[^ )]*/\\1{version}/" }
+  ]
 }
 EOF
 
-  run_bump_in_dir "$tmp_dir" "1.5.0"
-
-  assert_file_contains "$tmp_dir/.claude-plugin/plugin.json" '"version": "1.5.0"'
-
-  rm -rf "$tmp_dir"
-}
-
-# ---------- Test 4: Script updates Cargo.toml version field ----------
-
-function test_updates_cargo_toml_version() {
-  local tmp_dir
-  tmp_dir=$(create_tmp_dir)
-
-  cat > "$tmp_dir/Cargo.toml" << 'EOF'
-[package]
-name = "my-crate"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-serde = { version = "1.0", features = ["derive"] }
-EOF
-
-  run_bump_in_dir "$tmp_dir" "0.2.0"
-
-  # The package section version should be updated
-  local package_section
-  package_section=$(sed -n '/\[package\]/,/^\[/p' "$tmp_dir/Cargo.toml")
-  assert_contains 'version = "0.2.0"' "$package_section"
-
-  rm -rf "$tmp_dir"
-}
-
-# ---------- Test 5: Script updates pyproject.toml version field ----------
-
-function test_updates_pyproject_toml_version() {
-  local tmp_dir
-  tmp_dir=$(create_tmp_dir)
-
-  cat > "$tmp_dir/pyproject.toml" << 'EOF'
-[project]
-name = "my-project"
-version = "1.0.0"
-description = "A sample project"
-EOF
-
-  run_bump_in_dir "$tmp_dir" "1.1.0"
-
-  assert_file_contains "$tmp_dir/pyproject.toml" 'version = "1.1.0"'
-
-  rm -rf "$tmp_dir"
-}
-
-# ---------- Test 6: Script updates CMakeLists.txt project VERSION ----------
-
-function test_updates_cmakelists_project_version() {
-  local tmp_dir
-  tmp_dir=$(create_tmp_dir)
-
-  cat > "$tmp_dir/CMakeLists.txt" << 'EOF'
-cmake_minimum_required(VERSION 3.14)
+  : > "$proj/CMakeLists.txt"
+  cat > "$proj/build.cmake" << 'EOF'
 project(myapp VERSION 1.0.0)
-set(CMAKE_CXX_STANDARD 17)
 EOF
+  write_dev_binding "$proj" "$pack"
 
-  run_bump_in_dir "$tmp_dir" "1.3.0"
-
-  assert_file_contains "$tmp_dir/CMakeLists.txt" "project(myapp VERSION 1.3.0)"
-
-  rm -rf "$tmp_dir"
+  unset TDD_ACTIVE_PACK
+  run_bump_in_dir "$proj" "1.3.0"
+  assert_exit_code 0
+  assert_file_contains "$proj/build.cmake" "project(myapp VERSION 1.3.0)"
 }
 
-# ---------- Test 7: Script updates multiple version files in one invocation ----------
+# ---------- Test 5: missing argument -> exit 1, stderr usage (CLI preserved) ----------
 
-function test_updates_multiple_version_files() {
-  local tmp_dir
-  tmp_dir=$(create_tmp_dir)
-
-  cat > "$tmp_dir/pubspec.yaml" << 'EOF'
+function test_missing_argument_exits_1_with_usage() {
+  local proj
+  proj=$(mk)
+  cat > "$proj/pubspec.yaml" << 'EOF'
 name: my_app
 version: 1.0.0
 EOF
 
-  mkdir -p "$tmp_dir/.claude-plugin"
-  cat > "$tmp_dir/.claude-plugin/plugin.json" << 'EOF'
-{
-  "name": "my-plugin",
-  "version": "1.0.0"
-}
-EOF
-
-  run_bump_in_dir "$tmp_dir" "2.0.0"
-
-  assert_file_contains "$tmp_dir/pubspec.yaml" "version: 2.0.0"
-  assert_file_contains "$tmp_dir/.claude-plugin/plugin.json" '"version": "2.0.0"'
-
-  rm -rf "$tmp_dir"
-}
-
-# ---------- Test 8: Script exits 1 with usage message when no argument provided ----------
-
-function test_exits_1_with_usage_when_no_argument() {
-  local tmp_dir
-  tmp_dir=$(create_tmp_dir)
-
-  cat > "$tmp_dir/pubspec.yaml" << 'EOF'
-name: my_app
-version: 1.0.0
-EOF
-
-  run_bump_in_dir "$tmp_dir"
+  run_bump_in_dir "$proj"
   assert_exit_code 1
 
-  local stderr_output
-  stderr_output=$(run_bump_in_dir_stderr "$tmp_dir")
-  assert_contains "usage" "$stderr_output"
-
-  rm -rf "$tmp_dir"
+  local err
+  err=$(run_bump_in_dir_stderr "$proj")
+  assert_contains "usage" "$err"
 }
 
-# ---------- Test 9: Script exits 0 with informational message when no version files found ----------
+# ---------- Test 6: no pack + no version files -> "no version", exit 0 ----------
 
-function test_exits_0_when_no_version_files_found() {
-  local tmp_dir
-  tmp_dir=$(create_tmp_dir)
+function test_no_pack_no_version_files_degrades() {
+  local proj
+  proj=$(mk)
 
-  local output
-  output=$(run_bump_in_dir "$tmp_dir" "1.0.0")
+  run_bump_in_dir "$proj" "1.0.0"
   assert_exit_code 0
 
-  # Should indicate no version files were found (in stdout or stderr)
-  local all_output
-  all_output=$(cd "$tmp_dir" && bash "$SCRIPT" "1.0.0" 2>&1)
-  assert_contains "no version" "$all_output"
-
-  rm -rf "$tmp_dir"
+  local all
+  all=$(run_bump_in_dir_all "$proj" "1.0.0")
+  assert_contains "no version" "$all"
 }
 
-# ---------- Test 10: Script outputs list of updated files ----------
+# ---------- Test 7: multiple versionFiles (pack pubspec + built-in plugin.json) ----------
 
-function test_outputs_list_of_updated_files() {
-  local tmp_dir
-  tmp_dir=$(create_tmp_dir)
+function test_multiple_version_files_one_invocation() {
+  local proj pack
+  proj=$(mk)
+  pack=$(mk)
 
-  cat > "$tmp_dir/pubspec.yaml" << 'EOF'
+  cat > "$pack/pack.json" << 'EOF'
+{
+  "schemaVersion": 1,
+  "name": "local-dart",
+  "version": "1.0.0",
+  "language": "Dart/Flutter",
+  "detect": { "extensions": [".dart"], "markers": ["pubspec.yaml"] },
+  "versionFiles": ["pubspec.yaml"]
+}
+EOF
+
+  cat > "$proj/pubspec.yaml" << 'EOF'
 name: my_app
 version: 1.0.0
 EOF
-
-  cat > "$tmp_dir/package.json" << 'EOF'
+  mkdir -p "$proj/.claude-plugin"
+  cat > "$proj/.claude-plugin/plugin.json" << 'EOF'
 {
-  "name": "my-app",
+  "name": "my-plugin",
   "version": "1.0.0"
 }
 EOF
+  # Cargo.toml is NOT in versionFiles -> must NOT bump (old hardcoded matrix would).
+  cat > "$proj/Cargo.toml" << 'EOF'
+[package]
+name = "my-crate"
+version = "1.0.0"
+EOF
+  write_dev_binding "$proj" "$pack"
 
-  local output
-  output=$(run_bump_in_dir "$tmp_dir" "1.5.0")
-
-  assert_contains "pubspec.yaml" "$output"
-  assert_contains "package.json" "$output"
-
-  rm -rf "$tmp_dir"
+  unset TDD_ACTIVE_PACK
+  run_bump_in_dir "$proj" "2.0.0"
+  assert_exit_code 0
+  assert_file_contains "$proj/pubspec.yaml" "version: 2.0.0"
+  assert_file_contains "$proj/.claude-plugin/plugin.json" '"version": "2.0.0"'
+  assert_file_contains "$proj/Cargo.toml" 'version = "1.0.0"'
 }
 
-# ---------- Test 11: Script passes shellcheck ----------
+# ---------- Test 8: shellcheck clean ----------
 
 function test_passes_shellcheck() {
   assert_file_exists "$SCRIPT"
