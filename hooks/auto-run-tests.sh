@@ -27,7 +27,8 @@ derive_test_file() {
   if [[ "$file" == *_test"$ext" ]]; then
     printf '%s\n' "$file"
   else
-    printf '%s\n' "$(echo "$file" | sed "s|lib/|test/|;s|${ext//./\\.}\$|_test${ext}|")"
+    # shellcheck disable=SC2001  # anchored alternation needs sed, not ${//}
+    printf '%s\n' "$(echo "$file" | sed "s,\(^\|/\)lib/,\1test/,;s|${ext//./\\.}\$|_test${ext}|")"
   fi
 }
 
