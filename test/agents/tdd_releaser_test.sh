@@ -178,3 +178,38 @@ function test_body_still_says_changelog_modifications_via_bash_only() {
   # Must still restrict to CHANGELOG.md modifications only
   assert_matches "CHANGELOG" "$body"
 }
+
+# ---------- Test 16: Quality chain resolves committed binding + reads pack commands ----------
+
+function test_quality_chain_resolves_committed_binding_and_pack_commands() {
+  assert_file_exists "$AGENT_FILE"
+  local body
+  body=$(get_body)
+  # Must reference resolving the committed binding via active-pack.sh
+  # (or the committed .claude/tdd-conventions.json source of truth)
+  assert_matches "active-pack.sh|tdd-conventions.json|committed binding" "$body"
+  # Must state the test/lint/format commands come from the pack's commands
+  assert_matches "pack.commands|commands.test|commands.lint|commands.format|\.commands" "$body"
+}
+
+# ---------- Test 17: Quality chain does NOT rely on env propagation ----------
+
+function test_quality_chain_does_not_rely_on_env_propagation() {
+  assert_file_exists "$AGENT_FILE"
+  local body
+  body=$(get_body)
+  # Must state resolution uses the committed binding and does NOT depend on
+  # environment propagation ($TDD_ACTIVE_PACK) — the subagent stance.
+  assert_matches "do NOT rely on environment|not rely on environment|TDD_ACTIVE_PACK|environment propagation|subagent" "$body"
+}
+
+# ---------- Test 18: Built-in bash fallback preserved (no pack -> bashunit + shellcheck) ----------
+
+function test_quality_chain_builtin_bash_fallback_preserved() {
+  assert_file_exists "$AGENT_FILE"
+  local body
+  body=$(get_body)
+  # No-pack fallback must name bashunit (test) and shellcheck (analysis)
+  assert_contains "bashunit" "$body"
+  assert_contains "shellcheck" "$body"
+}
