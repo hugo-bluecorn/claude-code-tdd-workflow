@@ -41,7 +41,11 @@ Legend — FFT = first-failing-test · dep = hard prerequisite · sweep = old-be
 - **V3 C5 authority split + de-pollute `version-control.md`** — SemVer semantics → core; ecosystem cmds → pack; also fix line 165 "Squash and merge" → never-squash. dep: V2. sweep: `version-control.md`, `version_control_location_test`, `release_version_test`, `tdd_releaser_test` (Tests 10/12 ref the doc).
 - **V4 de-hardcode `skills/tdd-release/SKILL.md` wrapper** (lines 26-34 duplicate the chain). dep: V2. sweep: `tdd_release_test`.
 
-### Wave 3 — Cross-cutting tail
+### Wave 3 — Cross-cutting tail + foundation hardening
+**Opens with the R1-retro hardening fixes (issue 014), H1 first — H1 must precede langpack-dev. Each FFT asserts the ACTION, not the end-state — the #1 false-green lesson: a failed-and-cleaned-up clone reproduces the "no cache dir" success state, so end-state assertions are blind to it.**
+- **H1 `fetch-conventions.sh` dev-pack tab-collapse fix (issue 014 #1, PRIORITY)** — `:110` naive `IFS=$'\t' read` collapses a dev pack's empty-version adjacent tabs → mis-fires `git clone --branch dev https://~/…` every SessionStart. Fix = share ONE binding-iteration helper with `active-pack.sh` (which already hand-rolls the split it warns about at `:83-97`). dep: F2,F3. sweep: `fetch_conventions_versioned_test` Test 4 — re-assert via a `git`-clone spy (clone NEVER invoked for a dev pack), NOT end-state `count==0` (which the bug passes).
+- **H2 `auto-run-tests.sh` polyglot head-1 fix (issue 014 #2)** — `:47` `head -1` + single-ext check lets a non-matching first-declared pack fall through to the built-in C++ branch (cmake-only, no ctest) → resurrects the C3 false-green in polyglot repos. Fix = pick the resolved pack whose `detect.extensions` contains the edited ext (iterate all matches, don't truncate). dep: C2,C3. sweep: add a two-pack polyglot fixture asserting ctest fires for `.cpp` when a dart pack is declared first.
+- **H3 `auto-run-tests.sh` derive_test_file `lib/` mangle fix (issue 014 #3)** — `:30` unanchored `s|lib/|test/|` rewrites `mylib/`→`mytest/`. Fix = anchor to a path segment `s|(^\|/)lib/|\1test/|`. dep: C2. sweep: `auto_run_tests_test` — add a nested `packages/<x>lib/lib/` case.
 - **T1 `projectFiles` materialization (C4)** — resolver materializes `pack.projectFiles` into project root if absent, non-destructive; warn on drift. dep: F3.
 - **T2 `CLAUDE.md` residual-language cleanup** — remove C content but keep the `### C Testing` header while dir-names absent. dep: C1,C5. sweep: `convention_loading_documentation_test` (both-sided fence), `bash_documentation_test`, `language_documentation_test`.
 
@@ -65,7 +69,7 @@ F2 ─► F3 ─► T1        C2 ─► C3        F1,C1,C5 ─► T2
 4. V1 before V2 (version-files seam): `bump-version.sh` becomes pack-aware internally; releaser keeps calling it positionally.
 
 ## PR / dogfood structure
-Each wave = one `/tdd-plan → /tdd-implement → /tdd-release` cycle = one PR (no-squash, preserving `test:→feat:→refactor:`). Order: Wave 0 → (Wave 1 ∥ start Wave 2) → Wave 3. Wave 0 merges first. Sizes: W0 (5), W1 (7), W2 (4), W3 (2).
+Each wave = one `/tdd-plan → /tdd-implement → /tdd-release` cycle = one PR (no-squash, preserving `test:→feat:→refactor:`). Order: Wave 0 → (Wave 1 ∥ start Wave 2) → Wave 3. Wave 0 merges first. Sizes: W0 (5), W1 (7), W2 (4), W3 (5: H1,H2,H3 hardening + T1,T2). H1–H3 from the post-merge retro (issue 014).
 
 ## Verification
 - Per slice: `./lib/bashunit test/<dir>/<file>_test.sh` RED→GREEN; then full suite `./lib/bashunit test/` — `0 failed`.
