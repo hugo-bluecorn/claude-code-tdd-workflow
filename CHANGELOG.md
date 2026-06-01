@@ -6,6 +6,37 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
 
+## [2.5.0] - 2026-06-01
+
+### Added
+- Convention-pack data primitives (roadmap R1 foundation layer): the script-half
+  primitives every later consumer reads, decoupled from rewiring any consumer.
+  - `scripts/read-pack.sh` — reads any C2-schema `pack.json` field by dotted path
+    (scalars, nested `detect.*` arrays, the rich `commands.test` object with
+    `{variant}` placeholders preserved literally, `variants[]`). Absent optional
+    field → empty + exit 0; missing/malformed manifest → non-zero + stderr diagnostic.
+  - `scripts/parse-binding.sh` — parses `.claude/tdd-conventions.json` into normalized
+    `(source, version)` tuples. Accepts the new `{packs:[{source,version,dev?}]}` schema
+    and the legacy `{conventions:[...]}` schema; `dev:true` flags a local-path escape
+    hatch. Missing/empty/malformed binding degrades to empty without crashing.
+  - `scripts/resolve-active-pack.sh` — data-driven active-pack detection: scans
+    cwd→repo-root and emits pack dir(s) whose `detect.markers`/`extensions` match,
+    read from each `pack.json` (no hardcoded marker list). Emits all matches; broken
+    candidate skipped; no match → empty + exit 0.
+
+### Changed
+- SessionStart convention fetch (`hooks/fetch-conventions.sh`) now resolves a
+  new-schema `source@version` binding entry into a versioned cache dir keyed
+  `<repo>@<version>` with the requested tag checked out — distinct versions of the
+  same repo cache side-by-side. The legacy unversioned `conventions/<repo-name>` path
+  and all prior behavior are preserved. `dev:true` local-path sources are not fetched;
+  missing-tag/fetch failures exit 0 (never block SessionStart) with a stderr diagnostic.
+- When a non-bash language marker is detected but no convention pack resolves,
+  `fetch-conventions.sh` now emits an advisory naming the detected language
+  ("no convention pack for <lang>; TDD will proceed on training data + session context
+  only") and proceeds (C3 warn-and-proceed). A resolved pack suppresses it; bash-only
+  and marker-less projects never trigger it; no fallback chain is invoked (PRIME-safe).
+
 ## [2.4.5] - 2026-05-31
 
 ### Changed
