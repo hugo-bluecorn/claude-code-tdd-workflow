@@ -148,15 +148,6 @@ covered:
 
 ### C Testing
 
-Full details are available via the `project-conventions` skill, which loads
-your project's configured C conventions dynamically. Key points typically
-covered:
-
-- **Framework**: Unity for unit tests, CMock for test doubles
-- **Coding Standards**: BARR-C:2018 (style) and SEI CERT C (security/correctness)
-- **Static Analysis**: cppcheck + clang-tidy (cert-*, bugprone-* checks)
-- **Test Organization**: Mirror source structure in test directories
-
 ### Bash Testing
 
 Full details are available via the `project-conventions` skill, which loads

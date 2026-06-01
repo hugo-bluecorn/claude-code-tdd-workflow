@@ -44,8 +44,13 @@ project_dir="$1"
 
 # Sibling scripts live beside this one (same idiom as hooks/fetch-conventions.sh).
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-parse_binding="${script_dir}/parse-binding.sh"
 resolve_active="${script_dir}/resolve-active-pack.sh"
+
+# Shared binding-iteration helper. SOURCE it so the tuple split (which must
+# preserve a dev pack's EMPTY version field) lives in ONE place, shared with
+# hooks/fetch-conventions.sh -- no more divergent hand-rolled split here.
+# shellcheck source=./iterate-binding.sh
+. "${script_dir}/iterate-binding.sh"
 
 # Derive a clean repo name: basename with a trailing ".git" stripped.
 repo_name_of() {
@@ -80,25 +85,15 @@ candidate_dir_for() {
 }
 
 # --- 2. Committed-binding path. Collect candidate dirs from the binding. ------
-# parse-binding emits TAB-delimited tuples "<source>\t<version>\t<dev>". A dev
-# pack has an EMPTY version, yielding two adjacent tabs; `read` with IFS=$'\t'
-# would collapse them (TAB is IFS-whitespace) and misalign the fields, so split
-# the line explicitly to preserve empty fields.
+# iterate_binding streams the binding's tuples with the fields split correctly
+# (preserving a dev pack's EMPTY version), invoking the callback per tuple.
 candidates=()
-tab=$'\t'
-while IFS= read -r line; do
-  [[ -n "$line" ]] || continue
-  # Split on the FIRST two tabs by hand: `read`/array splitting with IFS=$'\t'
-  # collapses adjacent tabs (TAB is IFS-whitespace), which would misalign a dev
-  # pack's empty version field. Parameter expansion preserves empty fields.
-  source="${line%%"$tab"*}"
-  rest="${line#*"$tab"}"
-  version="${rest%%"$tab"*}"
-  dev="${rest#*"$tab"}"
-  [[ -n "$source" ]] || continue
-  cand="$(candidate_dir_for "$source" "$version" "$dev")"
+collect_candidate() {
+  local cand
+  cand="$(candidate_dir_for "$1" "$2" "$3")"
   [[ -n "$cand" ]] && candidates+=("$cand")
-done < <(bash "$parse_binding" "$project_dir" 2>/dev/null)
+}
+iterate_binding "$project_dir" collect_candidate
 
 # --- 3. No candidates -> degrade to empty (PRIME-safe). -----------------------
 [[ "${#candidates[@]}" -gt 0 ]] || exit 0

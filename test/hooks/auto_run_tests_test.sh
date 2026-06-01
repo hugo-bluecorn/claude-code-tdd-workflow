@@ -541,6 +541,230 @@ function test_cpp_no_pack_degrades_no_fabricated_command() {
   rm -rf "$proj"
 }
 
+# ==========================================================================
+# Slice H2 — Polyglot pack selection (iterate all matches, not head-1)
+# A repo with BOTH a dart pack and a cpp pack bound (dart declared FIRST) must
+# select the pack whose detect.extensions claims the EDITED file's extension,
+# not merely the first resolved pack. The FFT proves ctest ACTUALLY FIRES for a
+# .cpp edit despite dart being first — guarding against the C3 false-green
+# resurrection (a fall-through to the built-in cmake-only branch runs no ctest).
+# ==========================================================================
+
+# Helper: scaffold a temp POLYGLOT project carrying BOTH markers (pubspec.yaml
+# AND CMakeLists.txt) plus derivable dart + cpp sources, a committed binding
+# that lists BOTH dev fixtures with dart FIRST, and PATH stubs for cmake/ctest/
+# flutter (each records an identifiable marker + argv to stdout and to
+# "$proj/invocations.log"). Echoes the project dir. TDD_ACTIVE_PACK is NOT used
+# here — both packs must resolve through the committed-binding resolve chain so
+# the multi-match path (not head-1) is exercised.
+make_polyglot_project() {
+  local proj
+  proj=$(mktemp -d)
+  # Both detection markers present so both packs resolve.
+  echo 'name: tmp_app' > "$proj/pubspec.yaml"
+  echo 'cmake_minimum_required(VERSION 3.20)' > "$proj/CMakeLists.txt"
+  # Derivable sources + matching test files for each language.
+  mkdir -p "$proj/lib/models" "$proj/test/models" "$proj/src"
+  echo 'void main() {}' > "$proj/lib/models/user.dart"
+  echo 'void main() {}' > "$proj/test/models/user_test.dart"
+  echo 'int main() {}' > "$proj/src/parser.cpp"
+  # Committed binding: dart FIRST, cpp second — both dev packs.
+  mkdir -p "$proj/.claude"
+  cat > "$proj/.claude/tdd-conventions.json" << JSON
+{ "packs": [
+  { "source": "$DART_FIXTURE", "dev": true },
+  { "source": "$CPP_FIXTURE", "dev": true }
+] }
+JSON
+  # PATH stubs recording call order to invocations.log.
+  mkdir -p "$proj/bin"
+  cat > "$proj/bin/cmake" << STUB
+#!/bin/bash
+echo "CMAKE_STUB_INVOKED: \$*" | tee -a "$proj/invocations.log"
+STUB
+  cat > "$proj/bin/ctest" << STUB
+#!/bin/bash
+echo "CTEST_STUB_INVOKED: \$*" | tee -a "$proj/invocations.log"
+STUB
+  cat > "$proj/bin/flutter" << STUB
+#!/bin/bash
+echo "FLUTTER_STUB_INVOKED: \$*" | tee -a "$proj/invocations.log"
+STUB
+  chmod +x "$proj/bin/cmake" "$proj/bin/ctest" "$proj/bin/flutter"
+  printf '%s\n' "$proj"
+}
+
+# ---------- H2 Test 1 (FFT): polyglot, dart-first, .cpp edit RUNS ctest ----------
+
+function test_polyglot_dart_first_cpp_edit_runs_ctest() {
+  local proj
+  proj=$(make_polyglot_project)
+
+  local json output
+  json=$(build_json "src/parser.cpp")
+  output=$(cd "$proj" \
+    && export PATH="$proj/bin:/usr/bin:/bin" \
+    && unset TDD_ACTIVE_PACK \
+    && echo "$json" | bash "$HOOK_ABS" 2>/dev/null)
+
+  # ACTION assert: ctest ACTUALLY FIRED for the .cpp edit even though the dart
+  # pack is declared FIRST. A head-1 truncation would pick dart, find .cpp not
+  # in dart's detect.extensions, and fall through to the built-in cmake-only
+  # branch (no ctest) — that false-green is what this guards against.
+  assert_contains "CTEST_STUB_INVOKED" "$output"
+  assert_contains "systemMessage" "$output"
+  # The cpp pack's suite command fired; the actual ctest run is recorded.
+  assert_file_contains "$proj/invocations.log" "CTEST_STUB_INVOKED"
+
+  rm -rf "$proj"
+}
+
+# ---------- H2 Test 2: polyglot, .dart edit still runs the dart pack command ----------
+
+function test_polyglot_dart_edit_runs_flutter_not_ctest() {
+  local proj
+  proj=$(make_polyglot_project)
+
+  local json output
+  json=$(build_json "lib/models/user.dart")
+  output=$(cd "$proj" \
+    && export PATH="$proj/bin:/usr/bin:/bin" \
+    && unset TDD_ACTIVE_PACK \
+    && echo "$json" | bash "$HOOK_ABS" 2>/dev/null)
+
+  # The dart pack (file-granularity "flutter test {file}") is selected for the
+  # .dart edit, with {file} substituted to the derived test path. ctest must NOT
+  # fire — the correct pack is chosen per edited extension, not declared order.
+  assert_contains "FLUTTER_STUB_INVOKED" "$output"
+  assert_contains "test/models/user_test.dart" "$output"
+  assert_not_contains "CTEST_STUB_INVOKED" "$output"
+
+  rm -rf "$proj"
+}
+
+# ---------- H2 Test 3 (edge): .sh edit falls through to bashunit built-in ----------
+
+function test_polyglot_sh_edit_falls_through_to_bashunit() {
+  local proj
+  proj=$(make_polyglot_project)
+  # Provide a derivable shell source + matching test so the bashunit built-in
+  # has something to reference, and bashunit on PATH for the runner lookup.
+  mkdir -p "$proj/scripts" "$proj/test/scripts" "$proj/lib"
+  echo '#!/bin/bash' > "$proj/scripts/util.sh"
+  echo '#!/bin/bash' > "$proj/test/scripts/util_test.sh"
+  cp "$PROJECT_ROOT/lib/bashunit" "$proj/lib/bashunit"
+  chmod +x "$proj/lib/bashunit"
+
+  local json output
+  json=$(build_json "scripts/util.sh")
+  output=$(cd "$proj" \
+    && export PATH="$proj/bin:/usr/bin:/bin" \
+    && unset TDD_ACTIVE_PACK \
+    && echo "$json" | bash "$HOOK_ABS" 2>/dev/null)
+
+  # Neither pack claims .sh -> built-in bashunit branch handles it.
+  assert_contains "bashunit" "$output"
+  assert_not_contains "CTEST_STUB_INVOKED" "$output"
+  assert_not_contains "FLUTTER_STUB_INVOKED" "$output"
+
+  rm -rf "$proj"
+}
+
+# ==========================================================================
+# Slice H3 — derive_test_file: anchored lib/ -> test/ substitution
+# An UNANCHORED sed rewrote the FIRST "lib/" anywhere in the path, so a nested
+# package path "packages/mylib/lib/foo.dart" mangled to "packages/mytest/lib/..."
+# (the "lib/" inside "myLIB/"), yielding "No matching test file found". The fix
+# anchors the substitution to a full path segment (start-of-string or after a
+# "/"). These FFTs assert the EXACT derived path string the emitted command
+# carries — the precise correct path AND the absence of the mangled one.
+# ==========================================================================
+
+# Helper: scaffold a temp dart project with a NESTED package source + matching
+# nested test file. "packages/mylib/lib/foo.dart" must derive to
+# "packages/mylib/test/foo_test.dart" (NOT "packages/mytest/lib/foo_test.dart").
+# Stubs flutter so "flutter test {file}" is observable. Echoes the dir.
+make_nested_dart_project() {
+  local proj
+  proj=$(mktemp -d)
+  echo 'name: tmp_app' > "$proj/pubspec.yaml"
+  mkdir -p "$proj/packages/mylib/lib" "$proj/packages/mylib/test"
+  echo 'void main() {}' > "$proj/packages/mylib/lib/foo.dart"
+  echo 'void main() {}' > "$proj/packages/mylib/test/foo_test.dart"
+  mkdir -p "$proj/bin"
+  cat > "$proj/bin/flutter" << 'STUB'
+#!/bin/bash
+echo "FLUTTER_STUB_INVOKED: $*"
+STUB
+  chmod +x "$proj/bin/flutter"
+  printf '%s\n' "$proj"
+}
+
+# ---------- H3 Test 1 (FFT): nested package path derives the EXACT test path ----------
+
+function test_nested_lib_derives_exact_test_path_not_mangled() {
+  local proj
+  proj=$(make_nested_dart_project)
+
+  local json output
+  json=$(build_json "packages/mylib/lib/foo.dart")
+  output=$(cd "$proj" \
+    && export PATH="$proj/bin:/usr/bin:/bin" \
+    && export TDD_ACTIVE_PACK="$DART_FIXTURE" \
+    && echo "$json" | bash "$HOOK_ABS" 2>/dev/null)
+
+  # ACTION assert: the emitted command carries the EXACT correct derived path
+  # (lib/ anchored as a whole segment) AND never the mangled "packages/mytest/".
+  assert_contains "FLUTTER_STUB_INVOKED" "$output"
+  assert_contains "packages/mylib/test/foo_test.dart" "$output"
+  assert_not_contains "packages/mytest/" "$output"
+  assert_contains "systemMessage" "$output"
+
+  rm -rf "$proj"
+}
+
+# ---------- H3 Test 2 (no-regression): top-level lib/ still maps to test/ ----------
+
+function test_top_level_lib_still_maps_to_test() {
+  local proj
+  proj=$(make_dart_project)
+
+  local json output
+  json=$(build_json "lib/models/user.dart")
+  output=$(cd "$proj" \
+    && export PATH="$proj/bin:/usr/bin:/bin" \
+    && export TDD_ACTIVE_PACK="$DART_FIXTURE" \
+    && echo "$json" | bash "$HOOK_ABS" 2>/dev/null)
+
+  # The anchored substitution must still rewrite a leading "lib/" segment.
+  assert_contains "FLUTTER_STUB_INVOKED" "$output"
+  assert_contains "test/models/user_test.dart" "$output"
+
+  rm -rf "$proj"
+}
+
+# ---------- H3 Test 3 (edge): a *_test.dart path edited directly is used verbatim ----------
+
+function test_nested_test_file_edited_directly_used_verbatim() {
+  local proj
+  proj=$(make_nested_dart_project)
+
+  local json output
+  json=$(build_json "packages/mylib/test/foo_test.dart")
+  output=$(cd "$proj" \
+    && export PATH="$proj/bin:/usr/bin:/bin" \
+    && export TDD_ACTIVE_PACK="$DART_FIXTURE" \
+    && echo "$json" | bash "$HOOK_ABS" 2>/dev/null)
+
+  # The early-return branch (a *_test.dart path) is untouched by the anchor fix:
+  # the path is used verbatim, with no segment rewriting.
+  assert_contains "FLUTTER_STUB_INVOKED" "$output"
+  assert_contains "packages/mylib/test/foo_test.dart" "$output"
+  assert_not_contains "packages/mytest/" "$output"
+
+  rm -rf "$proj"
+}
+
 # ---------- Edge Case Test 9: Non-source file (.md) exits silently ----------
 
 function test_markdown_file_exits_silently() {

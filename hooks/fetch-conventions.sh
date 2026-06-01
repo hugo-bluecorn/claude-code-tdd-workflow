@@ -47,7 +47,12 @@ mkdir -p "$conventions_dir"
 
 # Resolve helper scripts (Slices 1/2/4) relative to this hook.
 hook_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-parse_binding="${hook_dir}/../scripts/parse-binding.sh"
+
+# Shared binding-iteration helper. SOURCE it so we share the ONE correct tuple
+# split with active-pack.sh -- avoiding the dev-pack tab-collapse trap that a
+# naive `IFS=$'\t' read` falls into (it mis-reads an empty version as "dev").
+# shellcheck source=../scripts/iterate-binding.sh
+. "${hook_dir}/../scripts/iterate-binding.sh"
 
 # True for sources we can hand to `git clone` directly.
 is_fetchable_url() {
@@ -104,30 +109,36 @@ fetch_versioned() {
   fi
 }
 
-# Stream normalized tuples from parse-binding and resolve each. With no config
-# file there is simply no binding to resolve (the C3 floor below still runs).
+# Resolve one normalized binding tuple. Invoked per-tuple by iterate_binding,
+# which splits the fields correctly (preserving a dev pack's EMPTY version).
+resolve_binding_tuple() {
+  local source="$1" version="$2" dev="$3"
+  [ -n "$source" ] || return 0
+
+  # Case 1: dev pack -> local, never fetched.
+  if [ "$dev" = "dev" ]; then
+    return 0
+  fi
+
+  if [ "$version" = "legacy" ]; then
+    # Case 2: legacy. Fetch only real URLs; skip bare local paths.
+    if is_fetchable_url "$source"; then
+      fetch_legacy "$source"
+    fi
+    return 0
+  fi
+
+  # Case 3: real version -> versioned resolve.
+  if [ -n "$version" ]; then
+    fetch_versioned "$source" "$version"
+  fi
+}
+
+# Stream normalized tuples from the shared helper and resolve each. With no
+# config file there is simply no binding to resolve (the C3 floor below still
+# runs).
 if [ -f "$config_file" ]; then
-  while IFS=$'\t' read -r source version dev; do
-    [ -n "$source" ] || continue
-
-    # Case 1: dev pack -> local, never fetched.
-    if [ "$dev" = "dev" ]; then
-      continue
-    fi
-
-    if [ "$version" = "legacy" ]; then
-      # Case 2: legacy. Fetch only real URLs; skip bare local paths.
-      if is_fetchable_url "$source"; then
-        fetch_legacy "$source"
-      fi
-      continue
-    fi
-
-    # Case 3: real version -> versioned resolve.
-    if [ -n "$version" ]; then
-      fetch_versioned "$source" "$version"
-    fi
-  done < <(bash "$parse_binding" "." 2>/dev/null)
+  iterate_binding "." resolve_binding_tuple
 fi
 
 # ---------------------------------------------------------------------------
@@ -186,5 +197,38 @@ for c3_marker in pubspec.yaml CMakeLists.txt CMakePresets.json; do
     echo "fetch-conventions: no convention pack for ${c3_lang}; TDD will proceed on training data + session context only" >&2
   fi
 done
+
+# ---------------------------------------------------------------------------
+# T1 (C4): projectFiles materialization -- non-destructive, warn-on-drift.
+# ---------------------------------------------------------------------------
+# For each ACTIVE pack (resolved via active-pack.sh, which -- unlike the C3
+# cache scan above -- also locates DEV packs from the committed binding), read
+# its projectFiles[] and materialize each into the PROJECT ROOT:
+#   - absent in project     -> copy the pack's file in (the ONLY write);
+#   - present & identical    -> no-op (silent);
+#   - present but DIFFERENT   -> NEVER overwrite; emit a drift advisory naming
+#                                the file to stderr; proceed.
+# PRIME-safe: no active pack / no projectFiles -> no writes. Hook still exit 0s.
+active_pack_for_t1="${hook_dir}/../scripts/active-pack.sh"
+read_pack_for_t1="${hook_dir}/../scripts/read-pack.sh"
+
+while IFS= read -r t1_pack; do
+  [ -n "$t1_pack" ] || continue
+  while IFS= read -r t1_file; do
+    [ -n "$t1_file" ] || continue
+    t1_src="${t1_pack%/}/${t1_file}"
+    t1_dst="./${t1_file}"
+    [ -f "$t1_src" ] || continue
+
+    if [ ! -e "$t1_dst" ]; then
+      # Absent -> copy the pack's file in (the only write).
+      cp "$t1_src" "$t1_dst" 2>/dev/null || true
+    elif ! cmp -s "$t1_src" "$t1_dst"; then
+      # Present but different -> NEVER overwrite; warn naming the file.
+      echo "fetch-conventions: project file ${t1_file} differs from convention pack; leaving your copy unchanged" >&2
+    fi
+    # Present & identical -> nothing to do.
+  done < <(bash "$read_pack_for_t1" "$t1_pack" projectFiles 2>/dev/null)
+done < <(bash "$active_pack_for_t1" "." 2>/dev/null)
 
 exit 0

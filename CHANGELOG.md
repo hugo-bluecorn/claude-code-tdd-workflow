@@ -6,6 +6,44 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
 
+## [2.8.0] - 2026-06-01
+
+### Fixed
+- R1 foundation hardening from the post-merge adversarial retro (issue 014) —
+  three real breaks that shipped green under blind end-state tests; each fix's
+  test now asserts the ACTION, not the end-state:
+  - **Dev-pack bogus clone (H1):** `hooks/fetch-conventions.sh` mis-parsed every
+    `dev:true` binding (a naive `IFS=$'\t' read` collapsed the empty-version
+    adjacent tabs) and fired a failing `git clone --branch dev https://…` every
+    SessionStart. Binding iteration is now a single shared helper
+    (`scripts/iterate-binding.sh`) used by both `fetch-conventions.sh` and
+    `scripts/active-pack.sh`, eliminating the parser divergence. (A `git`-clone
+    spy now guards it — clone is never invoked for a dev pack.)
+  - **Polyglot false-green (H2):** `hooks/auto-run-tests.sh` selected the active
+    pack with `head -1`, so in a repo with multiple packs bound the wrong-language
+    first pack let a `.cpp` edit fall through to a cmake-only build (no `ctest`).
+    It now selects the pack whose `detect.extensions` matches the edited file.
+  - **Nested `lib/` path mangle (H3):** `derive_test_file`'s unanchored
+    `s|lib/|test/|` rewrote `packages/mylib/…` → `packages/mytest/…`. The
+    substitution is now anchored to a full path segment.
+
+### Added
+- **Project-file materialization (T1):** the SessionStart resolver
+  (`hooks/fetch-conventions.sh`) materializes an active pack's `projectFiles[]`
+  (e.g. `analysis_options.yaml`) into the project root if absent — strictly
+  non-destructive: an existing file is never overwritten, and a present-but-different
+  file emits a drift advisory.
+
+### Changed
+- **Doc cleanup (T2):** removed the now-untested C-testing content from `CLAUDE.md`
+  (`### C Testing` body — Unity/CMock/BARR-C/SEI-CERT lines) while keeping the
+  `### C Testing` header and the Pre-Commit-Checklist cppcheck/clang-tidy line.
+
+### Notes
+- Completes R1 (foundation + Wave 1 consumers + Wave 2 version authority + Wave 3
+  hardening/cleanup). Core stays pack-optional throughout. Deferred (issue 014
+  #4–#10) are latent/cosmetic, tracked for vNext / pack-author docs.
+
 ## [2.7.0] - 2026-06-01
 
 ### Changed
