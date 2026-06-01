@@ -198,4 +198,37 @@ for c3_marker in pubspec.yaml CMakeLists.txt CMakePresets.json; do
   fi
 done
 
+# ---------------------------------------------------------------------------
+# T1 (C4): projectFiles materialization -- non-destructive, warn-on-drift.
+# ---------------------------------------------------------------------------
+# For each ACTIVE pack (resolved via active-pack.sh, which -- unlike the C3
+# cache scan above -- also locates DEV packs from the committed binding), read
+# its projectFiles[] and materialize each into the PROJECT ROOT:
+#   - absent in project     -> copy the pack's file in (the ONLY write);
+#   - present & identical    -> no-op (silent);
+#   - present but DIFFERENT   -> NEVER overwrite; emit a drift advisory naming
+#                                the file to stderr; proceed.
+# PRIME-safe: no active pack / no projectFiles -> no writes. Hook still exit 0s.
+active_pack_for_t1="${hook_dir}/../scripts/active-pack.sh"
+read_pack_for_t1="${hook_dir}/../scripts/read-pack.sh"
+
+while IFS= read -r t1_pack; do
+  [ -n "$t1_pack" ] || continue
+  while IFS= read -r t1_file; do
+    [ -n "$t1_file" ] || continue
+    t1_src="${t1_pack%/}/${t1_file}"
+    t1_dst="./${t1_file}"
+    [ -f "$t1_src" ] || continue
+
+    if [ ! -e "$t1_dst" ]; then
+      # Absent -> copy the pack's file in (the only write).
+      cp "$t1_src" "$t1_dst" 2>/dev/null || true
+    elif ! cmp -s "$t1_src" "$t1_dst"; then
+      # Present but different -> NEVER overwrite; warn naming the file.
+      echo "fetch-conventions: project file ${t1_file} differs from convention pack; leaving your copy unchanged" >&2
+    fi
+    # Present & identical -> nothing to do.
+  done < <(bash "$read_pack_for_t1" "$t1_pack" projectFiles 2>/dev/null)
+done < <(bash "$active_pack_for_t1" "." 2>/dev/null)
+
 exit 0
