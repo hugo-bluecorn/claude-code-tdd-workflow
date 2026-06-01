@@ -37,18 +37,27 @@ if ! echo "$FILE_PATH" | grep -qE '\.(dart|cpp|cc|h|hpp|sh)$'; then
 fi
 
 # --- Pack-driven, file-granularity path (data-driven, pack-optional). ---------
-# Resolve the active pack for this project. If one resolves, the edited file's
-# extension is among its detect.extensions, and its test granularity is "file",
-# run the pack's commands.test.run with {file} substituted to the derived test
-# file. No pack / no match -> fall through to the built-in branches below; a
-# pack EXTENSION with no active pack degrades silently (no fabricated command).
+# Resolve the active pack(s) for this project. active-pack.sh emits EVERY
+# matching pack dir (one per line, in declared order) — a polyglot repo can bind
+# several. Iterate ALL of them and select the FIRST whose detect.extensions
+# claims the edited file's extension, instead of blindly truncating to the head
+# match: in a dart+cpp repo with dart declared first, editing a .cpp must pick
+# the cpp pack (and run ctest), not fall through to the built-in cmake-only
+# branch. Only when NO resolved pack claims the edited ext do we fall through.
+FILE_EXT=".${FILE_PATH##*.}"
 PACK_DIR=""
-if [ -f "$ACTIVE_PACK_SH" ]; then
-  PACK_DIR=$(bash "$ACTIVE_PACK_SH" "$(pwd)" 2>/dev/null | head -1)
+if [ -f "$ACTIVE_PACK_SH" ] && [ -f "$READ_PACK_SH" ]; then
+  while IFS= read -r candidate_pack; do
+    [ -n "$candidate_pack" ] || continue
+    candidate_exts=$(bash "$READ_PACK_SH" "$candidate_pack" detect.extensions 2>/dev/null)
+    if echo "$candidate_exts" | grep -qxF "$FILE_EXT"; then
+      PACK_DIR="$candidate_pack"
+      break
+    fi
+  done < <(bash "$ACTIVE_PACK_SH" "$(pwd)" 2>/dev/null)
 fi
 
 if [ -n "$PACK_DIR" ] && [ -f "$READ_PACK_SH" ]; then
-  FILE_EXT=".${FILE_PATH##*.}"
   PACK_EXTS=$(bash "$READ_PACK_SH" "$PACK_DIR" detect.extensions 2>/dev/null)
   if echo "$PACK_EXTS" | grep -qxF "$FILE_EXT"; then
     GRANULARITY=$(bash "$READ_PACK_SH" "$PACK_DIR" commands.test.granularity 2>/dev/null)
