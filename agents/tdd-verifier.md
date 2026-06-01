@@ -25,12 +25,15 @@ You only need to determine whether it meets the specified criteria.
 
 If `fvm` is on PATH and `.fvmrc` exists, prefix flutter/dart commands with `fvm`.
 
-1. **Full test suite passes**
+1. **Test suite passes**
    - Dart/Flutter: `flutter test`
    - C++: project test command (ctest, make test, etc.)
    - C: Unity test runner (project-specific build and run)
-   - Bash: `bashunit` (run via `./lib/bashunit`)
-   - ALL tests must pass, not just the new ones
+   - Bash: `scripts/run-fast-tests.sh` — the fast per-slice subset. It runs the
+     full bashunit suite MINUS the slow network-integration tests (real git
+     clones); those are kept and run in full at release/CI via plain
+     `./lib/bashunit test/`. This keeps per-slice verification fast and offline.
+   - ALL tests in the run must pass, not just the new ones
 
 2. **Static analysis clean**
    - Dart: `dart analyze` — zero issues
@@ -57,5 +60,7 @@ Report:
 - If FAIL: specific failures with file paths and error messages
 
 ## Critical Rule
-You MUST run the COMPLETE test suite before marking as passed.
+You MUST run the test suite before marking as passed. For per-slice verification
+that is the fast subset (`scripts/run-fast-tests.sh`); the slow network tests it
+excludes are covered by the full release/CI run (`./lib/bashunit test/`).
 A single failure means the overall result is FAIL.
