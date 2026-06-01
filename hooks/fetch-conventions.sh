@@ -22,6 +22,17 @@
 # Preserves the legacy guards: CLAUDE_PLUGIN_DATA unset -> exit 0; no config ->
 # exit 0; failures log to stderr but never block. This hook does NOT reference,
 # check for, or require any role file.
+#
+# C3 no-pack warn-and-proceed floor: after resolving, if a NON-bash language
+# marker is present in the project but NO active pack resolved for it, emit an
+# advisory to stderr naming the language and PROCEED (never block, no fallback
+# command). bashunit stays the built-in default so bash-only / marker-less
+# projects never warn.
+#
+# ADVISORY-ONLY marker->language map: used SOLELY to produce the human-readable
+# C3 no-pack warning. It NEVER selects or drives any test/lint/format/build
+# command -- command behavior remains fully pack-driven. Bash markers are
+# deliberately absent (bashunit is the built-in default, never warned about).
 
 # Exit gracefully if CLAUDE_PLUGIN_DATA is not set
 if [ -z "${CLAUDE_PLUGIN_DATA:-}" ]; then
@@ -34,12 +45,7 @@ config_file=".claude/tdd-conventions.json"
 # Ensure conventions cache directory exists
 mkdir -p "$conventions_dir"
 
-# If no config file, just ensure empty cache dir exists and exit
-if [ ! -f "$config_file" ]; then
-  exit 0
-fi
-
-# Resolve the parse-binding helper (Slice 2) relative to this hook.
+# Resolve helper scripts (Slices 1/2/4) relative to this hook.
 hook_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 parse_binding="${hook_dir}/../scripts/parse-binding.sh"
 
@@ -98,27 +104,87 @@ fetch_versioned() {
   fi
 }
 
-# Stream normalized tuples from parse-binding and resolve each.
-while IFS=$'\t' read -r source version dev; do
-  [ -n "$source" ] || continue
+# Stream normalized tuples from parse-binding and resolve each. With no config
+# file there is simply no binding to resolve (the C3 floor below still runs).
+if [ -f "$config_file" ]; then
+  while IFS=$'\t' read -r source version dev; do
+    [ -n "$source" ] || continue
 
-  # Case 1: dev pack -> local, never fetched.
-  if [ "$dev" = "dev" ]; then
-    continue
-  fi
-
-  if [ "$version" = "legacy" ]; then
-    # Case 2: legacy. Fetch only real URLs; skip bare local paths.
-    if is_fetchable_url "$source"; then
-      fetch_legacy "$source"
+    # Case 1: dev pack -> local, never fetched.
+    if [ "$dev" = "dev" ]; then
+      continue
     fi
-    continue
-  fi
 
-  # Case 3: real version -> versioned resolve.
-  if [ -n "$version" ]; then
-    fetch_versioned "$source" "$version"
+    if [ "$version" = "legacy" ]; then
+      # Case 2: legacy. Fetch only real URLs; skip bare local paths.
+      if is_fetchable_url "$source"; then
+        fetch_legacy "$source"
+      fi
+      continue
+    fi
+
+    # Case 3: real version -> versioned resolve.
+    if [ -n "$version" ]; then
+      fetch_versioned "$source" "$version"
+    fi
+  done < <(bash "$parse_binding" "." 2>/dev/null)
+fi
+
+# ---------------------------------------------------------------------------
+# C3: no-pack warn-and-proceed floor (advisory only — never blocks, never runs
+# a fallback command).
+# ---------------------------------------------------------------------------
+
+# ADVISORY-ONLY marker -> language label. Bash markers are intentionally absent.
+# This map exists solely to NAME the language in the no-pack warning; it never
+# selects a test/lint/format/build command.
+c3_lang_for_marker() {
+  case "$1" in
+    pubspec.yaml) echo "Dart" ;;
+    CMakeLists.txt | CMakePresets.json) echo "C/C++" ;;
+    *) return 1 ;;
+  esac
+}
+
+# Collect resolved pack dirs available this run: any dir under the conventions
+# cache that contains a pack.json (new-schema <repo>@<version> dirs and legacy
+# sub-pack dirs). Dirs without a pack.json are not "resolved packs".
+resolved_packs=()
+while IFS= read -r packjson; do
+  [ -n "$packjson" ] || continue
+  resolved_packs+=("$(dirname "$packjson")")
+done < <(find "$conventions_dir" -mindepth 1 -maxdepth 2 -name pack.json 2>/dev/null)
+
+# Determine the active packs for THIS project via the data-driven resolver.
+active_packs=""
+if [ "${#resolved_packs[@]}" -gt 0 ]; then
+  resolve_active="${hook_dir}/../scripts/resolve-active-pack.sh"
+  active_packs="$(bash "$resolve_active" "." "${resolved_packs[@]}" 2>/dev/null)"
+fi
+
+read_pack_for_c3="${hook_dir}/../scripts/read-pack.sh"
+
+# A marker is "covered" when an active pack declares it in detect.markers.
+c3_marker_covered() {
+  local marker="$1" pack
+  [ -n "$active_packs" ] || return 1
+  while IFS= read -r pack; do
+    [ -n "$pack" ] || continue
+    if bash "$read_pack_for_c3" "$pack" detect.markers 2>/dev/null \
+        | grep -Fxq "$marker"; then
+      return 0
+    fi
+  done <<<"$active_packs"
+  return 1
+}
+
+# For each advisory non-bash marker present at the project root with no active
+# pack covering it, emit the C3 advisory naming its language. Then proceed.
+for c3_marker in pubspec.yaml CMakeLists.txt CMakePresets.json; do
+  [ -f "./$c3_marker" ] || continue
+  if c3_lang="$(c3_lang_for_marker "$c3_marker")" && ! c3_marker_covered "$c3_marker"; then
+    echo "fetch-conventions: no convention pack for ${c3_lang}; TDD will proceed on training data + session context only" >&2
   fi
-done < <(bash "$parse_binding" "." 2>/dev/null)
+done
 
 exit 0
