@@ -66,6 +66,31 @@ if [ -n "$PACK_DIR" ] && [ -f "$READ_PACK_SH" ]; then
         jq -n --arg msg "Auto-test: $RESULT" '{"systemMessage": $msg}'
         exit 0
       fi
+    elif [ "$GRANULARITY" = "suite" ]; then
+      # Suite granularity: run every commands.test.setup[] step (in declared
+      # order), THEN commands.test.run. Substitute {variant} from the pack's
+      # default variant (the variants entry with default:true, else the first).
+      RUN_TMPL=$(bash "$READ_PACK_SH" "$PACK_DIR" commands.test.run 2>/dev/null)
+      if [ -n "$RUN_TMPL" ]; then
+        VARIANT=$(jq -r \
+          '(.commands.test.variants[]? | select(.default==true) | .name)
+            // (.commands.test.variants[0]?.name) // empty' \
+          "${PACK_DIR%/}/pack.json" 2>/dev/null | head -1)
+        RESULT=""
+        # Run each setup step first (placeholders substituted), capturing output.
+        while IFS= read -r setup_step; do
+          [ -n "$setup_step" ] || continue
+          setup_cmd="${setup_step//\{variant\}/$VARIANT}"
+          RESULT+=$(eval "$setup_cmd" 2>&1)$'\n'
+        done < <(bash "$READ_PACK_SH" "$PACK_DIR" commands.test.setup 2>/dev/null)
+        # Then run the test command.
+        TEST_CMD="${RUN_TMPL//\{variant\}/$VARIANT}"
+        RESULT+=$(eval "$TEST_CMD" 2>&1)
+        RESULT=$(printf '%s\n' "$RESULT" | tail -10)
+        # Emit informational systemMessage and stop (never blocks).
+        jq -n --arg msg "Auto-test: $RESULT" '{"systemMessage": $msg}'
+        exit 0
+      fi
     fi
   fi
   # Pack resolved but this file is a non-pack extension -> fall through to the
