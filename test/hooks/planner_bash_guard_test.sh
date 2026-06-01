@@ -92,6 +92,7 @@ function test_guard_all_allowlisted_commands_exit_zero() {
     git flutter dart fvm test command which type pwd echo
   )
 
+  local accepted=0
   for cmd in "${allowed_commands[@]}"; do
     run_hook "$cmd --help"
     local rc=$?
@@ -99,7 +100,11 @@ function test_guard_all_allowlisted_commands_exit_zero() {
       bashunit::fail "Expected exit 0 for allowlisted command '$cmd', got $rc"
       return
     fi
+    accepted=$((accepted + 1))
   done
+
+  # Positive assertion for the happy path: every allowlisted command was accepted.
+  assert_equals "${#allowed_commands[@]}" "$accepted"
 }
 
 # ---------- Edge Case 1: Empty command ----------
