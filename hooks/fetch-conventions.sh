@@ -157,21 +157,13 @@ c3_lang_for_marker() {
   esac
 }
 
-# Collect resolved pack dirs available this run: any dir under the conventions
-# cache that contains a pack.json (new-schema <repo>@<version> dirs and legacy
-# sub-pack dirs). Dirs without a pack.json are not "resolved packs".
-resolved_packs=()
-while IFS= read -r packjson; do
-  [ -n "$packjson" ] || continue
-  resolved_packs+=("$(dirname "$packjson")")
-done < <(find "$conventions_dir" -mindepth 1 -maxdepth 2 -name pack.json 2>/dev/null)
-
-# Determine the active packs for THIS project via the data-driven resolver.
-active_packs=""
-if [ "${#resolved_packs[@]}" -gt 0 ]; then
-  resolve_active="${hook_dir}/../scripts/resolve-active-pack.sh"
-  active_packs="$(bash "$resolve_active" "." "${resolved_packs[@]}" 2>/dev/null)"
-fi
+# Determine the active packs for THIS project via the unified committed-binding
+# resolver. Unlike a fetch-cache scan, active-pack.sh also locates DEV packs
+# (local, never fetched) from the committed binding -- so a bound-and-resolving
+# dev pack correctly COVERS its marker and the no-pack advisory does not fire
+# (issue 015 / BF-001). It emits one pack dir per line, exactly what
+# c3_marker_covered's read loop below consumes.
+active_packs="$(bash "${hook_dir}/../scripts/active-pack.sh" "." 2>/dev/null)"
 
 read_pack_for_c3="${hook_dir}/../scripts/read-pack.sh"
 
