@@ -67,6 +67,26 @@ EOF
   echo "$repo"
 }
 
+# Build a plain LOCAL pack dir (no git, never fetched) whose pack.json declares
+# the given detect.markers, so a dev binding to it RESOLVES for a project
+# containing that marker. Echoes the pack dir path.
+create_local_dev_pack() {
+  local base="$1" marker="$2"
+  local pack="$base/dev-pack"
+  mkdir -p "$pack"
+  cat > "$pack/pack.json" << EOF
+{"schemaVersion":1,"name":"dev-conventions","version":"0.0.0","language":"Dart/Flutter","detect":{"markers":["$marker"],"extensions":[]}}
+EOF
+  echo "$pack"
+}
+
+# Write a local dev-pack binding into <project>/.claude/tdd-conventions.json.
+write_dev_binding() {
+  local dir="$1" src="$2"
+  printf '{"packs":[{"source":"%s","dev":true}]}\n' "$src" \
+    > "$dir/.claude/tdd-conventions.json"
+}
+
 # ---------- Test 1: non-bash marker, no resolved pack -> advisory + proceed ----------
 
 function test_non_bash_marker_no_pack_emits_advisory_and_proceeds() {
@@ -187,6 +207,32 @@ function test_advisory_emits_no_fallback_command() {
   assert_not_contains "ctest" "$stdout_output"
   assert_not_contains "cmake" "$stdout_output"
   assert_not_contains "dart test" "$stdout_output"
+
+  run_hook_rc "$tmp_dir"
+  assert_equals 0 "$?"
+
+  rm -rf "$tmp_dir"
+}
+
+# ---------- Test 7: a DEV-bound pack suppresses the warning ----------
+# Regression (BF-001 / issue 015): the C3 coverage check scanned the fetch
+# cache, which a dev pack (local, never fetched) never populates -> the advisory
+# wrongly fired for a bound-and-resolving dev pack. The coverage check must
+# resolve active packs via active-pack.sh (the committed-binding resolver), so a
+# dev binding that covers pubspec.yaml suppresses the no-pack advisory.
+
+function test_dev_bound_pack_suppresses_warning() {
+  local tmp_dir pack
+  tmp_dir=$(create_tmp_env)
+  : > "$tmp_dir/pubspec.yaml"
+  pack=$(create_local_dev_pack "$tmp_dir" "pubspec.yaml")
+  write_dev_binding "$tmp_dir" "$pack"
+
+  local stderr_output
+  stderr_output=$(run_hook_stderr "$tmp_dir")
+
+  # The dev pack covers pubspec.yaml -> no no-pack advisory must fire.
+  assert_not_contains "no convention pack for Dart" "$stderr_output"
 
   run_hook_rc "$tmp_dir"
   assert_equals 0 "$?"
