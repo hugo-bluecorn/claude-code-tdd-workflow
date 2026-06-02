@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
 
+## [2.8.1] - 2026-06-02
+
+### Fixed
+- **C3 no-pack false-negative for dev-bound packs (BF-001, issue 015):**
+  `hooks/fetch-conventions.sh`'s "no convention pack" coverage check built its
+  active-pack set by scanning the fetch cache, which never contains a local
+  `dev:true`-bound pack — so the advisory wrongly fired for a fully-resolving dev
+  pack. The C3 check now resolves the active pack via `active-pack.sh "."` (the
+  same unified resolver the T1/projectFiles block already used), so a dev-bound
+  pack correctly suppresses the advisory while an unbound project still gets it.
+- **bump-version drops a Flutter `+build` suffix on a bare semver (BF-003,
+  issue 016):** the bare-path `.yaml`/`.yml` heuristic in `scripts/bump-version.sh`
+  rewrote the whole `version:` line, discarding an existing `+build`. It now
+  preserves an existing `+build` when the supplied version omits one; an explicit
+  `+build` in the argument still wins.
+
+
 ## [2.8.0] - 2026-06-01
 
 ### Fixed
