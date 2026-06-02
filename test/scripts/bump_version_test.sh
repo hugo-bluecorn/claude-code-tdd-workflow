@@ -275,6 +275,66 @@ EOF
   assert_file_contains "$proj/Cargo.toml" 'version = "1.0.0"'
 }
 
+# ---------- Test 9: bare semver preserves an existing +build (Flutter pubspec) ----------
+# Falsifier for BF-003: the bare-path .yaml heuristic must NOT drop a Flutter
+# `+build` suffix when the supplied version omits one. `version: 0.1.0+1` bumped
+# with a bare `0.2.0` must land at `version: 0.2.0+1` — the +1 is preserved.
+
+function test_bare_semver_preserves_existing_build() {
+  local proj
+  proj=$(mk)
+  cat > "$proj/pubspec.yaml" << 'EOF'
+name: my_app
+version: 0.1.0+1
+EOF
+
+  export TDD_ACTIVE_PACK="$DART_FIXTURE"
+  run_bump_in_dir "$proj" "0.2.0"
+  assert_exit_code 0
+
+  assert_file_contains "$proj/pubspec.yaml" "version: 0.2.0+1"
+  # Tight falsifier: the build-stripped line must NOT be present.
+  # (assert_file_not_contains greps a BRE per line -> anchor to end-of-line.)
+  assert_file_not_contains "$proj/pubspec.yaml" "^version: 0.2.0$"
+}
+
+# ---------- Test 10: explicit +build in the argument wins ----------
+# When the supplied version carries an explicit `+build`, it overrides the file's.
+
+function test_explicit_build_argument_wins() {
+  local proj
+  proj=$(mk)
+  cat > "$proj/pubspec.yaml" << 'EOF'
+name: my_app
+version: 0.1.0+1
+EOF
+
+  export TDD_ACTIVE_PACK="$DART_FIXTURE"
+  run_bump_in_dir "$proj" "0.2.0+5"
+  assert_exit_code 0
+
+  assert_file_contains "$proj/pubspec.yaml" "version: 0.2.0+5"
+}
+
+# ---------- Test 11: no build present, none added (unchanged behavior) ----------
+
+function test_bare_semver_no_build_adds_none() {
+  local proj
+  proj=$(mk)
+  cat > "$proj/pubspec.yaml" << 'EOF'
+name: my_app
+version: 0.1.0
+EOF
+
+  export TDD_ACTIVE_PACK="$DART_FIXTURE"
+  run_bump_in_dir "$proj" "0.2.0"
+  assert_exit_code 0
+
+  assert_file_contains "$proj/pubspec.yaml" "version: 0.2.0"
+  # No spurious +build introduced: the line is exactly the bare semver.
+  assert_file_not_contains "$proj/pubspec.yaml" "version: 0.2.0+"
+}
+
 # ---------- Test 8: shellcheck clean ----------
 
 function test_passes_shellcheck() {

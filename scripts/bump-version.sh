@@ -43,7 +43,15 @@ bump_bare_path() {
   [[ -f "$file" ]] || return 0
   case "$file" in
     *.yaml | *.yml)
-      sed -i "s/^version: .*/version: $VERSION/" "$file"
+      if [[ "$VERSION" == *+* ]]; then
+        # Explicit +build supplied by the caller -> write it verbatim.
+        sed -i "s/^version: .*/version: $VERSION/" "$file"
+      else
+        # Bare semver -> preserve any existing +build in the file (Flutter
+        # pubspec). Rewrite only the semver portion; \1 reattaches a trailing
+        # +build when present, and is empty when absent.
+        sed -i -E "s/^version: [^+[:space:]]*(\+[^[:space:]]*)?/version: $VERSION\1/" "$file"
+      fi
       ;;
     *.json)
       sed -i "s/\"version\": \"[^\"]*\"/\"version\": \"$VERSION\"/" "$file"
